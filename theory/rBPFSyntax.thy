@@ -1,0 +1,85 @@
+theory rBPFSyntax
+imports Main rBPFCommType
+begin
+
+datatype bpf_ireg = BR0 | BR1 | BR2 | BR3 | BR4 | BR5 | BR6 | BR7 | BR8 | BR9
+
+datatype bpf_sreg = IR bpf_ireg | BR10
+
+datatype bpf_preg = bpf_sreg | BPC
+
+type_synonym off_ty = i16
+type_synonym imm_ty = i32
+
+type_synonym dst_ty = bpf_ireg  
+type_synonym src_ty = bpf_sreg
+
+datatype snd_op = SOImm imm_ty | SOReg bpf_ireg
+
+datatype arch = A32 | A64
+
+fun arch2int :: "arch \<Rightarrow> int" where
+"arch2int A32 = 32" |
+"arch2int A64 = 64"
+
+datatype condition = Eq | Gt | Ge | Lt | Le | SEt | Ne | SGt | SGe | SLt | SLe
+
+datatype binop = BPF_ADD | BPF_SUB | BPF_MUL | BPF_DIV | BPF_OR | BPF_AND |
+  BPF_LSH | BPF_RSH | BPF_MOD | BPF_XOR | BPF_MOV | BPF_ARSH
+
+datatype pqrop = BPF_LMUL | BPF_UDIV | BPF_UREM | BPF_SDIV | BPF_SREM
+
+datatype pqrop2 = BPF_UHMUL | BPF_SHMUL
+
+datatype chunk = Byte | HalfWord | SWord | DWord 
+
+datatype SBPFV = V1 (* The legacy format *) |
+ V2 (* The current SOImm *)(* |
+ V3  The future format with BTF support *)
+
+datatype bpf_instruction = 
+  BPF_LD_IMM          dst_ty imm_ty imm_ty | 
+  (* BPF_LDX class *)
+  BPF_LDX     chunk   dst_ty src_ty off_ty |
+  (* BPF_ST/BPF_STX class *)
+  BPF_ST      chunk   dst_ty snd_op off_ty |
+  (* BPF_ALU class *)
+  BPF_ALU     binop   dst_ty snd_op |
+  BPF_NEG32_REG       dst_ty        |
+  BPF_LE              dst_ty imm_ty |
+  BPF_BE              dst_ty imm_ty |
+  (* BPF_ALU64 class *)
+  BPF_ALU64   binop   dst_ty snd_op |
+  BPF_NEG64_REG       dst_ty        |
+  BPF_HOR64_IMM       dst_ty imm_ty |
+  (* BPF_PQR class *)
+  BPF_PQR     pqrop   dst_ty snd_op |
+  BPF_PQR64   pqrop   dst_ty snd_op |
+  BPF_PQR2    pqrop2  dst_ty snd_op |
+  (* BPF_JMP class *)
+  BPF_JA off_ty |
+  BPF_JUMP condition bpf_ireg snd_op off_ty |
+  BPF_CALL_REG src_ty imm_ty |
+  BPF_CALL_IMM bpf_sreg imm_ty |
+  
+  BPF_EXIT
+  
+type_synonym ebpf_asm = "bpf_instruction list"
+
+fun bpf_ireg2i64 :: "bpf_ireg \<Rightarrow> i64" where
+"bpf_ireg2i64 BR0 = 0" | 
+"bpf_ireg2i64 BR1 = 1" | 
+"bpf_ireg2i64 BR2 = 2" | 
+"bpf_ireg2i64 BR3 = 3" | 
+"bpf_ireg2i64 BR4 = 4" | 
+"bpf_ireg2i64 BR5 = 5" | 
+"bpf_ireg2i64 BR6 = 6" | 
+"bpf_ireg2i64 BR7 = 7" | 
+"bpf_ireg2i64 BR8 = 8" | 
+"bpf_ireg2i64 BR9 = 9" 
+
+fun bpf_sreg2i64 :: "bpf_sreg \<Rightarrow> i64" where
+"bpf_sreg2i64 (IR ir) = bpf_ireg2i64 ir" | 
+"bpf_sreg2i64 BR10 = 10"
+
+end
