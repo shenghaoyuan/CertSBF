@@ -1,5 +1,8 @@
 theory Assembler
-imports Main "HOL.Bit_Operations" "HOL-Library.Word" rBPFCommType rBPFSyntax
+imports
+  Main
+  "HOL.Bit_Operations" "HOL-Library.Word"
+  rBPFCommType rBPFSyntax
 begin
 
 fun insn :: "u8 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> ebpf_binary option" where

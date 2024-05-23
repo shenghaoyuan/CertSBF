@@ -1,5 +1,9 @@
 theory rBPFCommType
-imports Main "/home/shyuan/GitHub/l4v/lib/Word_Lib/Signed_Words"
+imports
+  Main
+  (*"/home/shyuan/GitLab/Isabelle2023/autocorres-1.10/lib/Word_Lib/Signed_Words" *)
+  "AutoCorres.AutoCorres"
+(* "/home/shyuan/GitHub/l4v/lib/Word_Lib/Signed_Words"*)
 begin
 type_synonym u8 = "8 word"
 type_synonym i16 = "16 sword"

@@ -1,28 +1,19 @@
 # CertSBF
 
 # How to install
-- Isabelle/HOL 2023 (please set your PATH with e.g. `/home/shyuan/GitLab/Isabelle2023`)
-- seL4 project: L4V (Follow [SetUp](https://github.com/seL4/l4v/blob/master/docs/setup.md), please remember change all l4v prefix `/home/shyuan/GitHub/l4v/` to your l4v path)
+- [Isabelle/HOL 2023](https://isabelle.in.tum.de/) (please set your PATH with e.g. `/home/shyuan/GitLab/Isabelle2023`)
+- [AutoCorres 1.10](https://github.com/seL4/l4v/releases/tag/autocorres-1.10)
 
-ps: some sel4-install soft requires a magic tool(V-P-N):
-- `repo`: can only [install repo manually](https://gerrit.googlesource.com/git-repo/+/HEAD/README.md)
 ```shell
-$ mkdir -p ~/.bin
-$ PATH="${HOME}/.bin:${PATH}"
-$ curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-$ chmod a+rx ~/.bin/repo
-```
-NB: please set your PATH with e.g. `/home/shyuan/.bin`
-- `cabal-install`
-```shell
-stack install cabal-install
-```
-- `repo init`
-```shell
-repo init -u https://git@github.com/seL4/verification-manifest.git
-repo sync
-```
-- `l4v`
-```shell
-./isabelle/bin/isabelle components -a
+# 1. assume the current folder is the root of CertSBF
+# 2. assume you has downloaded Isabelle2023 and autocorres
+
+# unzip autocorres on the folder of the Isabelle/HOL home folder
+tar -zxvf YOUR-AUTOCORRES-DIR/autocorres-1.10.tar.gz -C /home/shyuan/GitLab/Isabelle2023/
+
+# confige info
+./configure --isabelledir=/home/shyuan/GitLab/Isabelle2023
+
+# open Isabelle/HOL with autocorres
+make
 ```
