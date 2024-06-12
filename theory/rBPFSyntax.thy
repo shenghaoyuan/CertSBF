@@ -78,8 +78,25 @@ fun bpf_ireg2i64 :: "bpf_ireg \<Rightarrow> i64" where
 "bpf_ireg2i64 BR8 = 8" | 
 "bpf_ireg2i64 BR9 = 9" 
 
+value "bpf_ireg2i64 BR0"
+
 fun bpf_sreg2i64 :: "bpf_sreg \<Rightarrow> i64" where
 "bpf_sreg2i64 (IR ir) = bpf_ireg2i64 ir" | 
 "bpf_sreg2i64 BR10 = 10"
 
+fun u4_to_bpf_ireg :: "u4 \<Rightarrow> bpf_ireg option" where
+"u4_to_bpf_ireg dst =
+  (       if dst = 0 then Some BR0
+    else  if dst = 1 then Some BR1
+    else  if dst = 2 then Some BR2
+    else  if dst = 3 then Some BR3
+    else  if dst = 4 then Some BR4
+    else  if dst = 5 then Some BR5
+    else  if dst = 6 then Some BR6
+    else  if dst = 7 then Some BR7
+    else  if dst = 8 then Some BR8
+    else  if dst = 9 then Some BR9
+    else None)"
+
+    
 end

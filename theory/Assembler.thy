@@ -192,18 +192,18 @@ fun assemble_one_instruction :: "bpf_instruction \<Rightarrow> ebpf_binary optio
 
 fun assemble :: "ebpf_asm \<Rightarrow> ebpf_bin option" where
 "assemble [] = Some []" |
-"assemble (h#t) =
-  (case (assemble_one_instruction h) of
+"assemble (h#t) = (
+  case (assemble_one_instruction h) of
+  None \<Rightarrow> None |
+  Some h_i \<Rightarrow> (
+    case (assemble t) of
     None \<Rightarrow> None |
-    Some h_i \<Rightarrow>
-      (case (assemble t) of
+    Some tl_i \<Rightarrow> (
+      case h of
+      BPF_LD_IMM dst i1 i2 \<Rightarrow> (
+        case (insn 0 0 0 0 (scast i2)) of
         None \<Rightarrow> None |
-        Some tl_i \<Rightarrow>
-          (case h of
-            (BPF_LD_IMM dst i1 i2) \<Rightarrow>
-              (case (insn 0 0 0 0 (scast i2)) of
-                None \<Rightarrow> None |
-                Some h_i2 \<Rightarrow> Some (h_i#h_i2#tl_i))|
-             _ \<Rightarrow> Some (h_i#tl_i) )))"
+        Some h_i2 \<Rightarrow> Some (h_i#h_i2#tl_i))|
+       _ \<Rightarrow> Some (h_i#tl_i) )) )"
 
 end
