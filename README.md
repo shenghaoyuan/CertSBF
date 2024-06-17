@@ -1,7 +1,7 @@
 # CertSBF
 
 # Goal
-- [ ] formalize rbpf assember + disassember, prove the consistency: i.e. `assember (disassmber bin) = Some bin`, and `disassember (assmber asm) = Some asm`
+- [ ] formalize rbpf assembler + disassembler, prove the consistency: i.e. `assembler (disassmbler bin) = Some bin`, and `disassembler (assmbler asm) = Some asm`
 - [ ] formalize the rbpf semantics (`interpreter.rs`)
 - [ ] optimize the rbpf interpreter (e.g. `opcode masking`) and prove that the optimization is correct
 - [ ] _More: formalize rbpf's verifier, static analysis, memory model, and JIT compiler (correctness proof) ..._

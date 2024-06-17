@@ -2,17 +2,15 @@ theory rBPFSyntax
 imports Main rBPFCommType
 begin
 
-datatype bpf_ireg = BR0 | BR1 | BR2 | BR3 | BR4 | BR5 | BR6 | BR7 | BR8 | BR9
+datatype bpf_ireg = BR0 | BR1 | BR2 | BR3 | BR4 | BR5 | BR6 | BR7 | BR8 | BR9 | BR10
 
-datatype bpf_sreg = IR bpf_ireg | BR10
-
-datatype bpf_preg = bpf_sreg | BPC
+datatype bpf_preg = bpf_ireg | BPC
 
 type_synonym off_ty = i16
 type_synonym imm_ty = i32
 
 type_synonym dst_ty = bpf_ireg  
-type_synonym src_ty = bpf_sreg
+type_synonym src_ty = bpf_ireg  
 
 datatype snd_op = SOImm imm_ty | SOReg bpf_ireg
 
@@ -40,7 +38,7 @@ datatype SBPFV = V1 (* The legacy format *) |
 datatype bpf_instruction = 
   BPF_LD_IMM          dst_ty imm_ty imm_ty | 
   (* BPF_LDX class *)
-  BPF_LDX     chunk   dst_ty src_ty off_ty |
+  BPF_LDX     chunk   dst_ty snd_op off_ty |
   (* BPF_ST/BPF_STX class *)
   BPF_ST      chunk   dst_ty snd_op off_ty |
   (* BPF_ALU class *)
@@ -60,7 +58,7 @@ datatype bpf_instruction =
   BPF_JA off_ty |
   BPF_JUMP condition bpf_ireg snd_op off_ty |
   BPF_CALL_REG src_ty imm_ty |
-  BPF_CALL_IMM bpf_sreg imm_ty |
+  BPF_CALL_IMM src_ty imm_ty |
   
   BPF_EXIT
   
@@ -76,15 +74,10 @@ fun bpf_ireg2i64 :: "bpf_ireg \<Rightarrow> i64" where
 "bpf_ireg2i64 BR6 = 6" | 
 "bpf_ireg2i64 BR7 = 7" | 
 "bpf_ireg2i64 BR8 = 8" | 
-"bpf_ireg2i64 BR9 = 9" 
+"bpf_ireg2i64 BR9 = 9"  | 
+"bpf_ireg2i64 BR10 = 10" 
 
-value "bpf_ireg2i64 BR0"
-
-fun bpf_sreg2i64 :: "bpf_sreg \<Rightarrow> i64" where
-"bpf_sreg2i64 (IR ir) = bpf_ireg2i64 ir" | 
-"bpf_sreg2i64 BR10 = 10"
-
-fun u4_to_bpf_ireg :: "u4 \<Rightarrow> bpf_ireg option" where
+definition u4_to_bpf_ireg :: "u4 \<Rightarrow> bpf_ireg option" where
 "u4_to_bpf_ireg dst =
   (       if dst = 0 then Some BR0
     else  if dst = 1 then Some BR1
@@ -96,7 +89,7 @@ fun u4_to_bpf_ireg :: "u4 \<Rightarrow> bpf_ireg option" where
     else  if dst = 7 then Some BR7
     else  if dst = 8 then Some BR8
     else  if dst = 9 then Some BR9
+    else  if dst = 10 then Some BR10
     else None)"
 
-    
 end

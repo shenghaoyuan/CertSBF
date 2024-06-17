@@ -10,12 +10,21 @@ fun disassemble_lddw :: "u4 => i32 \<Rightarrow> ebpf_binary \<Rightarrow> bpf_i
   ( if (bpf_opc imm_h = 0 \<and> bpf_dst imm_h = 0 \<and> bpf_src imm_h = 0)
     then
       case u4_to_bpf_ireg dst of
-        None \<Rightarrow> None |
-        Some d \<Rightarrow> Some (BPF_LD_IMM d imm (bpf_imm imm_h))
+      None \<Rightarrow> None |
+      Some d \<Rightarrow> Some (BPF_LD_IMM d imm (bpf_imm imm_h))
     else None)"
 
 fun disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruction option" where
-"disassemble_one_instruction bi = None" (**r TODO *)   
+"disassemble_one_instruction bi = (
+  case u4_to_bpf_ireg (bpf_dst bi) of
+  None \<Rightarrow> None |
+  Some dst \<Rightarrow> (
+    case u4_to_bpf_ireg (bpf_src bi) of
+    None \<Rightarrow> None |
+    Some src \<Rightarrow> (
+      if bpf_opc bi = 0x71 then
+        Some (BPF_LDX Byte dst (SOReg src) (bpf_off bi))
+      else  None)))" (**r TODO *)
     
 fun disassemble :: "ebpf_bin \<Rightarrow> ebpf_asm option" where
 "disassemble [] = Some []" |
