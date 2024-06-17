@@ -53,5 +53,17 @@ function u4_to_bpf_ireg_t :: "u4 \<Rightarrow> bpf_ireg option" where
 "u4_to_bpf_ireg_t 9 = Some BR9" |
 "u4_to_bpf_ireg_t 10 = Some BR10" |
 "u4_to_bpf_ireg_t _ = None"
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
+apply simp
 
 end

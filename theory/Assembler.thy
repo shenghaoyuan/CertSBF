@@ -150,7 +150,7 @@ fun assemble_one_instruction :: "bpf_instruction \<Rightarrow> ebpf_binary optio
 "assemble_one_instruction (BPF_LD_IMM dst i1 i2) =
   insn 0x18 (bpf_ireg2i64 dst) 0 0 (scast i1)" |
 "assemble_one_instruction (BPF_LDX ck dst src off) =
-  insn (ldx_chunk2opcode ck) (bpf_ireg2i64 dst) (snd_op2i64 src) (scast off) 0" |
+  insn (ldx_chunk2opcode ck) (bpf_ireg2i64 dst) (bpf_ireg2i64 src) (scast off) 0" |
 "assemble_one_instruction (BPF_ST ck dst src off) =
   insn (st_chunk2opcode ck src) (bpf_ireg2i64 dst) (snd_op2i64 src) (scast off) 0" |
   
@@ -184,9 +184,9 @@ fun assemble_one_instruction :: "bpf_instruction \<Rightarrow> ebpf_binary optio
   insn (condition2opcode cop src) (bpf_ireg2i64 dst) (snd_op2i64 src) (scast off) 0" |
   
 "assemble_one_instruction (BPF_CALL_REG src imm) =
-  insn 0x8d 0 (bpf_sreg2i64 src) 0 (scast imm)" |
+  insn 0x8d 0 (bpf_ireg2i64 src) 0 (scast imm)" |
 "assemble_one_instruction (BPF_CALL_IMM src imm) =
-  insn 0x85 0 (bpf_sreg2i64 src) 0 (scast imm)" |
+  insn 0x85 0 (bpf_ireg2i64 src) 0 (scast imm)" |
   
 "assemble_one_instruction BPF_EXIT = insn 0x95 0 0 0 0"
 

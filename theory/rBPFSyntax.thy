@@ -38,7 +38,7 @@ datatype SBPFV = V1 (* The legacy format *) |
 datatype bpf_instruction = 
   BPF_LD_IMM          dst_ty imm_ty imm_ty | 
   (* BPF_LDX class *)
-  BPF_LDX     chunk   dst_ty snd_op off_ty |
+  BPF_LDX     chunk   dst_ty src_ty off_ty |
   (* BPF_ST/BPF_STX class *)
   BPF_ST      chunk   dst_ty snd_op off_ty |
   (* BPF_ALU class *)
