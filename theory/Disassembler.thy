@@ -5,7 +5,7 @@ imports
   rBPFCommType rBPFSyntax
 begin
 
-fun disassemble_lddw :: "u4 => i32 \<Rightarrow> ebpf_binary \<Rightarrow> bpf_instruction option" where
+definition disassemble_lddw :: "u4 => i32 \<Rightarrow> ebpf_binary \<Rightarrow> bpf_instruction option" where
 "disassemble_lddw dst imm imm_h =
   ( if (bpf_opc imm_h = 0 \<and> bpf_dst imm_h = 0 \<and> bpf_src imm_h = 0)
     then
@@ -14,7 +14,7 @@ fun disassemble_lddw :: "u4 => i32 \<Rightarrow> ebpf_binary \<Rightarrow> bpf_i
       Some d \<Rightarrow> Some (BPF_LD_IMM d imm (bpf_imm imm_h))
     else None)"
 
-fun disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruction option" where
+definition disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruction option" where
 "disassemble_one_instruction bi = (
   case u4_to_bpf_ireg (bpf_dst bi) of
   None \<Rightarrow> None |
@@ -217,7 +217,62 @@ fun disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruction op
       else if bpf_opc bi = 0xfe then
         Some (BPF_PQR64 BPF_SREM  dst (SOReg src))
 
-      else  None)))" (**r TODO *)
+      else if bpf_opc bi = 0x05 then
+        Some (BPF_JA (bpf_off bi))
+
+      else if bpf_opc bi = 0x15 then
+        Some (BPF_JUMP Eq  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x1d then
+        Some (BPF_JUMP Eq  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0x25 then
+        Some (BPF_JUMP Gt  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x2d then
+        Some (BPF_JUMP Gt  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0x35 then
+        Some (BPF_JUMP Ge  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x3d then
+        Some (BPF_JUMP Ge  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0xa5 then
+        Some (BPF_JUMP Lt  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0xad then
+        Some (BPF_JUMP Lt  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0xb5 then
+        Some (BPF_JUMP Le  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0xbd then
+        Some (BPF_JUMP Le  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0x45 then
+        Some (BPF_JUMP SEt dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x4d then
+        Some (BPF_JUMP SEt dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0x55 then
+        Some (BPF_JUMP Ne  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x5d then
+        Some (BPF_JUMP Ne  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0x65 then
+        Some (BPF_JUMP SGt dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x6d then
+        Some (BPF_JUMP SGt dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0x75 then
+        Some (BPF_JUMP SGe  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0x7d then
+        Some (BPF_JUMP SGe  dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0xc5 then
+        Some (BPF_JUMP SLt dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0xcd then
+        Some (BPF_JUMP SLt dst (SOReg src)          (bpf_off bi))
+      else if bpf_opc bi = 0xc5 then
+        Some (BPF_JUMP SLe dst (SOImm (bpf_imm bi)) (bpf_off bi))
+      else if bpf_opc bi = 0xcd then
+        Some (BPF_JUMP SLe dst (SOReg src)          (bpf_off bi))
+
+      else if bpf_opc bi = 0x8d then
+        Some (BPF_CALL_REG src (bpf_imm bi))
+      else if bpf_opc bi = 0x85 then
+        Some (BPF_CALL_IMM src (bpf_imm bi))
+
+      else if bpf_opc bi = 0x95 then
+        Some BPF_EXIT
+      else  None)))"
     
 fun disassemble :: "ebpf_bin \<Rightarrow> ebpf_asm option" where
 "disassemble [] = Some []" |
@@ -239,3 +294,5 @@ fun disassemble :: "ebpf_bin \<Rightarrow> ebpf_asm option" where
       case disassemble t of
       None \<Rightarrow> None |
       Some t2 \<Rightarrow> Some (ins#t2)) )"
+
+end

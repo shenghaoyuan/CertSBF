@@ -5,7 +5,7 @@ imports
   rBPFCommType rBPFSyntax
 begin
 
-fun insn :: "u8 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> ebpf_binary option" where
+definition insn :: "u8 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> ebpf_binary option" where
 "insn opc dst src off imm = 
   ( if dst < 0 \<or> dst > 10 then None else
     if src < 0 \<or> src > 10 then None else
@@ -17,7 +17,7 @@ fun insn :: "u8 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarrow> i64 \<Rightarr
             bpf_off = (scast off),
             bpf_imm = (scast imm) \<rparr> )"
 
-fun ldx_chunk2opcode :: "chunk \<Rightarrow> u8" where
+definition ldx_chunk2opcode :: "chunk \<Rightarrow> u8" where
 "ldx_chunk2opcode ck =
   (case ck of
     Byte \<Rightarrow> 0x71 |
