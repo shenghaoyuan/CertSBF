@@ -74,7 +74,7 @@ fun bpf_ireg2i64 :: "bpf_ireg \<Rightarrow> i64" where
 "bpf_ireg2i64 BR6 = 6" | 
 "bpf_ireg2i64 BR7 = 7" | 
 "bpf_ireg2i64 BR8 = 8" | 
-"bpf_ireg2i64 BR9 = 9"  | 
+"bpf_ireg2i64 BR9 = 9" | 
 "bpf_ireg2i64 BR10 = 10" 
 
 definition u4_to_bpf_ireg :: "u4 \<Rightarrow> bpf_ireg option" where
