@@ -64,18 +64,18 @@ datatype bpf_instruction =
   
 type_synonym ebpf_asm = "bpf_instruction list"
 
-fun bpf_ireg2i64 :: "bpf_ireg \<Rightarrow> i64" where
-"bpf_ireg2i64 BR0 = 0" | 
-"bpf_ireg2i64 BR1 = 1" | 
-"bpf_ireg2i64 BR2 = 2" | 
-"bpf_ireg2i64 BR3 = 3" | 
-"bpf_ireg2i64 BR4 = 4" | 
-"bpf_ireg2i64 BR5 = 5" | 
-"bpf_ireg2i64 BR6 = 6" | 
-"bpf_ireg2i64 BR7 = 7" | 
-"bpf_ireg2i64 BR8 = 8" | 
-"bpf_ireg2i64 BR9 = 9" | 
-"bpf_ireg2i64 BR10 = 10" 
+fun bpf_ireg2u4 :: "bpf_ireg \<Rightarrow> u4" where
+"bpf_ireg2u4 BR0 = 0" | 
+"bpf_ireg2u4 BR1 = 1" | 
+"bpf_ireg2u4 BR2 = 2" | 
+"bpf_ireg2u4 BR3 = 3" | 
+"bpf_ireg2u4 BR4 = 4" | 
+"bpf_ireg2u4 BR5 = 5" | 
+"bpf_ireg2u4 BR6 = 6" | 
+"bpf_ireg2u4 BR7 = 7" | 
+"bpf_ireg2u4 BR8 = 8" | 
+"bpf_ireg2u4 BR9 = 9" | 
+"bpf_ireg2u4 BR10 = 10" 
 
 definition u4_to_bpf_ireg :: "u4 \<Rightarrow> bpf_ireg option" where
 "u4_to_bpf_ireg dst =

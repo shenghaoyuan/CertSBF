@@ -7,7 +7,7 @@ begin
 
 definition disassemble_lddw :: "u4 => i32 \<Rightarrow> ebpf_binary \<Rightarrow> bpf_instruction option" where
 "disassemble_lddw dst imm imm_h =
-  ( if (bpf_opc imm_h = 0 \<and> bpf_dst imm_h = 0 \<and> bpf_src imm_h = 0 )
+  ( if (bpf_opc imm_h = 0 \<and> bpf_dst imm_h = 0 \<and> bpf_src imm_h = 0 \<and> bpf_off imm_h = 0 )
     then
       case u4_to_bpf_ireg dst of
       None \<Rightarrow> None |
@@ -36,22 +36,22 @@ definition disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruc
         Some (BPF_LDX DWord     dst src         (bpf_off bi))
 
       else if bpf_opc bi = 0x72 then
-        Some (BPF_ST  Byte      dst (SOReg src) (bpf_off bi))
+        Some (BPF_ST  Byte      dst (SOImm (bpf_imm bi)) (bpf_off bi))
       else if bpf_opc bi = 0x6a then
-        Some (BPF_ST  HalfWord  dst (SOReg src) (bpf_off bi))
+        Some (BPF_ST  HalfWord  dst (SOImm (bpf_imm bi)) (bpf_off bi))
       else if bpf_opc bi = 0x62 then
-        Some (BPF_ST  SWord     dst (SOReg src) (bpf_off bi))
+        Some (BPF_ST  SWord     dst (SOImm (bpf_imm bi)) (bpf_off bi))
       else if bpf_opc bi = 0x7a then
-        Some (BPF_ST  DWord     dst (SOReg src) (bpf_off bi))
+        Some (BPF_ST  DWord     dst (SOImm (bpf_imm bi)) (bpf_off bi))
 
       else if bpf_opc bi = 0x73 then
-        Some (BPF_ST  Byte      dst (SOImm (bpf_imm bi)) (bpf_off bi))
+        Some (BPF_ST  Byte      dst (SOReg src) (bpf_off bi))
       else if bpf_opc bi = 0x6b then
-        Some (BPF_ST  HalfWord  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+        Some (BPF_ST  HalfWord  dst (SOReg src) (bpf_off bi))
       else if bpf_opc bi = 0x63 then
-        Some (BPF_ST  SWord     dst (SOImm (bpf_imm bi)) (bpf_off bi))
+        Some (BPF_ST  SWord     dst (SOReg src) (bpf_off bi))
       else if bpf_opc bi = 0x7b then
-        Some (BPF_ST  DWord     dst (SOImm (bpf_imm bi)) (bpf_off bi))
+        Some (BPF_ST  DWord     dst (SOReg src) (bpf_off bi))
 
       else if bpf_opc bi = 0x04 then
         Some (BPF_ALU BPF_ADD   dst (SOImm (bpf_imm bi)))
@@ -264,9 +264,9 @@ definition disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruc
         Some (BPF_JUMP SLt dst (SOImm (bpf_imm bi)) (bpf_off bi))
       else if bpf_opc bi = 0xcd then
         Some (BPF_JUMP SLt dst (SOReg src)          (bpf_off bi))
-      else if bpf_opc bi = 0xc5 then
+      else if bpf_opc bi = 0xd5 then
         Some (BPF_JUMP SLe dst (SOImm (bpf_imm bi)) (bpf_off bi))
-      else if bpf_opc bi = 0xcd then
+      else if bpf_opc bi = 0xdd then
         Some (BPF_JUMP SLe dst (SOReg src)          (bpf_off bi))
 
       else if bpf_opc bi = 0x8d then
