@@ -23,3 +23,9 @@ tar -zxvf YOUR-AUTOCORRES-DIR/autocorres-1.10.tar.gz -C /YOUR-PATH/Isabelle2023/
 # open Isabelle/HOL with autocorres
 make
 ```
+
+# Note
+- `static_analysis.rs` is a test for generated jited code
+- `static_analysis.rs#276L: self.cfg_nodes.entry(insn.ptr + 1).or_default();` should be removed?
+- `static_analysis.rs#311L: std::mem::swap(&mut self.cfg_nodes, &mut cfg_nodes);`, why swap?
+- `static_analysis.rs#324L: std::mem::swap(&mut self.cfg_nodes, &mut cfg_nodes);`, now cfg_nodes are empty?

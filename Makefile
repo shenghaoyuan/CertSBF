@@ -10,6 +10,5 @@ include Makefile.config
 DEFAULT_FILE = $(CURDIR)/theory/Disassembler.thy
 
 open:
-	cd $(ISABELLE_DIR)/autocorres-1.10 \
-	&& L4V_ARCH=X64 ../bin/isabelle jedit -d . -l AutoCorres $(DEFAULT_FILE)
+	isabelle jedit -d . $(DEFAULT_FILE)
 

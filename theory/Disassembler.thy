@@ -1,18 +1,22 @@
 theory Disassembler
 imports
-  Main
-  "HOL.Bit_Operations" "HOL-Library.Word"
+  Main (*
+  "HOL.Bit_Operations" "HOL-Library.Word" *)
   rBPFCommType rBPFSyntax
 begin
 
 definition disassemble_lddw :: "u4 => i32 \<Rightarrow> ebpf_binary \<Rightarrow> bpf_instruction option" where
 "disassemble_lddw dst imm imm_h =
-  ( if (bpf_opc imm_h = 0 \<and> bpf_dst imm_h = 0 \<and> bpf_src imm_h = 0)
+  ( if (bpf_opc imm_h = 0 \<and> bpf_dst imm_h = 0 \<and> bpf_src imm_h = 0 )
     then
       case u4_to_bpf_ireg dst of
       None \<Rightarrow> None |
       Some d \<Rightarrow> Some (BPF_LD_IMM d imm (bpf_imm imm_h))
     else None)"
+
+    (**  \<and>
+        (\<not> (imm <s (-2147483648) \<or> 2147483647 <s imm)) \<and>
+        (\<not> ((bpf_imm imm_h) <s (-2147483648) \<or> 2147483647 <s (bpf_imm imm_h)))  *)
 
 definition disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruction option" where
 "disassemble_one_instruction bi = (
