@@ -1,7 +1,6 @@
 theory Assembler
 imports
-  Main (*
-  "HOL.Bit_Operations" "HOL-Library.Word" *)
+  Main
   rBPFCommType rBPFSyntax
 begin
 
