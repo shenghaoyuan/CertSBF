@@ -36,11 +36,13 @@ from Hx1 have "(
 thm Hx1 *)
 
   apply (induction l_asm arbitrary: l_bin)
+(**r l_asm = [] *)
   subgoal
     apply simp
     done
+(**r l_asm = hd # tl *)
   subgoal for x1 l_asm
-    apply simp+ 
+    apply simp 
     apply (cases "assemble_one_instruction x1", auto)
     apply (cases "assemble l_asm", auto)
     subgoal for a aa

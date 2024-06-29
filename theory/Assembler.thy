@@ -1,9 +1,12 @@
+section \<open> Solana rBPF assembler formalization \<close>
+
 theory Assembler
 imports
   Main
   rBPFCommType rBPFSyntax
 begin
 
+subsection \<open> basic instruction check \<close>
 definition insn :: "u8 \<Rightarrow> u4 \<Rightarrow> u4 \<Rightarrow> i16 \<Rightarrow> i32 \<Rightarrow> ebpf_binary option" where
 "insn opc dst src off imm = 
   ( if 10 < dst \<or> 10 < src then None else
@@ -13,6 +16,7 @@ definition insn :: "u8 \<Rightarrow> u4 \<Rightarrow> u4 \<Rightarrow> i16 \<Rig
             bpf_off = (scast off),
             bpf_imm = (scast imm) \<rparr> )"
 
+subsection \<open> get instruction opcode \<close>
 fun ldx_chunk2opcode :: "chunk \<Rightarrow> u8" where
 "ldx_chunk2opcode Byte = 0x71" |
 "ldx_chunk2opcode HalfWord = 0x69" |
@@ -153,6 +157,10 @@ fun condition2opcode_reg :: "condition \<Rightarrow> u8" where
 "condition2opcode_reg SLt  = 0xcd" |
 "condition2opcode_reg SLe  = 0xdd"
 
+subsection \<open> assemble one instruction \<close>
+
+
+text \<open> LD_IMM only encode the first 32-bit immediate number, the second one is encoded later  \<close>
 fun assemble_one_instruction :: "bpf_instruction \<Rightarrow> ebpf_binary option" where
 "assemble_one_instruction (BPF_LD_IMM dst i1 i2) =
   insn 0x18 (bpf_ireg2u4 dst) 0 0 i1" |
@@ -211,6 +219,10 @@ fun assemble_one_instruction :: "bpf_instruction \<Rightarrow> ebpf_binary optio
   
 "assemble_one_instruction BPF_EXIT = insn 0x95 0 0 0 0"
 
+subsection \<open> assemble a set of instructions \<close>
+
+text \<open>after each time assemble one instruction, we check if the current
+instruction is LD_IMM dst imm1 imm2, if so, we additionally encode 0 0 0 0 imm2\<close>
 fun assemble :: "ebpf_asm \<Rightarrow> ebpf_bin option" where
 "assemble [] = Some []" |
 "assemble (h#t) = (

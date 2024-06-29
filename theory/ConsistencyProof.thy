@@ -14,4 +14,6 @@ lemma CA2 [simp]: "disassemble l_bin = Some l_asm \<Longrightarrow> assemble l_a
 lemma assemble_disassemble_consistency_iff:
 "assemble l_asm = Some l_bin \<longleftrightarrow> disassemble l_bin = Some l_asm"
   using CA1 CA2 by blast
+
+
 end
