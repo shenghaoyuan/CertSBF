@@ -12,8 +12,11 @@ lemma CA2 [simp]: "disassemble l_bin = Some l_asm \<Longrightarrow> assemble l_a
   sorry
 
 lemma assemble_disassemble_consistency_iff:
-"assemble l_asm = Some l_bin \<longleftrightarrow> disassemble l_bin = Some l_asm"
+"(assemble l_asm = Some l_bin) = (disassemble l_bin = Some l_asm)"
   using CA1 CA2 by blast
+(* TBC: why the following doesn't work?
+by (auto intro: CA1 dest: CA2) *)
+
 
 
 end

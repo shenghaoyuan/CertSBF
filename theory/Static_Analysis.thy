@@ -1,9 +1,13 @@
+section \<open> Static Analysis of Solana rBPF \<close>
+
 theory Static_Analysis
 imports
   Main
-  "HOL.Bit_Operations" "HOL-Library.Word"
   rBPFCommType rBPFSyntax Assembler Disassembler
 begin
+
+text \<open> We skip this module firstly,
+  as the current static analysis of Solana rBPF is just a test of JIT compiler \<close>
 
 record TopologicalIndex =
 scc_id    :: nat
