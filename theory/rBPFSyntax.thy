@@ -4,7 +4,7 @@ begin
 
 datatype bpf_ireg = BR0 | BR1 | BR2 | BR3 | BR4 | BR5 | BR6 | BR7 | BR8 | BR9 | BR10
 
-datatype bpf_preg = bpf_ireg | BPC
+datatype bpf_preg = BR bpf_ireg | BPC
 
 type_synonym off_ty = i16
 type_synonym imm_ty = i32

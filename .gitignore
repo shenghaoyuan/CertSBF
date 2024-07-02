@@ -1,3 +1,5 @@
 */*.thy~
+*/#*.thy#
 Makefile.config
 Makefile
+theory/IsabelleTutorialExample.thy
