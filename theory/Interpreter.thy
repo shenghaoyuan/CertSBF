@@ -82,7 +82,7 @@ proof-
   
   have "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast ((word_of_int (uint i))::u64)) :: u32) " 
     by auto
-  also have "((ucast ((word_of_int (uint i))::u64)) :: u32) = ((ucast ((word_of_int (uint i))::u32)) :: u32)"
+  also have "...  = ((ucast ((word_of_int (uint i))::u32)) :: u32)"
     (* sledgehammer gives this solution but reconstruction fails
         by (metis bintr_uint of_nat_nat_take_bit_eq ucast_id unsigned_of_int verit_comp_simplify1(2) *)
     using bintr_uint of_nat_nat_take_bit_eq order.refl ucast_id unsigned_of_int apply auto
