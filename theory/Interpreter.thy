@@ -68,6 +68,11 @@ subsection  \<open> CALL \<close>
 subsection  \<open> EXIT \<close>
 subsection  \<open> step \<close>
 
+(*
+value "((ucast ((ucast (-1::i32))::u64)) :: u32)"
+value "((ucast (-1::i32))::u32)" *)
 
+lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
+  sorry
 
 end
