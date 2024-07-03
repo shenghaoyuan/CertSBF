@@ -4,7 +4,18 @@ theory JITCommType
 imports
   Main
   rBPFCommType rBPFSyntax
+  vm x86CommType
 begin
+
+text \<open> RDI: Used together with slot_in_vm() \<close>
+abbreviation "REGISTER_PTR_TO_VM:: u8 \<equiv> ARGUMENT_REGISTERS ! 0"
+text \<open> RBX: Program counter limit \<close>
+abbreviation "REGISTER_INSTRUCTION_METER:: u8 \<equiv> CALLEE_SAVED_REGISTERS ! 1"
+text \<open> R10: Other scratch register \<close>
+abbreviation "REGISTER_OTHER_SCRATCH:: u8 \<equiv> CALLER_SAVED_REGISTERS ! 7"
+text \<open> R11: Scratch register \<close>
+abbreviation "REGISTER_SCRATCH :: u8 \<equiv> CALLER_SAVED_REGISTERS ! 8"
+
 
 definition u8_of_bool :: "bool \<Rightarrow> u8" where
 "u8_of_bool b = (
@@ -70,8 +81,8 @@ offset_in_text_section :: nat \<comment> \<open> usize is refined to nat \<close
 (*
     executable: &'a Executable<C>,
     program: &'a [u8],
-    program_vm_addr: u64,
-    config: &'a Config, *)
+    program_vm_addr: u64, *)
+jit_config  :: Config
 jit_pc :: usize (*
     last_instruction_meter_validation_pc: usize,
     next_noop_insertion: u32,
@@ -84,6 +95,7 @@ definition jit_emit :: "JitCompiler \<Rightarrow> u8 list  \<Rightarrow> JitComp
  \<lparr>
   jit_result = add_text_section (jit_result l) n,
   offset_in_text_section = (offset_in_text_section l) + length n,
+  jit_config = jit_config l,
   jit_pc = jit_pc l
  \<rparr>"
 

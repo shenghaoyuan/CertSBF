@@ -13,6 +13,11 @@ type_synonym u64 = "64 word"
 
 type_synonym usize = "64 word" \<comment> \<open> Assume the hardware is 64-bit \<close>
 
+definition i32_MIN :: "i32" where
+"i32_MIN = 0x80000000"
+
+definition i32_MAX :: "i32" where
+"i32_MAX = 0x7FFFFFFF"
 
 type_synonym u4 = "4 word"
 
