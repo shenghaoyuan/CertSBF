@@ -11,6 +11,8 @@ type_synonym u32 = "32 word"
 type_synonym i64 = "64 sword"
 type_synonym u64 = "64 word"
 
+type_synonym usize = "64 word" \<comment> \<open> Assume the hardware is 64-bit \<close>
+
 
 type_synonym u4 = "4 word"
 
