@@ -79,14 +79,39 @@ declare [[show_types]]
 
 lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
 proof-
+
+   have n:"take_bit LENGTH(32)  (uint i) = take_bit 32 (uint i)" by auto
+   have m:"take_bit LENGTH(64)  (uint i) = take_bit 64 (uint i)" by auto
+
+  have "((ucast ((word_of_int (uint i))::u64)) :: u32)  = ((ucast ((word_of_int (uint i))::u32)) :: u32)"
+    using n m 
+    by (smt (verit, best) bintr_uint len_signed nat_le_linear numeral_Bit0_eq_double numeral_le_iff
+         of_int_uint semiring_norm(69) take_bit_tightened_less_eq_int unsigned_ucast_eq)
+   then show ?thesis by auto
+qed
+
+lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
+proof-
+  
   
   have "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast ((word_of_int (uint i))::u64)) :: u32) " 
     by auto
-  also have "...  = ((ucast ((word_of_int (uint i))::u32)) :: u32)"
-    (* sledgehammer gives this solution but reconstruction fails
-        by (metis bintr_uint of_nat_nat_take_bit_eq ucast_id unsigned_of_int verit_comp_simplify1(2) *)
-    using bintr_uint of_nat_nat_take_bit_eq order.refl ucast_id unsigned_of_int apply auto
-    sorry
+  also have "((ucast ((word_of_int (uint i))::u64)) :: u32)  = ((ucast ((word_of_int (uint i))::u32)) :: u32)"
+  proof- 
+    have n:"take_bit LENGTH(32)  (uint i) = take_bit 32 (uint i)" by auto
+    moreover  have m:"take_bit LENGTH(64)  (uint i) = take_bit 64 (uint i)" by auto
+    have "of_nat (nat (take_bit 32 (uint i))) = ((ucast ((word_of_int (uint i))::u32)))"
+      using unsigned_of_int n  by metis
+    moreover have "of_nat (nat (take_bit 64 (uint i))) = ((ucast ((word_of_int (uint i))::u64)))"
+      using unsigned_of_int m  by metis 
+    
+    moreover have "take_bit 32 (uint i) = take_bit 64 (uint i)"
+      by (smt (verit) Suc_1 bintr_uint len_bit0 len_signed m mult_le_mono mult_numeral_left_semiring_numeral n not_less_eq_eq numeral_Bit0_eq_double numeral_le_one_iff numeral_times_numeral semiring_norm(69) verit_comp_simplify1(2))
+ 
+    then have "of_nat (nat (take_bit 32 (uint i))) = of_nat (nat (take_bit 64 (uint i)))"
+      by auto
+    ultimately show ?thesis by metis
+  qed
   finally show ?thesis by auto
 qed
 
