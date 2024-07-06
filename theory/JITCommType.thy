@@ -65,14 +65,6 @@ page_size     :: usize
 pc_section    :: "usize list"
 text_section  :: "u8 list"
 
-definition add_text_section :: "JitProgram \<Rightarrow> u8 list \<Rightarrow> JitProgram" where
-"add_text_section l n =
-  \<lparr>
-    page_size = page_size l,
-    pc_section = pc_section l,
-    text_section = (text_section l)@n
-  \<rparr>"
-
 record JitCompiler =
 jit_result :: JitProgram (*
 text_section_jumps: Vec<Jump>,
@@ -93,11 +85,13 @@ jit_pc :: usize (*
 definition jit_emit :: "JitCompiler \<Rightarrow> u8 list  \<Rightarrow> JitCompiler" where
 "jit_emit l n =
  \<lparr>
-  jit_result = add_text_section (jit_result l) n,
+  jit_result = (jit_result l)\<lparr> text_section := (text_section (jit_result l))@n \<rparr>,
   offset_in_text_section = (offset_in_text_section l) + length n,
   jit_config = jit_config l,
   jit_pc = jit_pc l
  \<rparr>"
+
+
 
 definition jit_emit_variable_length ::
   "JitCompiler \<Rightarrow> OperandSize \<Rightarrow> u64  \<Rightarrow> JitCompiler" where

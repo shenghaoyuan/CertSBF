@@ -37,21 +37,11 @@ x86_rex_r :: bool
 x86_rex_x :: bool
 x86_rex_b :: bool
 
-definition upd_x86_rex_x :: "bool \<Rightarrow> X86Rex \<Rightarrow> X86Rex" where
-"upd_x86_rex_x v m =
-  \<lparr> x86_rex_w = x86_rex_w m, x86_rex_r = x86_rex_r m,
-    x86_rex_x = v, x86_rex_b = x86_rex_b m \<rparr>"
-
 text \<open> size = 3, align = 0x1 \<close>
 record X86ModRm =
 x86_rm_mode :: u8
 x86_rm_r    :: u8
 x86_rm_m    :: u8
-
-definition upd_x86_rm_mode :: "u8 \<Rightarrow> X86ModRm \<Rightarrow> X86ModRm" where
-"upd_x86_rm_mode v m =
-  \<lparr> x86_rm_mode = v, x86_rm_r = x86_rm_r m, x86_rm_m = x86_rm_m m \<rparr>"
-
 
 text \<open> size = 3, align = 0x1 \<close>
 record X86Sib =
@@ -89,12 +79,12 @@ definition emit :: "X86Instruction \<Rightarrow> JitCompiler \<Rightarrow> JitCo
 \<comment>  \<open> ignore `debug_assert_ne!(self.second_operand & 0b111, RSP)  \<close>
           if ( (-128 \<le>s ofs) \<and> (ofs \<le>s 127) ) \<or>
              ( (ofs = 0) \<and> ((and (x86_ins_second_operand ins) 0b111) = RBP) ) then
-            (rex, upd_x86_rm_mode 1 modrm, sib, ofs, S8)
+            (rex, modrm \<lparr> x86_rm_mode := 1 \<rparr>, sib, ofs, S8)
           else
-            (rex, upd_x86_rm_mode 2 modrm, sib, ofs, S32)
+            (rex, modrm \<lparr> x86_rm_mode := 2 \<rparr>, sib, ofs, S32)
           ) | 
         Some (X86IndirectAccess_OffsetIndexShift ofs index shift) \<Rightarrow>
-          (upd_x86_rex_x ((and index 0b1000) \<noteq> 0) rex,
+          (rex \<lparr> x86_rex_x := (and index 0b1000) \<noteq> 0 \<rparr>,
             \<lparr> x86_rm_mode = 2, x86_rm_r = x86_rm_r modrm, x86_rm_m = RSP \<rparr>,
               \<lparr>
                 x86_sib_scale = and shift 0b11,
@@ -103,7 +93,7 @@ definition emit :: "X86Instruction \<Rightarrow> JitCompiler \<Rightarrow> JitCo
                     ofs, S32) |
         _ \<Rightarrow> (rex, modrm, sib, displacement, displacement_size)
     else
-      (rex, upd_x86_rm_mode 3 modrm, sib, displacement, displacement_size) in (
+      (rex, modrm \<lparr> x86_rm_mode := 3 \<rparr>, sib, displacement, displacement_size) in (
 
     let l = if x86_ins_size ins = S16 then jit_emit l [0x66]  else l in (
 
@@ -164,23 +154,138 @@ definition alu :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u
   S0 \<Rightarrow> None |
   S8 \<Rightarrow> None |
   S16 \<Rightarrow> None |
-  _ \<Rightarrow> Some \<lparr>
-        x86_ins_size                    = sz,
-        x86_ins_opcode_escape_sequence  = 0,
-        x86_ins_opcode                  = op,
-        x86_ins_modrm                   = True,
-        x86_ins_indirect                = ind,
-        x86_ins_first_operand           = src,
-        x86_ins_second_operand          = dst,
-        x86_ins_immediate_size          = (
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := op,
+        x86_ins_indirect        := ind,
+        x86_ins_first_operand   := src,
+        x86_ins_second_operand  := dst,
+        x86_ins_immediate_size  := (
                if op = 0xc1 then S8
           else if op = 0x81 then S32
           else if op = 0xf7 then (if src = 0 then S32 else S0)
           else S0
           ),
-        x86_ins_immediate               = imm
-      \<rparr>
+        x86_ins_immediate       := imm
+      \<rparr>)
 )"
+        
+definition mov :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> X86Instruction option" where
+"mov sz src dst = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S8 \<Rightarrow> None |
+  S16 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := 0x89,
+        x86_ins_first_operand   := src,
+        x86_ins_second_operand  := dst
+      \<rparr>)
+)"
+        
+definition cmov :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> X86Instruction option" where
+"cmov sz cond src dst = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S8 \<Rightarrow> None |
+  S16 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size                    := sz,
+        x86_ins_opcode_escape_sequence  := 1,
+        x86_ins_opcode                  := cond,
+        x86_ins_first_operand           := dst,
+        x86_ins_second_operand          := src
+      \<rparr>)
+)"
+        
+definition xchg :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> X86IndirectAccess option \<Rightarrow> X86Instruction option" where
+"xchg sz src dst ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S8 \<Rightarrow> None |
+  S16 \<Rightarrow> None |
+  S32 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := 0x87,
+        x86_ins_first_operand   := src,
+        x86_ins_second_operand  := dst,
+        x86_ins_indirect        := ind
+      \<rparr>)
+)"
+        
+definition bswap :: "OperandSize \<Rightarrow> u8 \<Rightarrow> X86Instruction option" where
+"bswap sz dst = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S8 \<Rightarrow> None |
+  S16 \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := 0xc1,
+        x86_ins_second_operand  := dst,
+        x86_ins_immediate_size  := S8,
+        x86_ins_immediate       := 8
+      \<rparr>) |
+  S32 \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size                    := sz,
+        x86_ins_opcode_escape_sequence  := 1,
+        x86_ins_opcode                  := or 0xc8 (and dst 0b111),
+        x86_ins_modrm                   := False,
+        x86_ins_second_operand          := dst
+      \<rparr>) |
+  S64 \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size                    := sz,
+        x86_ins_opcode_escape_sequence  := 1,
+        x86_ins_opcode                  := or 0xc8 (and dst 0b111),
+        x86_ins_modrm                   := False,
+        x86_ins_second_operand          := dst
+      \<rparr>)
+)"
+
+definition test :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow>
+  X86IndirectAccess option \<Rightarrow> X86Instruction option" where
+"test sz src dst ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := if sz = S8 then 0x84 else 0x85,
+        x86_ins_indirect        := ind,
+        x86_ins_first_operand   := src,
+        x86_ins_second_operand  := dst
+      \<rparr>)
+)"
+
+text \<open> ../..
+pub const fn test_immediate(
+        size: OperandSize,
+        destination: u8,
+        immediate: i64,
+        indirect: Option<X86IndirectAccess>,
+    ) -> Self {
+        exclude_operand_sizes!(size, OperandSize::S0);
+        Self {
+            size,
+            opcode: if let OperandSize::S8 = size {
+                0xf6
+            } else {
+                0xf7
+            },
+            first_operand: RAX,
+            second_operand: destination,
+            immediate_size: if let OperandSize::S64 = size {
+                OperandSize::S32
+            } else {
+                size
+            },
+            immediate,
+            indirect,
+            ..Self::DEFAULT
+        }
+    }
+
+ \<close>
 
 
 definition load_immediate :: "OperandSize \<Rightarrow> u8 \<Rightarrow> i64 \<Rightarrow> X86Instruction option" where
@@ -195,36 +300,33 @@ definition load_immediate :: "OperandSize \<Rightarrow> u8 \<Rightarrow> i64 \<R
       else S64 in (
 
     case sz of
-      S32 \<Rightarrow> Some \<lparr>
-              x86_ins_size                    = sz,
-              x86_ins_opcode_escape_sequence  = 0,
-              x86_ins_opcode                  = 0xc7,
-              x86_ins_modrm                   = True,
-              x86_ins_indirect                = None,
-              x86_ins_first_operand           = 0,
-              x86_ins_second_operand          = dst,
-              x86_ins_immediate_size          = S32,
-              x86_ins_immediate               = imm
-            \<rparr> |
-      S64 \<Rightarrow> Some \<lparr>
-              x86_ins_size                    = sz,
-              x86_ins_opcode_escape_sequence  = 0,
-              x86_ins_opcode                  = or 0xb8 (and dst 0b111),
-              x86_ins_modrm                   = False,
-              x86_ins_indirect                = None,
-              x86_ins_first_operand           = 0,
-              x86_ins_second_operand          = dst,
-              x86_ins_immediate_size          = S64,
-              x86_ins_immediate               = imm
-            \<rparr> |
+      S32 \<Rightarrow> Some (DEFAULT \<lparr>
+              x86_ins_size            := sz,
+              x86_ins_opcode          := 0xc7,
+              x86_ins_second_operand  := dst,
+              x86_ins_immediate_size  := S32,
+              x86_ins_immediate       := imm
+            \<rparr>) |
+      S64 \<Rightarrow> Some (DEFAULT \<lparr>
+              x86_ins_size            := sz,
+              x86_ins_opcode          := or 0xb8 (and dst 0b111),
+              x86_ins_modrm           := False,
+              x86_ins_second_operand  := dst,
+              x86_ins_immediate_size  := S64,
+              x86_ins_immediate       := imm
+            \<rparr>) |
       _ \<Rightarrow>  None \<comment>  \<open> unimplemented  \<close> )
 )"
 
-text \<open> ../..
-
- \<close>
-
-
-
+definition conditional_jump_immediate :: " u8 \<Rightarrow> i32 \<Rightarrow> X86Instruction option" where
+"conditional_jump_immediate op rel_dst = Some (
+  DEFAULT \<lparr>
+    x86_ins_size                    := S32,
+    x86_ins_opcode_escape_sequence  := 1,
+    x86_ins_opcode                  := op,
+    x86_ins_modrm                   := False,
+    x86_ins_immediate_size          := S32,
+    x86_ins_immediate               := (scast rel_dst)
+  \<rparr>)"
 
 end
