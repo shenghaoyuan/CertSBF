@@ -7,17 +7,19 @@ imports
   JITCommType x86CommType
 begin
 
-(**
-pub enum X86IndirectAccess {
-    /// [second_operand + offset]
-    Offset(i32),
-    /// [second_operand + offset + index << shift]
-    OffsetIndexShift(i32, u8, u8),
-}
-*)
 datatype X86IndirectAccess =
   X86IndirectAccess_Offset i32 |
   X86IndirectAccess_OffsetIndexShift i32 u8 u8
+
+datatype FenceType = FT_Load |  FT_All | FT_Store
+
+definition u8_of_fence_type :: "FenceType \<Rightarrow> u8" where
+"u8_of_fence_type ft = (
+  case ft of
+  FT_Load   \<Rightarrow> 5 |
+  FT_All    \<Rightarrow> 6 |
+  FT_Store  \<Rightarrow> 7
+)"
 
 record X86Instruction =
 x86_ins_size                    :: OperandSize
@@ -257,36 +259,110 @@ definition test :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow>
       \<rparr>)
 )"
 
-text \<open> ../..
-pub const fn test_immediate(
-        size: OperandSize,
-        destination: u8,
-        immediate: i64,
-        indirect: Option<X86IndirectAccess>,
-    ) -> Self {
-        exclude_operand_sizes!(size, OperandSize::S0);
-        Self {
-            size,
-            opcode: if let OperandSize::S8 = size {
-                0xf6
-            } else {
-                0xf7
-            },
-            first_operand: RAX,
-            second_operand: destination,
-            immediate_size: if let OperandSize::S64 = size {
-                OperandSize::S32
-            } else {
-                size
-            },
-            immediate,
-            indirect,
-            ..Self::DEFAULT
-        }
-    }
+definition test_immediate :: "OperandSize \<Rightarrow> u8 \<Rightarrow> i64 \<Rightarrow>
+  X86IndirectAccess option \<Rightarrow> X86Instruction option" where
+"test_immediate sz dst imm ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := if sz = S8 then 0xf6 else 0xf7,
+        x86_ins_first_operand   := RAX,
+        x86_ins_second_operand  := dst,
+        x86_ins_immediate_size  := if sz = S64 then S32 else sz,
+        x86_ins_immediate       := imm,
+        x86_ins_indirect        := ind
+      \<rparr>)
+)"
 
- \<close>
+definition cmp :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow>
+  X86IndirectAccess option \<Rightarrow> X86Instruction option" where
+"cmp sz src dst ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := if sz = S8 then 0x38 else 0x39,
+        x86_ins_first_operand   := src,
+        x86_ins_second_operand  := dst,
+        x86_ins_indirect        := ind
+      \<rparr>)
+)"
 
+definition cmp_immediate :: "OperandSize \<Rightarrow> u8 \<Rightarrow> i64 \<Rightarrow>
+  X86IndirectAccess option \<Rightarrow> X86Instruction option" where
+"cmp_immediate sz dst imm ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := if sz = S8 then 0x80 else 0x81,
+        x86_ins_first_operand   := RDI,
+        x86_ins_second_operand  := dst,
+        x86_ins_immediate_size  := if sz = S64 then S32 else sz,
+        x86_ins_immediate       := imm,
+        x86_ins_indirect        := ind
+      \<rparr>)
+)"
+
+definition lea :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow>
+  X86IndirectAccess option \<Rightarrow> X86Instruction option" where
+"lea sz src dst ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S8 \<Rightarrow> None |
+  S16 \<Rightarrow> None |
+  S32 \<Rightarrow> None |
+  S64 \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := 0x8d,
+        x86_ins_first_operand   := dst,
+        x86_ins_second_operand  := src,
+        x86_ins_indirect        := ind
+      \<rparr>)
+)"
+
+definition sign_extend_rax_rdx :: "OperandSize \<Rightarrow> X86Instruction option" where
+"sign_extend_rax_rdx sz = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S8 \<Rightarrow> None |
+  S16 \<Rightarrow> None |
+  _ \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size            := sz,
+        x86_ins_opcode          := 0x99,
+        x86_ins_modrm           := False
+      \<rparr>)
+)"
+
+definition load :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow>
+  X86IndirectAccess \<Rightarrow> X86Instruction option" where
+"load sz src dst ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _  \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size                    := if sz = S64 then S64 else S32,
+        x86_ins_opcode_escape_sequence  := (case sz of S8 \<Rightarrow> 1 | S16 \<Rightarrow> 1 | _ \<Rightarrow> 0 ),
+        x86_ins_opcode                  := (case sz of S8 \<Rightarrow> 0xb6 | S16 \<Rightarrow> 0xb7 | _ \<Rightarrow> 0x8b),
+        x86_ins_first_operand           := dst,
+        x86_ins_second_operand          := src,
+        x86_ins_indirect                := Some ind
+      \<rparr>)
+)"
+
+definition store :: "OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow>
+  X86IndirectAccess \<Rightarrow> X86Instruction option" where
+"store sz src dst ind = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _  \<Rightarrow> Some (DEFAULT \<lparr>
+        x86_ins_size                    := sz,
+        x86_ins_opcode                  := (case sz of S8 \<Rightarrow> 0x88 | _ \<Rightarrow> 0x89),
+        x86_ins_first_operand           := src,
+        x86_ins_second_operand          := dst,
+        x86_ins_indirect                := Some ind
+      \<rparr>)
+)"
 
 definition load_immediate :: "OperandSize \<Rightarrow> u8 \<Rightarrow> i64 \<Rightarrow> X86Instruction option" where
 "load_immediate sz dst imm = (
@@ -318,15 +394,145 @@ definition load_immediate :: "OperandSize \<Rightarrow> u8 \<Rightarrow> i64 \<R
       _ \<Rightarrow>  None \<comment>  \<open> unimplemented  \<close> )
 )"
 
-definition conditional_jump_immediate :: " u8 \<Rightarrow> i32 \<Rightarrow> X86Instruction option" where
-"conditional_jump_immediate op rel_dst = Some (
-  DEFAULT \<lparr>
+definition store_immediate ::
+  "OperandSize \<Rightarrow> u8 \<Rightarrow> X86IndirectAccess \<Rightarrow> i64 \<Rightarrow> X86Instruction option" where
+"store_immediate sz dst ind imm = (
+  case sz of
+  S0 \<Rightarrow> None |
+  _ \<Rightarrow>  Some (DEFAULT \<lparr>
+          x86_ins_size            := sz,
+          x86_ins_opcode          := case sz of S8 \<Rightarrow> 0xc6 | _ \<Rightarrow> 0xc7,
+          x86_ins_second_operand  := dst,
+          x86_ins_indirect        := Some ind,
+          x86_ins_immediate_size  := if sz = S64 then S32 else sz,
+          x86_ins_immediate       := imm
+        \<rparr>)
+)"
+
+definition push_immediate :: "OperandSize \<Rightarrow> i32 \<Rightarrow> X86Instruction option" where
+"push_immediate sz imm = (
+  case sz of
+  S0 \<Rightarrow> None |
+  S16 \<Rightarrow> None |
+  _ \<Rightarrow>  Some (DEFAULT \<lparr>
+          x86_ins_size            := sz,
+          x86_ins_opcode          := case sz of S8 \<Rightarrow> 0x6A | _ \<Rightarrow> 0x68,
+          x86_ins_modrm           := False,
+          x86_ins_immediate_size  := if sz = S64 then S32 else sz,
+          x86_ins_immediate       := (scast imm)
+        \<rparr>)
+)"
+
+definition push :: "u8 \<Rightarrow> X86IndirectAccess option \<Rightarrow> X86Instruction" where
+"push src ind = (
+  case ind of
+  None \<Rightarrow> DEFAULT \<lparr>
+            x86_ins_size            := S32,
+            x86_ins_opcode          := or 0x50 (and src 0b111),
+            x86_ins_modrm           := False,
+            x86_ins_second_operand  := src
+          \<rparr> |
+  Some i \<Rightarrow> DEFAULT \<lparr>
+          x86_ins_size            := S64,
+          x86_ins_opcode          := 0xFF,
+          x86_ins_modrm           := True,
+          x86_ins_first_operand   := 6,
+          x86_ins_second_operand  := src,
+          x86_ins_indirect        := ind
+        \<rparr>
+)"
+
+definition pop :: "u8 \<Rightarrow> X86Instruction" where
+"pop dst = DEFAULT \<lparr>
+          x86_ins_size            := S32,
+          x86_ins_opcode          := or 0x58 (and dst 0b111),
+          x86_ins_modrm           := False,
+          x86_ins_second_operand  := dst
+        \<rparr>"
+
+definition conditional_jump_immediate :: " u8 \<Rightarrow> i32 \<Rightarrow> X86Instruction" where
+"conditional_jump_immediate op rel_dst = DEFAULT \<lparr>
     x86_ins_size                    := S32,
     x86_ins_opcode_escape_sequence  := 1,
     x86_ins_opcode                  := op,
     x86_ins_modrm                   := False,
     x86_ins_immediate_size          := S32,
     x86_ins_immediate               := (scast rel_dst)
-  \<rparr>)"
+  \<rparr>"
+
+definition jump_immediate :: " i32 \<Rightarrow> X86Instruction" where
+"jump_immediate rel_dst = DEFAULT \<lparr>
+    x86_ins_size            := S32,
+    x86_ins_opcode          := 0xe9,
+    x86_ins_modrm           := False,
+    x86_ins_immediate_size  := S32,
+    x86_ins_immediate       := (scast rel_dst)
+  \<rparr>"
+
+definition call_immediate :: " i32 \<Rightarrow> X86Instruction" where
+"call_immediate rel_dst = DEFAULT \<lparr>
+    x86_ins_size            := S32,
+    x86_ins_opcode          := 0xe8,
+    x86_ins_modrm           := False,
+    x86_ins_immediate_size  := S32,
+    x86_ins_immediate       := (scast rel_dst)
+  \<rparr>"
+
+definition call_reg :: " u8 \<Rightarrow> X86IndirectAccess option \<Rightarrow> X86Instruction" where
+"call_reg dst ind = DEFAULT \<lparr>
+    x86_ins_size            := S64,
+    x86_ins_opcode          := 0xff,
+    x86_ins_first_operand   := 2,
+    x86_ins_second_operand  := dst,
+    x86_ins_indirect        := ind
+  \<rparr>"
+
+definition return_near :: "X86Instruction" where
+"return_near = DEFAULT \<lparr>
+    x86_ins_size            := S32,
+    x86_ins_opcode          := 0xc3,
+    x86_ins_modrm           := False
+  \<rparr>"
+
+definition noop :: "X86Instruction" where
+"noop = DEFAULT \<lparr>
+    x86_ins_size            := S32,
+    x86_ins_opcode          := 0x90,
+    x86_ins_modrm           := False
+  \<rparr>"
+
+definition interrupt :: "u8 \<Rightarrow> X86Instruction" where
+"interrupt imm = (
+  if imm = 3 then
+    DEFAULT \<lparr>
+      x86_ins_size            := S32,
+      x86_ins_opcode          := 0xcc,
+      x86_ins_modrm           := False
+    \<rparr>
+  else
+    DEFAULT \<lparr>
+      x86_ins_size            := S32,
+      x86_ins_opcode          := 0xcd,
+      x86_ins_modrm           := False,
+      x86_ins_immediate_size  := S8,
+      x86_ins_immediate       := (scast imm)
+    \<rparr>
+)"
+
+definition cycle_count :: "X86Instruction" where
+"cycle_count = DEFAULT \<lparr>
+    x86_ins_size                    := S32,
+    x86_ins_opcode_escape_sequence  := 1,
+    x86_ins_opcode                  := 0x31,
+    x86_ins_modrm                   := False
+  \<rparr>"
+
+definition fence :: "FenceType \<Rightarrow> X86Instruction" where
+"fence ft = DEFAULT \<lparr>
+    x86_ins_size                    := S32,
+    x86_ins_opcode_escape_sequence  := 1,
+    x86_ins_opcode                  := 0xae,
+    x86_ins_first_operand           := u8_of_fence_type ft
+  \<rparr>"
 
 end
