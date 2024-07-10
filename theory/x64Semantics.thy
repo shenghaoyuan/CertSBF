@@ -3,166 +3,12 @@ section \<open> x64 Semantics \<close>
 theory x64Semantics
 imports
   Main
-  rBPFCommType Val
+  rBPFCommType Val Mem x64Syntax
 begin
 
 text \<open> define our x64 semantics in Isabelle/HOL, following the style of CompCert x64 semantics: https://github.com/AbsInt/CompCert/blob/master/x86/Asm.v  \<close>
 
-
-subsection  \<open> x64 Syntax \<close>
-
-datatype ireg = RAX | RBX | RAC | RDX | RSI | RDI | RBP | RSP | R8 | R9 | R10 | R11 | R12 | R13 | R14 | R15
-
-text \<open> skip float registers, as Solana rBPF doesn't deal with float \<close>
-
-datatype crbit = ZF | CF | PF | SF | OF
-
-datatype preg = PC | IR ireg | CR crbit | RA
-
-abbreviation "RIP \<equiv> PC"  \<comment> \<open> the RIP register in x86-64 (x64) architecture is the equivalent of the program counter (PC) in many other architectures.  \<close>
-  
-abbreviation "SP \<equiv> RSP"
-
-type_synonym label = nat
-
-datatype addrmode =
-  Addrmode "ireg option" "(ireg * int) option" int
-
-datatype testcond =
-    Cond_e | Cond_ne
-  | Cond_b | Cond_be | Cond_ae | Cond_a
-  | Cond_l | Cond_le | Cond_ge | Cond_g
-  | Cond_p | Cond_np
-
-(** Instructions.  IA32 instructions accept many combinations of
-  registers, memory references and immediate constants as arguments.
-  Here, we list only the combinations that we actually use.
-
-  Naming conventions for types:
-- [b]: 8 bits
-- [w]: 16 bits ("word")
-- [l]: 32 bits ("longword")
-- [q]: 64 bits ("quadword")
-- [d] or [sd]: FP double precision (64 bits)
-- [s] or [ss]: FP single precision (32 bits)
-
-  Naming conventions for operands:
-- [r]: integer register operand
-- [f]: XMM register operand
-- [m]: memory operand
-- [i]: immediate integer operand
-- [s]: immediate symbol operand
-- [l]: immediate label operand
-- [cl]: the [CL] register
-
-  For two-operand instructions, the first suffix describes the result
-  (and first argument), the second suffix describes the second argument.
-*)
-
-datatype instruction =
-  (** Moves *)
-    Pmov_rr ireg ireg       (**r [mov] (integer) *)
-  | Pmovl_ri ireg u32
-  | Pmovq_ri ireg u64
-  | Pmovl_rm ireg addrmode
-  | Pmovq_rm ireg addrmode
-  | Pmovl_mr addrmode ireg
-  | Pmovq_mr addrmode ireg
-  | Pfldl_m addrmode               (**r [fld] double precision *)
-  | Pfstpl_m addrmode              (**r [fstp] double precision *)
-  | Pflds_m addrmode               (**r [fld] simple precision *)
-  | Pfstps_m addrmode              (**r [fstp] simple precision *)
-  (** Moves with conversion *)
-  | Pmovb_mr addrmode ireg   (**r [mov] (8-bit int) *)
-  | Pmovw_mr addrmode ireg   (**r [mov] (16-bit int) *)
-  | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
-  | Pmovzb_rm ireg addrmode
-  | Pmovsb_rr ireg ireg     (**r [movsb] (8-bit sign-extension) *)
-  | Pmovsb_rm ireg addrmode
-  | Pmovzw_rr ireg ireg     (**r [movzw] (16-bit zero-extension) *)
-  | Pmovzw_rm ireg addrmode
-  | Pmovsw_rr ireg ireg     (**r [movsw] (16-bit sign-extension) *)
-  | Pmovsw_rm ireg addrmode
-  | Pmovzl_rr ireg ireg     (**r [movzl] (32-bit zero-extension) *)
-  | Pmovsl_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
-  | Pmovls_rr ireg                (** 64 to 32 bit conversion (pseudo) *)
-  (** Integer arithmetic *)
-  | Pleal ireg addrmode
-  | Pleaq ireg addrmode
-  | Pnegl ireg
-  | Pnegq ireg
-  | Paddl_ri ireg u32
-  | Paddq_ri ireg u64 (*
-  | Psubl_rr ireg ireg
-  | Psubq_rr ireg ireg
-  | Pimull_rr ireg ireg
-  | Pimulq_rr ireg ireg
-  | Pimull_ri ireg u32
-  | Pimulq_ri ireg u64
-  | Pimull_r ireg
-  | Pimulq_r ireg
-  | Pmull_r ireg
-  | Pmulq_r ireg
-  | Pcltd
-  | Pcqto
-  | Pdivl ireg
-  | Pdivq ireg
-  | Pidivl ireg
-  | Pidivq ireg
-  | Pandl_rr ireg ireg
-  | Pandq_rr ireg ireg
-  | Pandl_ri ireg u32
-  | Pandq_ri ireg u64
-  | Porl_rr ireg ireg
-  | Porq_rr ireg ireg
-  | Porl_ri ireg u32
-  | Porq_ri ireg u64
-  | Pxorl_r ireg                  (**r [xor] with self = set to zero *)
-  | Pxorq_r ireg
-  | Pxorl_rr ireg ireg
-  | Pxorq_rr ireg ireg
-  | Pxorl_ri ireg u32
-  | Pxorq_ri ireg u64
-  | Pnotl ireg
-  | Pnotq ireg
-  | Psall_rcl ireg
-  | Psalq_rcl ireg
-  | Psall_ri ireg u32
-  | Psalq_ri ireg u32
-  | Pshrl_rcl ireg
-  | Pshrq_rcl ireg
-  | Pshrl_ri ireg u32
-  | Pshrq_ri ireg u32
-  | Psarl_rcl ireg
-  | Psarq_rcl ireg
-  | Psarl_ri ireg u32
-  | Psarq_ri ireg u32
-  | Pshld_ri ireg ireg u32
-  | Prorl_ri ireg u32
-  | Prorq_ri ireg u32
-  | Pcmpl_rr ireg ireg
-  | Pcmpq_rr ireg ireg
-  | Pcmpl_ri ireg u32
-  | Pcmpq_ri ireg u64
-  | Ptestl_rr ireg ireg
-  | Ptestq_rr ireg ireg
-  | Ptestl_ri ireg u32
-  | Ptestq_ri ireg u64
-  | Pcmov testcond ireg ireg
-  | Psetcc testcond ireg
-  (** Branches and calls *)
-  | Pjmp_l label
-  | Pjcc testcond label
-  | Pjcc2 testcond testcond label   (**r pseudo *)
-  | Pjmptbl ireg "label list" (**r pseudo *)
-  | Pret
-  (** Saving and restoring registers *)
-  | Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
-  | Pmov_mr_a addrmode ireg  (**r like [Pmov_mr], using [Many64] chunk *) *)
-
-
 type_synonym regset = "preg \<Rightarrow> val"
-type_synonym mem = "(u64, val) map"
 
 syntax "_pregmap_set" :: "'a => 'b => 'c => 'a" ("_ # _ <- _" [1000, 1000, 1000] 1)
 
@@ -251,9 +97,321 @@ definition eval_testcond :: "testcond \<Rightarrow> regset \<Rightarrow> bool op
   Cond_np \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 0) | _ \<Rightarrow> None)
 )"
 
-datatype outcom = Next regset mem | Stuck
+datatype outcome = Next regset mem | Stuck
+
+definition nextinstr :: "regset \<Rightarrow> regset" where
+"nextinstr rs = (rs#PC <- (Val.add (rs PC) (Vint 1)))"
+
+definition nextinstr_nf :: "regset \<Rightarrow> regset" where
+"nextinstr_nf rs = nextinstr (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] rs)"
+
+definition exec_load :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
+"exec_load chunk m a rs rd = (
+  case Mem.loadv chunk m (eval_addrmode64 a rs) of
+  None \<Rightarrow> Stuck |
+  Some v \<Rightarrow> Next (nextinstr_nf (rs#rd <- v)) m
+)"
+
+definition exec_store :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> preg list \<Rightarrow> outcome" where
+"exec_store chunk m a rs r1 destroyed = (
+  case Mem.storev chunk m (eval_addrmode64 a rs) (rs r1) of
+  None \<Rightarrow> Stuck |
+  Some m' \<Rightarrow> Next (nextinstr_nf (undef_regs destroyed rs)) m'
+)"
+
+definition exec_instr :: "instruction \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
+"exec_instr i rs m = (
+  case i of
+  \<comment> \<open> Moves \<close>
+  Pmov_rr rd r1 \<Rightarrow> Next (nextinstr (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovl_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Vint n))) m |
+  Pmovq_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Vlong n))) m |
+  Pmovl_rm rd a \<Rightarrow> exec_load M32 m a rs (IR rd) |
+  Pmovq_rm rd a \<Rightarrow> exec_load M64 m a rs (IR rd) |
+  Pmovl_mr a r1 \<Rightarrow> exec_store M32 m a rs (IR r1) [] |
+  Pmovq_mr a r1 \<Rightarrow> exec_store M64 m a rs (IR r1) [] |
+  \<comment> \<open> Moves with conversion \<close>
+  Pmovb_mr a r1 \<Rightarrow> exec_store M8 m a rs (IR r1) [] |
+  Pmovw_mr a r1 => exec_store M16 m a rs (IR r1) [] |
+  \<comment> \<open> Integer arithmetic \<close>
+  Paddl_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Val.add (rs (IR rd)) (Vint n)))) m |
+  Paddq_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
+  _ \<Rightarrow> Stuck
+)"
 
 (**r
+  | Pmovzb_rr rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.zero_ext 8 rs#r1))) m
+  | Pmovzb_rm rd a =>
+      exec_load Mint8unsigned m a rs rd
+  | Pmovsb_rr rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.sign_ext 8 rs#r1))) m
+  | Pmovsb_rm rd a =>
+      exec_load Mint8signed m a rs rd
+  | Pmovzw_rr rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.zero_ext 16 rs#r1))) m
+  | Pmovzw_rm rd a =>
+      exec_load Mint16unsigned m a rs rd
+  | Pmovsw_rr rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.sign_ext 16 rs#r1))) m
+  | Pmovsw_rm rd a =>
+      exec_load Mint16signed m a rs rd
+  | Pmovzl_rr rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.longofintu rs#r1))) m
+  | Pmovsl_rr rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.longofint rs#r1))) m
+  | Pmovls_rr rd =>
+      Next (nextinstr (rs#rd <- (Val.loword rs#rd))) m
+  (** Integer arithmetic *)
+  | Pleal rd a =>
+      Next (nextinstr (rs#rd <- (eval_addrmode32 a rs))) m
+  | Pleaq rd a =>
+      Next (nextinstr (rs#rd <- (eval_addrmode64 a rs))) m
+  | Pnegl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.neg rs#rd))) m
+  | Pnegq rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.negl rs#rd))) m
+| Paddl_ri rd n =>
+    Next (nextinstr_nf (rs#rd <- (Val.add rs#rd (Vint n)))) m
+| Paddq_ri rd n =>
+    Next (nextinstr_nf (rs#rd <- (Val.addl rs#rd (Vlong n)))) m
+  | Psubl_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.sub rs#rd rs#r1))) m
+  | Psubq_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.subl rs#rd rs#r1))) m
+  | Pimull_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.mul rs#rd rs#r1))) m
+  | Pimulq_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.mull rs#rd rs#r1))) m
+  | Pimull_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.mul rs#rd (Vint n)))) m
+  | Pimulq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.mull rs#rd (Vlong n)))) m
+  | Pimull_r r1 =>
+      Next (nextinstr_nf (rs#RAX <- (Val.mul rs#RAX rs#r1)
+                            #RDX <- (Val.mulhs rs#RAX rs#r1))) m
+  | Pimulq_r r1 =>
+      Next (nextinstr_nf (rs#RAX <- (Val.mull rs#RAX rs#r1)
+                            #RDX <- (Val.mullhs rs#RAX rs#r1))) m
+  | Pmull_r r1 =>
+      Next (nextinstr_nf (rs#RAX <- (Val.mul rs#RAX rs#r1)
+                            #RDX <- (Val.mulhu rs#RAX rs#r1))) m
+  | Pmulq_r r1 =>
+      Next (nextinstr_nf (rs#RAX <- (Val.mull rs#RAX rs#r1)
+                            #RDX <- (Val.mullhu rs#RAX rs#r1))) m
+  | Pcltd =>
+      Next (nextinstr_nf (rs#RDX <- (Val.shr rs#RAX (Vint (Int.repr 31))))) m
+  | Pcqto =>
+      Next (nextinstr_nf (rs#RDX <- (Val.shrl rs#RAX (Vint (Int.repr 63))))) m
+  | Pdivl r1 =>
+      match rs#RDX, rs#RAX, rs#r1 with
+      | Vint nh, Vint nl, Vint d =>
+          match Int.divmodu2 nh nl d with
+          | Some(q, r) => Next (nextinstr_nf (rs#RAX <- (Vint q) #RDX <- (Vint r))) m
+          | None => Stuck
+          end
+      | _, _, _ => Stuck
+      end
+  | Pdivq r1 =>
+      match rs#RDX, rs#RAX, rs#r1 with
+      | Vlong nh, Vlong nl, Vlong d =>
+          match Int64.divmodu2 nh nl d with
+          | Some(q, r) => Next (nextinstr_nf (rs#RAX <- (Vlong q) #RDX <- (Vlong r))) m
+          | None => Stuck
+          end
+      | _, _, _ => Stuck
+      end
+  | Pidivl r1 =>
+      match rs#RDX, rs#RAX, rs#r1 with
+      | Vint nh, Vint nl, Vint d =>
+          match Int.divmods2 nh nl d with
+          | Some(q, r) => Next (nextinstr_nf (rs#RAX <- (Vint q) #RDX <- (Vint r))) m
+          | None => Stuck
+          end
+      | _, _, _ => Stuck
+      end
+  | Pidivq r1 =>
+      match rs#RDX, rs#RAX, rs#r1 with
+      | Vlong nh, Vlong nl, Vlong d =>
+          match Int64.divmods2 nh nl d with
+          | Some(q, r) => Next (nextinstr_nf (rs#RAX <- (Vlong q) #RDX <- (Vlong r))) m
+          | None => Stuck
+          end
+      | _, _, _ => Stuck
+      end
+  | Pandl_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.and rs#rd rs#r1))) m
+  | Pandq_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.andl rs#rd rs#r1))) m
+  | Pandl_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.and rs#rd (Vint n)))) m
+  | Pandq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.andl rs#rd (Vlong n)))) m
+  | Porl_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.or rs#rd rs#r1))) m
+  | Porq_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.orl rs#rd rs#r1))) m
+  | Porl_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.or rs#rd (Vint n)))) m
+  | Porq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.orl rs#rd (Vlong n)))) m
+  | Pxorl_r rd =>
+      Next (nextinstr_nf (rs#rd <- Vzero)) m
+  | Pxorq_r rd =>
+      Next (nextinstr_nf (rs#rd <- (Vlong Int64.zero))) m
+  | Pxorl_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.xor rs#rd rs#r1))) m
+  | Pxorq_rr rd r1 =>
+      Next (nextinstr_nf (rs#rd <- (Val.xorl rs#rd rs#r1))) m
+  | Pxorl_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.xor rs#rd (Vint n)))) m
+  | Pxorq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.xorl rs#rd (Vlong n)))) m
+  | Pnotl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.notint rs#rd))) m
+  | Pnotq rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.notl rs#rd))) m
+  | Psall_rcl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.shl rs#rd rs#RCX))) m
+  | Psalq_rcl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.shll rs#rd rs#RCX))) m
+  | Psall_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.shl rs#rd (Vint n)))) m
+  | Psalq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.shll rs#rd (Vint n)))) m
+  | Pshrl_rcl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.shru rs#rd rs#RCX))) m
+  | Pshrq_rcl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.shrlu rs#rd rs#RCX))) m
+  | Pshrl_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.shru rs#rd (Vint n)))) m
+  | Pshrq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.shrlu rs#rd (Vint n)))) m
+  | Psarl_rcl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.shr rs#rd rs#RCX))) m
+  | Psarq_rcl rd =>
+      Next (nextinstr_nf (rs#rd <- (Val.shrl rs#rd rs#RCX))) m
+  | Psarl_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.shr rs#rd (Vint n)))) m
+  | Psarq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.shrl rs#rd (Vint n)))) m
+  | Pshld_ri rd r1 n =>
+      Next (nextinstr_nf
+              (rs#rd <- (Val.or (Val.shl rs#rd (Vint n))
+                                (Val.shru rs#r1 (Vint (Int.sub Int.iwordsize n)))))) m
+  | Prorl_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.ror rs#rd (Vint n)))) m
+  | Prorq_ri rd n =>
+      Next (nextinstr_nf (rs#rd <- (Val.rorl rs#rd (Vint n)))) m
+  | Pcmpl_rr r1 r2 =>
+      Next (nextinstr (compare_ints (rs r1) (rs r2) rs m)) m
+  | Pcmpq_rr r1 r2 =>
+      Next (nextinstr (compare_longs (rs r1) (rs r2) rs m)) m
+  | Pcmpl_ri r1 n =>
+      Next (nextinstr (compare_ints (rs r1) (Vint n) rs m)) m
+  | Pcmpq_ri r1 n =>
+      Next (nextinstr (compare_longs (rs r1) (Vlong n) rs m)) m
+  | Ptestl_rr r1 r2 =>
+      Next (nextinstr (compare_ints (Val.and (rs r1) (rs r2)) Vzero rs m)) m
+  | Ptestq_rr r1 r2 =>
+      Next (nextinstr (compare_longs (Val.andl (rs r1) (rs r2)) (Vlong Int64.zero) rs m)) m
+  | Ptestl_ri r1 n =>
+      Next (nextinstr (compare_ints (Val.and (rs r1) (Vint n)) Vzero rs m)) m
+  | Ptestq_ri r1 n =>
+      Next (nextinstr (compare_longs (Val.andl (rs r1) (Vlong n)) (Vlong Int64.zero) rs m)) m
+  | Pcmov c rd r1 =>
+      let v :=
+        match eval_testcond c rs with
+        | Some b => if b then rs#r1 else rs#rd
+        | None   => Vundef
+      end in
+      Next (nextinstr (rs#rd <- v)) m
+  | Psetcc c rd =>
+      Next (nextinstr (rs#rd <- (Val.of_optbool (eval_testcond c rs)))) m
+  (** Arithmetic operations over double-precision floats *)
+  | Paddd_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.addf rs#rd rs#r1))) m
+  | Psubd_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.subf rs#rd rs#r1))) m
+  | Pmuld_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.mulf rs#rd rs#r1))) m
+  | Pdivd_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.divf rs#rd rs#r1))) m
+  | Pnegd rd =>
+      Next (nextinstr (rs#rd <- (Val.negf rs#rd))) m
+  | Pabsd rd =>
+      Next (nextinstr (rs#rd <- (Val.absf rs#rd))) m
+  | Pcomisd_ff r1 r2 =>
+      Next (nextinstr (compare_floats (rs r1) (rs r2) rs)) m
+  | Pxorpd_f rd =>
+      Next (nextinstr_nf (rs#rd <- (Vfloat Float.zero))) m
+  | Pmaxsd rd r1 =>
+      Next (nextinstr (rs#rd <- (Op.maxf rs#rd rs#r1))) m
+  | Pminsd rd r1 =>
+      Next (nextinstr (rs#rd <- (Op.minf rs#rd rs#r1))) m
+  (** Arithmetic operations over single-precision floats *)
+  | Padds_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.addfs rs#rd rs#r1))) m
+  | Psubs_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.subfs rs#rd rs#r1))) m
+  | Pmuls_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.mulfs rs#rd rs#r1))) m
+  | Pdivs_ff rd r1 =>
+      Next (nextinstr (rs#rd <- (Val.divfs rs#rd rs#r1))) m
+  | Pnegs rd =>
+      Next (nextinstr (rs#rd <- (Val.negfs rs#rd))) m
+  | Pabss rd =>
+      Next (nextinstr (rs#rd <- (Val.absfs rs#rd))) m
+  | Pcomiss_ff r1 r2 =>
+      Next (nextinstr (compare_floats32 (rs r1) (rs r2) rs)) m
+  | Pxorps_f rd =>
+      Next (nextinstr_nf (rs#rd <- (Vsingle Float32.zero))) m
+  (** Branches and calls *)
+  | Pjmp_l lbl =>
+      goto_label f lbl rs m
+  | Pjmp_s id sg =>
+      Next (rs#PC <- (Genv.symbol_address ge id Ptrofs.zero)) m
+  | Pjmp_r r sg =>
+      Next (rs#PC <- (rs r)) m
+  | Pjcc cond lbl =>
+      match eval_testcond cond rs with
+      | Some true => goto_label f lbl rs m
+      | Some false => Next (nextinstr rs) m
+      | None => Stuck
+      end
+  | Pjcc2 cond1 cond2 lbl =>
+      match eval_testcond cond1 rs, eval_testcond cond2 rs with
+      | Some true, Some true => goto_label f lbl rs m
+      | Some _, Some _ => Next (nextinstr rs) m
+      | _, _ => Stuck
+      end
+  | Pjmptbl r tbl =>
+      match rs#r with
+      | Vint n =>
+          match list_nth_z tbl (Int.unsigned n) with
+          | None => Stuck
+          | Some lbl => goto_label f lbl (rs #RAX <- Vundef #RDX <- Vundef) m
+          end
+      | _ => Stuck
+      end
+  | Pcall_s id sg =>
+      Next (rs#RA <- (Val.offset_ptr rs#PC Ptrofs.one) #PC <- (Genv.symbol_address ge id Ptrofs.zero)) m
+  | Pcall_r r sg =>
+      Next (rs#RA <- (Val.offset_ptr rs#PC Ptrofs.one) #PC <- (rs r)) m
+  | Pret =>
+      Next (rs#PC <- (rs#RA)) m
+  (** Saving and restoring registers *)
+  | Pmov_rm_a rd a =>
+      exec_load (if Archi.ptr64 then Many64 else Many32) m a rs rd
+  | Pmov_mr_a a r1 =>
+      exec_store (if Archi.ptr64 then Many64 else Many32) m a rs r1 nil
+  | Pmovsd_fm_a rd a =>
+      exec_load Many64 m a rs rd
+  | Pmovsd_mf_a a r1 =>
+      exec_store Many64 m a rs r1 nil
+  (** Pseudo-instructions *)
+  | Plabel lbl =>
+      Next (nextinstr rs) m
 
 
 *)

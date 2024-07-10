@@ -24,14 +24,6 @@ definition u8_of_bool :: "bool \<Rightarrow> u8" where
     False \<Rightarrow> 0
 )"
 
-abbreviation bit_left_shift ::
-  "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix "<<" 50)
-where "x << n \<equiv> push_bit n x"
-
-abbreviation bit_right_shift ::
-  "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix ">>" 50)
-where "x >> n \<equiv> drop_bit n x"
-
 definition u8_list_of_u16 :: "u16 \<Rightarrow> u8 list" where
 "u8_list_of_u16 i =
   [ (ucast (and i 0xff)),

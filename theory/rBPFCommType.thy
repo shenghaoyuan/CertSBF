@@ -36,4 +36,12 @@ bpf_imm :: i32
 
 type_synonym ebpf_bin = "ebpf_binary list"
 
+abbreviation bit_left_shift ::
+  "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix "<<" 50)
+where "x << n \<equiv> push_bit n x"
+
+abbreviation bit_right_shift ::
+  "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix ">>" 50)
+where "x >> n \<equiv> drop_bit n x"
+
 end

@@ -192,4 +192,10 @@ definition cmp :: "comparison \<Rightarrow> val \<Rightarrow> val \<Rightarrow> 
 definition cmpu :: "comparison \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val" where
 "cmpu c v1 v2 = of_optbool (cmpu_bool c v1 v2)"
 
+definition cmpl :: "comparison \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val" where
+"cmpl c v1 v2 = of_optbool (cmpl_bool c v1 v2)"
+
+definition cmplu :: "comparison \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val" where
+"cmplu c v1 v2 = of_optbool (cmplu_bool c v1 v2)"
+
 end
