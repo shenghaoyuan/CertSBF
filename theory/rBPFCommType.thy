@@ -19,6 +19,12 @@ definition i32_MIN :: "i32" where
 definition i32_MAX :: "i32" where
 "i32_MAX = 0x7FFFFFFF"
 
+definition i64_MIN :: "i64" where
+"i64_MIN = 0x8000000000000000"
+
+definition i64_MAX :: "i64" where
+"i64_MAX = 0x7FFFFFFFFFFFFFFF"
+
 type_synonym u4 = "4 word"
 
 record ebpf_binary =

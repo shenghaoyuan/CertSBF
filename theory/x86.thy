@@ -32,12 +32,17 @@ x86_ins_second_operand          :: u8
 x86_ins_immediate_size          :: OperandSize
 x86_ins_immediate               :: i64
 
-text \<open> size = 4, align = 0x1 \<close>
+text \<open> 0100WRXB
+@source: P524 (Vol.2A 2.2.1.2 Table 2-4)
+The REX prefix allows the use of extended registers and 64-bit operand sizes in the X86 ISA.
+
+ \<close>
+
 record X86Rex =
-x86_rex_w :: bool
-x86_rex_r :: bool
-x86_rex_x :: bool
-x86_rex_b :: bool
+x86_rex_w :: bool \<comment> \<open> 1 = 64-bit operand size, 0 = Operand size determined by CS.D \<close>
+x86_rex_r :: bool \<comment> \<open> Extension of the ModR/M reg field \<close>
+x86_rex_x :: bool \<comment> \<open> Extension of the SIB index field \<close>
+x86_rex_b :: bool \<comment> \<open> Extension of the ModR/M r/m field, SIB base field, or Opcode reg field \<close>
 
 text \<open> size = 3, align = 0x1 \<close>
 record X86ModRm =

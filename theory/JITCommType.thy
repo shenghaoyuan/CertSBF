@@ -60,6 +60,35 @@ definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
 
 datatype OperandSize = S0 | S8 | S16 | S32 | S64
 
+datatype RuntimeEnvironmentSlot =
+  HostStackPointer |
+  CallDepth |
+  StackPointer |
+  ContextObjectPointer |
+  PreviousInstructionMeter |
+  DueInsnCount |
+  StopwatchNumerator |
+  StopwatchDenominator |
+  Registers |
+  ProgramResult |
+  MemoryMapping
+
+definition i32_of_RuntimeEnvironmentSlot :: "RuntimeEnvironmentSlot \<Rightarrow> i32" where
+"i32_of_RuntimeEnvironmentSlot slot = (
+  case slot of
+  HostStackPointer          \<Rightarrow> 0 |
+  CallDepth                 \<Rightarrow> 1 |
+  StackPointer              \<Rightarrow> 2 |
+  ContextObjectPointer      \<Rightarrow> 3 |
+  PreviousInstructionMeter  \<Rightarrow> 4 |
+  DueInsnCount              \<Rightarrow> 5 |
+  StopwatchNumerator        \<Rightarrow> 6 |
+  StopwatchDenominator      \<Rightarrow> 7 |
+  Registers                 \<Rightarrow> 8 |
+  ProgramResult             \<Rightarrow> 20 |
+  MemoryMapping             \<Rightarrow> 28
+)"
+
 record JitProgram =
 page_size     :: usize
 pc_section    :: "usize list"
@@ -77,21 +106,21 @@ offset_in_text_section :: nat \<comment> \<open> usize is refined to nat \<close
 jit_config  :: Config
 jit_pc :: usize (*
     last_instruction_meter_validation_pc: usize,
-    next_noop_insertion: u32,
-    runtime_environment_key: i32,
+    next_noop_insertion: u32, *)
+runtime_environment_key :: i32 (*
     diversification_rng: SmallRng,
     stopwatch_is_active: bool, *)
 
 definition jit_emit :: "JitCompiler \<Rightarrow> u8 list  \<Rightarrow> JitCompiler" where
-"jit_emit l n =
+"jit_emit l n = l
  \<lparr>
-  jit_result = (jit_result l)\<lparr> text_section := (text_section (jit_result l))@n \<rparr>,
-  offset_in_text_section = (offset_in_text_section l) + length n,
-  jit_config = jit_config l,
-  jit_pc = jit_pc l
+  jit_result              := (jit_result l)\<lparr> text_section := (text_section (jit_result l))@n \<rparr>,
+  offset_in_text_section  := (offset_in_text_section l) + length n
  \<rparr>"
 
-
+definition slot_in_vm :: "JitCompiler \<Rightarrow> RuntimeEnvironmentSlot \<Rightarrow> i32" where
+"slot_in_vm l slot =
+  8 * ((i32_of_RuntimeEnvironmentSlot slot) - (runtime_environment_key l))"
 
 definition jit_emit_variable_length ::
   "JitCompiler \<Rightarrow> OperandSize \<Rightarrow> u64  \<Rightarrow> JitCompiler" where
@@ -103,17 +132,5 @@ definition jit_emit_variable_length ::
   S32 \<Rightarrow> jit_emit l (u8_list_of_u32 (ucast data)) |
   S64 \<Rightarrow> jit_emit l (u8_list_of_u64 (ucast data))
 )"
-
-text \<open> 
-pub(crate) fn emit_variable_length(&mut self, size: OperandSize, data: u64) {
-        match size {
-            OperandSize::S0 => {},
-            OperandSize::S8 => self.emit::<u8>(data as u8),
-            OperandSize::S16 => self.emit::<u16>(data as u16),
-            OperandSize::S32 => self.emit::<u32>(data as u32),
-            OperandSize::S64 => self.emit::<u64>(data),
-        }
-    }
- \<close>
 
 end
