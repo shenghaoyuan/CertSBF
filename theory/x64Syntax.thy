@@ -10,6 +10,7 @@ subsection  \<open> x64 Syntax \<close>
 
 datatype ireg = RAX | RBX | RCX | RDX | RSI | RDI | RBP | RSP | R8 | R9 | R10 | R11 | R12 | R13 | R14 | R15
 
+(*
 fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
 "u8_of_ireg RAX = 0" |
 "u8_of_ireg RBX = 1" |
@@ -26,7 +27,68 @@ fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
 "u8_of_ireg R12 = 12" |
 "u8_of_ireg R13 = 13" |
 "u8_of_ireg R14 = 14" |
+"u8_of_ireg R15 = 15" *)
+
+text \<open> TODO: Solana rBPF uses the following mapping, very weird.
+I don't understand, see: https://github.com/solana-labs/rbpf/blob/main/src/x86.rs#L16 
+But this mapping doesn't effect x64 semantics, only binary code
+\<close>
+
+fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
+"u8_of_ireg RAX = 0" |
+"u8_of_ireg RCX = 1" |
+"u8_of_ireg RDX = 2" |
+"u8_of_ireg RBX = 3" |
+"u8_of_ireg RSP = 4" |
+"u8_of_ireg RBP = 5" |
+"u8_of_ireg RSI = 6" |
+"u8_of_ireg RDI = 7" |
+"u8_of_ireg R8  = 8" |
+"u8_of_ireg R9  = 9" |
+"u8_of_ireg R10 = 10" |
+"u8_of_ireg R11 = 11" |
+"u8_of_ireg R12 = 12" |
+"u8_of_ireg R13 = 13" |
+"u8_of_ireg R14 = 14" |
 "u8_of_ireg R15 = 15"
+
+definition ireg_of_u8 ::"u8 \<Rightarrow> ireg option" where
+"ireg_of_u8 i = (
+        if i = 0 then
+    Some RAX
+  else  if i = 1 then
+    Some RCX
+  else  if i = 2 then
+    Some RDX
+  else  if i = 3 then
+    Some RBX
+  else  if i = 4 then
+    Some RSP
+  else  if i = 5 then
+    Some RBP
+  else  if i = 6 then
+    Some RSI
+  else  if i = 7 then
+    Some RDI
+  else  if i = 8 then
+    Some R8
+  else  if i = 9 then
+    Some R9
+  else  if i = 10 then
+    Some R10
+  else  if i = 11 then
+    Some R11
+  else  if i = 12 then
+    Some R12
+  else  if i = 13 then
+    Some R13
+  else  if i = 14 then
+    Some R14
+  else  if i = 15 then
+    Some R15
+  else
+    None
+)"
 
 text \<open> skip float registers, as Solana rBPF doesn't deal with float \<close>
 
@@ -103,9 +165,9 @@ datatype instruction =
   | Pnegl ireg
   | Pnegq ireg
   | Paddl_ri ireg u32
-  | Paddq_ri ireg u64 (*
+  | Paddq_ri ireg u64
   | Psubl_rr ireg ireg
-  | Psubq_rr ireg ireg
+  | Psubq_rr ireg ireg (*
   | Pimull_rr ireg ireg
   | Pimulq_rr ireg ireg
   | Pimull_ri ireg u32
@@ -119,7 +181,7 @@ datatype instruction =
   | Pdivl ireg
   | Pdivq ireg
   | Pidivl ireg
-  | Pidivq ireg
+  | Pidivq ireg *)
   | Pandl_rr ireg ireg
   | Pandq_rr ireg ireg
   | Pandl_ri ireg u32
@@ -135,7 +197,7 @@ datatype instruction =
   | Pxorl_ri ireg u32
   | Pxorq_ri ireg u64
   | Pnotl ireg
-  | Pnotq ireg
+  | Pnotq ireg (*
   | Psall_rcl ireg
   | Psalq_rcl ireg
   | Psall_ri ireg u32
@@ -166,10 +228,12 @@ datatype instruction =
   | Pjcc testcond label
   | Pjcc2 testcond testcond label   (**r pseudo *)
   | Pjmptbl ireg "label list" (**r pseudo *)
+  | Pcall_r (r: ireg)
   | Pret
   (** Saving and restoring registers *)
   | Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
   | Pmov_mr_a addrmode ireg  (**r like [Pmov_mr], using [Many64] chunk *) *)
+  | Pnop
 
 type_synonym x64_asm = "instruction list"
 type_synonym x64_bin = "u8 list"

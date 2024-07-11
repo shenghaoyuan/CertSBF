@@ -32,30 +32,6 @@ x86_ins_second_operand          :: u8
 x86_ins_immediate_size          :: OperandSize
 x86_ins_immediate               :: i64
 
-text \<open> 0100WRXB
-@source: P524 (Vol.2A 2.2.1.2 Table 2-4)
-The REX prefix allows the use of extended registers and 64-bit operand sizes in the X86 ISA.
-
- \<close>
-
-record X86Rex =
-x86_rex_w :: bool \<comment> \<open> 1 = 64-bit operand size, 0 = Operand size determined by CS.D \<close>
-x86_rex_r :: bool \<comment> \<open> Extension of the ModR/M reg field \<close>
-x86_rex_x :: bool \<comment> \<open> Extension of the SIB index field \<close>
-x86_rex_b :: bool \<comment> \<open> Extension of the ModR/M r/m field, SIB base field, or Opcode reg field \<close>
-
-text \<open> size = 3, align = 0x1 \<close>
-record X86ModRm =
-x86_rm_mode :: u8
-x86_rm_r    :: u8
-x86_rm_m    :: u8
-
-text \<open> size = 3, align = 0x1 \<close>
-record X86Sib =
-x86_sib_scale :: u8
-x86_sib_index :: u8
-x86_sib_base  :: u8
-
 definition emit :: "X86Instruction \<Rightarrow> JitCompiler \<Rightarrow> JitCompiler option" where
 "emit ins l = (
   if (x86_ins_size ins) = S0 then None else (
@@ -104,10 +80,7 @@ definition emit :: "X86Instruction \<Rightarrow> JitCompiler \<Rightarrow> JitCo
 
     let l = if x86_ins_size ins = S16 then jit_emit l [0x66]  else l in (
 
-    let rex::u8 = or (or (or  (((u8_of_bool (x86_rex_w rex))) << 3)
-                              (((u8_of_bool (x86_rex_r rex))) << 2 ))
-                              (((u8_of_bool (x86_rex_x rex))) << 1 ))
-                              ((u8_of_bool (x86_rex_b rex))) in (
+    let rex::u8 = construct_rex_to_u8 (x86_rex_w rex) (x86_rex_r rex) (x86_rex_x rex) (x86_rex_b rex) in (
 
     let l = (if rex \<noteq> 0 then jit_emit l [(or 0x40 rex)] else l) in (
 
@@ -125,12 +98,8 @@ definition emit :: "X86Instruction \<Rightarrow> JitCompiler \<Rightarrow> JitCo
 
     let l =
       if x86_ins_modrm ins then
-        let l = jit_emit l [( or (or  ((x86_rm_mode modrm) << 6)
-                                      ((x86_rm_r modrm) << 3) )
-                                      (x86_rm_m modrm) )] in
-        let sib = ( or (or  ((x86_sib_scale sib) << 6)
-                            ((x86_sib_index sib) << 3) )
-                            (x86_sib_base sib) ) in
+        let l = jit_emit l [construct_modsib_to_u8 (x86_rm_mode modrm) (x86_rm_r modrm) (x86_rm_m modrm)] in
+        let sib =construct_modsib_to_u8 (x86_sib_scale sib) (x86_sib_index sib) (x86_sib_base sib) in
         let l = (if sib \<noteq> 0 then jit_emit l [sib] else l) in
           jit_emit_variable_length l displacement_size (ucast displacement)
       else l

@@ -23,6 +23,14 @@ datatype val = Vundef | Vint u32 | Vlong u64
 
 subsection \<open> 32-bit Arithmetic operations \<close>
 
+definition neg :: "val \<Rightarrow> val" where
+"neg v = (
+  case v of
+  Vint n \<Rightarrow> Vint (- n) |
+  _ => Vundef
+)"
+
+
 definition maketotal :: "val option \<Rightarrow> val" where
 "maketotal ov = (case ov of Some v \<Rightarrow> v | None \<Rightarrow> Vundef)"
 
@@ -62,6 +70,13 @@ definition negative :: "val \<Rightarrow> val" where
 )"
 
 subsection \<open> 64-bit Arithmetic operations \<close>
+
+definition negl :: "val \<Rightarrow> val" where
+"negl v = (
+  case v of
+  Vlong n \<Rightarrow> Vlong (- n) |
+  _ => Vundef
+)"
 
 definition addl :: "val \<Rightarrow> val \<Rightarrow> val" where
 "addl v1 v2 = (

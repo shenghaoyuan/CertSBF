@@ -4,6 +4,7 @@ imports
   "Word_Lib.Signed_Words"
 begin
 type_synonym u8 = "8 word"
+type_synonym i8 = "8 sword"
 type_synonym i16 = "16 sword"
 type_synonym u16 = "16 word"
 type_synonym i32 = "32 sword"
@@ -42,6 +43,64 @@ where "x << n \<equiv> push_bit n x"
 
 abbreviation bit_right_shift ::
   "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix ">>" 50)
-where "x >> n \<equiv> drop_bit n x"
+  where "x >> n \<equiv> drop_bit n x"
+
+fun unsigned_bitfield_extract_u8 :: "nat \<Rightarrow> nat \<Rightarrow> u8 \<Rightarrow> u8" where
+"unsigned_bitfield_extract_u8 pos width n = and ((2 ^ width) - 1) (n >> pos)"
+
+definition bitfield_insert_u8 :: "nat \<Rightarrow> nat \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8" where
+"bitfield_insert_u8 pos width n p = (
+  let mask = ((2 ^ width) - 1) << pos in
+    or ((and ((2 ^ width) - 1) p) << pos)
+       (and n (not mask)) 
+)"
+
+(* something is wrong
+definition unsigned_bitfield_extract_i8 :: "nat \<Rightarrow> nat \<Rightarrow> i8 \<Rightarrow> i8" where
+"unsigned_bitfield_extract_i8 pos width n = and ((2 ^ width) - 1) (n >> pos)" *)
+
+(* Test
+value "drop_bit 3 0b10101010::u8"
+value "0b10101::u8"
+
+value "and ((2 ^ 4) - 1) 0b10101::u8"
+
+value "unsigned_bitfield_extract_u8 3 4 0b10101010"
+
+This one is wrong
+value "(scast (unsigned_bitfield_extract_i8 3 4 0b11101010)) :: i16" *)
+
+definition u8_of_bool :: "bool \<Rightarrow> u8" where
+"u8_of_bool b = (
+  case b of
+    True \<Rightarrow> 1 |
+    False \<Rightarrow> 0
+)"
+
+definition u8_list_of_u16 :: "u16 \<Rightarrow> u8 list" where
+"u8_list_of_u16 i =
+  [ (ucast (and i 0xff)),
+    (ucast (i >> 8))
+  ]"
+
+definition u8_list_of_u32 :: "u32 \<Rightarrow> u8 list" where
+"u8_list_of_u32 i =
+  [ (ucast (and i 0xff)),
+    (ucast (i >> 8)),
+    (ucast (i >> 16)),
+    (ucast (i >> 24))
+  ]"
+
+definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
+"u8_list_of_u64 i =
+  [ (ucast (and i 0xff)),
+    (ucast (i >> 8)),
+    (ucast (i >> 16)),
+    (ucast (i >> 24)),
+    (ucast (i >> 32)),
+    (ucast (i >> 40)),
+    (ucast (i >> 48)),
+    (ucast (i >> 56))
+  ]"
 
 end

@@ -99,44 +99,50 @@ definition eval_testcond :: "testcond \<Rightarrow> regset \<Rightarrow> bool op
 
 datatype outcome = Next regset mem | Stuck
 
-definition nextinstr :: "regset \<Rightarrow> regset" where
-"nextinstr rs = (rs#PC <- (Val.add (rs PC) (Vint 1)))"
+definition nextinstr :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
+"nextinstr sz rs = (rs#PC <- (Val.add (rs PC) (Vint (of_nat sz))))"
 
-definition nextinstr_nf :: "regset \<Rightarrow> regset" where
-"nextinstr_nf rs = nextinstr (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] rs)"
+definition nextinstr_nf :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
+"nextinstr_nf sz rs = nextinstr sz (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] rs)"
 
-definition exec_load :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
-"exec_load chunk m a rs rd = (
+definition exec_load :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
+"exec_load sz chunk m a rs rd = (
   case Mem.loadv chunk m (eval_addrmode64 a rs) of
   None \<Rightarrow> Stuck |
-  Some v \<Rightarrow> Next (nextinstr_nf (rs#rd <- v)) m
+  Some v \<Rightarrow> Next (nextinstr_nf sz (rs#rd <- v)) m
 )"
 
-definition exec_store :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> preg list \<Rightarrow> outcome" where
-"exec_store chunk m a rs r1 destroyed = (
+definition exec_store :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> preg list \<Rightarrow> outcome" where
+"exec_store sz chunk m a rs r1 destroyed = (
   case Mem.storev chunk m (eval_addrmode64 a rs) (rs r1) of
   None \<Rightarrow> Stuck |
-  Some m' \<Rightarrow> Next (nextinstr_nf (undef_regs destroyed rs)) m'
+  Some m' \<Rightarrow> Next (nextinstr_nf sz (undef_regs destroyed rs)) m'
 )"
 
-definition exec_instr :: "instruction \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
-"exec_instr i rs m = (
+definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
+"exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
   \<comment> \<open> Moves \<close>
-  Pmov_rr rd r1 \<Rightarrow> Next (nextinstr (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovl_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Vint n))) m |
-  Pmovq_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Vlong n))) m |
-  Pmovl_rm rd a \<Rightarrow> exec_load M32 m a rs (IR rd) |
-  Pmovq_rm rd a \<Rightarrow> exec_load M64 m a rs (IR rd) |
-  Pmovl_mr a r1 \<Rightarrow> exec_store M32 m a rs (IR r1) [] |
-  Pmovq_mr a r1 \<Rightarrow> exec_store M64 m a rs (IR r1) [] |
+  Pmov_rr   rd r1 \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovl_ri  rd n  \<Rightarrow> Next (nextinstr_nf  sz (rs#(IR rd) <- (Vint n))) m |
+  Pmovq_ri  rd n  \<Rightarrow> Next (nextinstr_nf  sz (rs#(IR rd) <- (Vlong n))) m |
+  Pmovl_rm  rd a  \<Rightarrow> exec_load   sz M32 m a rs (IR rd) |
+  Pmovq_rm  rd a  \<Rightarrow> exec_load   sz M64 m a rs (IR rd) |
+  Pmovl_mr  a r1  \<Rightarrow> exec_store  sz M32 m a rs (IR r1) [] |
+  Pmovq_mr  a r1  \<Rightarrow> exec_store  sz M64 m a rs (IR r1) [] |
   \<comment> \<open> Moves with conversion \<close>
-  Pmovb_mr a r1 \<Rightarrow> exec_store M8 m a rs (IR r1) [] |
-  Pmovw_mr a r1 => exec_store M16 m a rs (IR r1) [] |
+  Pmovb_mr  a r1  \<Rightarrow> exec_store  sz M8  m a rs (IR r1) [] |
+  Pmovw_mr  a r1  \<Rightarrow> exec_store  sz M16 m a rs (IR r1) [] |
   \<comment> \<open> Integer arithmetic \<close>
-  Paddl_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Val.add (rs (IR rd)) (Vint n)))) m |
-  Paddq_ri rd n \<Rightarrow> Next (nextinstr_nf (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
-  _ \<Rightarrow> Stuck
+  Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg  (rs (IR rd))))) m |
+  Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.negl (rs (IR rd))))) m |
+  Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
+  Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
+  Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
+  Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (rs (IR r1))))) m |
+
+  Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
+  _               \<Rightarrow> Stuck
 )"
 
 (**r
@@ -167,18 +173,18 @@ definition exec_instr :: "instruction \<Rightarrow> regset \<Rightarrow> mem \<R
       Next (nextinstr (rs#rd <- (eval_addrmode32 a rs))) m
   | Pleaq rd a =>
       Next (nextinstr (rs#rd <- (eval_addrmode64 a rs))) m
-  | Pnegl rd =>
-      Next (nextinstr_nf (rs#rd <- (Val.neg rs#rd))) m
-  | Pnegq rd =>
-      Next (nextinstr_nf (rs#rd <- (Val.negl rs#rd))) m
+| Pnegl rd =>
+    Next (nextinstr_nf (rs#rd <- (Val.neg rs#rd))) m
+| Pnegq rd =>
+    Next (nextinstr_nf (rs#rd <- (Val.negl rs#rd))) m
 | Paddl_ri rd n =>
     Next (nextinstr_nf (rs#rd <- (Val.add rs#rd (Vint n)))) m
 | Paddq_ri rd n =>
     Next (nextinstr_nf (rs#rd <- (Val.addl rs#rd (Vlong n)))) m
-  | Psubl_rr rd r1 =>
-      Next (nextinstr_nf (rs#rd <- (Val.sub rs#rd rs#r1))) m
-  | Psubq_rr rd r1 =>
-      Next (nextinstr_nf (rs#rd <- (Val.subl rs#rd rs#r1))) m
+| Psubl_rr rd r1 =>
+    Next (nextinstr_nf (rs#rd <- (Val.sub rs#rd rs#r1))) m
+| Psubq_rr rd r1 =>
+    Next (nextinstr_nf (rs#rd <- (Val.subl rs#rd rs#r1))) m
   | Pimull_rr rd r1 =>
       Next (nextinstr_nf (rs#rd <- (Val.mul rs#rd rs#r1))) m
   | Pimulq_rr rd r1 =>
@@ -328,44 +334,6 @@ definition exec_instr :: "instruction \<Rightarrow> regset \<Rightarrow> mem \<R
       Next (nextinstr (rs#rd <- v)) m
   | Psetcc c rd =>
       Next (nextinstr (rs#rd <- (Val.of_optbool (eval_testcond c rs)))) m
-  (** Arithmetic operations over double-precision floats *)
-  | Paddd_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.addf rs#rd rs#r1))) m
-  | Psubd_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.subf rs#rd rs#r1))) m
-  | Pmuld_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.mulf rs#rd rs#r1))) m
-  | Pdivd_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.divf rs#rd rs#r1))) m
-  | Pnegd rd =>
-      Next (nextinstr (rs#rd <- (Val.negf rs#rd))) m
-  | Pabsd rd =>
-      Next (nextinstr (rs#rd <- (Val.absf rs#rd))) m
-  | Pcomisd_ff r1 r2 =>
-      Next (nextinstr (compare_floats (rs r1) (rs r2) rs)) m
-  | Pxorpd_f rd =>
-      Next (nextinstr_nf (rs#rd <- (Vfloat Float.zero))) m
-  | Pmaxsd rd r1 =>
-      Next (nextinstr (rs#rd <- (Op.maxf rs#rd rs#r1))) m
-  | Pminsd rd r1 =>
-      Next (nextinstr (rs#rd <- (Op.minf rs#rd rs#r1))) m
-  (** Arithmetic operations over single-precision floats *)
-  | Padds_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.addfs rs#rd rs#r1))) m
-  | Psubs_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.subfs rs#rd rs#r1))) m
-  | Pmuls_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.mulfs rs#rd rs#r1))) m
-  | Pdivs_ff rd r1 =>
-      Next (nextinstr (rs#rd <- (Val.divfs rs#rd rs#r1))) m
-  | Pnegs rd =>
-      Next (nextinstr (rs#rd <- (Val.negfs rs#rd))) m
-  | Pabss rd =>
-      Next (nextinstr (rs#rd <- (Val.absfs rs#rd))) m
-  | Pcomiss_ff r1 r2 =>
-      Next (nextinstr (compare_floats32 (rs r1) (rs r2) rs)) m
-  | Pxorps_f rd =>
-      Next (nextinstr_nf (rs#rd <- (Vsingle Float32.zero))) m
   (** Branches and calls *)
   | Pjmp_l lbl =>
       goto_label f lbl rs m
@@ -394,8 +362,6 @@ definition exec_instr :: "instruction \<Rightarrow> regset \<Rightarrow> mem \<R
           end
       | _ => Stuck
       end
-  | Pcall_s id sg =>
-      Next (rs#RA <- (Val.offset_ptr rs#PC Ptrofs.one) #PC <- (Genv.symbol_address ge id Ptrofs.zero)) m
   | Pcall_r r sg =>
       Next (rs#RA <- (Val.offset_ptr rs#PC Ptrofs.one) #PC <- (rs r)) m
   | Pret =>

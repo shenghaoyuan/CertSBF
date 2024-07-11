@@ -16,40 +16,6 @@ abbreviation "REGISTER_OTHER_SCRATCH:: u8 \<equiv> CALLER_SAVED_REGISTERS ! 7"
 text \<open> R11: Scratch register \<close>
 abbreviation "REGISTER_SCRATCH :: u8 \<equiv> CALLER_SAVED_REGISTERS ! 8"
 
-
-definition u8_of_bool :: "bool \<Rightarrow> u8" where
-"u8_of_bool b = (
-  case b of
-    True \<Rightarrow> 1 |
-    False \<Rightarrow> 0
-)"
-
-definition u8_list_of_u16 :: "u16 \<Rightarrow> u8 list" where
-"u8_list_of_u16 i =
-  [ (ucast (and i 0xff)),
-    (ucast (i >> 8))
-  ]"
-
-definition u8_list_of_u32 :: "u32 \<Rightarrow> u8 list" where
-"u8_list_of_u32 i =
-  [ (ucast (and i 0xff)),
-    (ucast (i >> 8)),
-    (ucast (i >> 16)),
-    (ucast (i >> 24))
-  ]"
-
-definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
-"u8_list_of_u64 i =
-  [ (ucast (and i 0xff)),
-    (ucast (i >> 8)),
-    (ucast (i >> 16)),
-    (ucast (i >> 24)),
-    (ucast (i >> 32)),
-    (ucast (i >> 40)),
-    (ucast (i >> 48)),
-    (ucast (i >> 56))
-  ]"
-
 datatype OperandSize = S0 | S8 | S16 | S32 | S64
 
 datatype RuntimeEnvironmentSlot =
