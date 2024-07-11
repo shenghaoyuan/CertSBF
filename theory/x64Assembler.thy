@@ -20,7 +20,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
       (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x89 in
-    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg rd) (u8_of_ireg r1) in
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
       Some [prefix, rex, op, rop] |
 
   \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
@@ -29,7 +29,15 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
   )"
 
 fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
-"x64_assemble l = None"
-
+"x64_assemble [] = Some []" |
+"x64_assemble (h#t) = (
+  case x64_assemble_one_instruction h of
+  None \<Rightarrow> None |
+  Some l1 \<Rightarrow> (
+    case x64_assemble t of
+    None \<Rightarrow> None |
+    Some l \<Rightarrow> Some (l1@l)
+  )
+)"
 
 end

@@ -63,6 +63,6 @@ definition construct_rex_to_u8 :: "bool \<Rightarrow> bool \<Rightarrow> bool \<
 "
 
 definition construct_modsib_to_u8 :: "u8 \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8" where
-"construct_modsib_to_u8 op1 op2 op3 = or (or (op1 << 6) (op2 << 3)) op3"
+"construct_modsib_to_u8 op1 op2 op3 = or (or ((and 0b11 op1) << 6) ((and 0b111 op2) << 3)) (and 0b111 op3)"
 
 end
