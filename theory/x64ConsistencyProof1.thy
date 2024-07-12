@@ -60,85 +60,22 @@ lemma pmov_src [simp]: "or 64
        = Some r1"
   apply (unfold u8_of_bool_def bitfield_insert_u8_def Let_def)
   apply (cases r1)
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
-
-  subgoal
-    apply simp
-    subgoal by (cases rd, auto simp add: ireg_of_u8_def)
-    done
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
+  subgoal by (cases rd, auto simp add: ireg_of_u8_def)
   done
 
 lemma x64assemble_disassemble_consistency:
@@ -181,325 +118,22 @@ lemma x64assemble_disassemble_consistency:
                 = Some r1" using pmov_src \<close>
 
                 apply (cases r1)
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
-
-                subgoal
-                  apply (cases rd)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  subgoal by (unfold bitfield_insert_u8_def Let_def ireg_of_u8_def, simp)
-                  done
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
                 done
               done
             done
@@ -520,8 +154,5 @@ lemma x64assemble_disassemble_consistency:
         done
       done
     done
-
-    done
-  done
 
 end
