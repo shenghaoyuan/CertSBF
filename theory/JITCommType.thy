@@ -73,7 +73,7 @@ offset_in_text_section :: nat \<comment> \<open> usize is refined to nat \<close
 (*
     executable: &'a Executable<C>,
     program: &'a [u8],
-    program_vm_addr: u64, *)
+    program_vm_BPF_ADDr: u64, *)
 jit_config  :: Config
 jit_pc :: usize (*
     last_instruction_meter_validation_pc: usize,

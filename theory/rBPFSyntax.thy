@@ -23,14 +23,14 @@ fun arch2int :: "arch \<Rightarrow> int" where
 datatype condition = Eq | Gt | Ge | Lt | Le | SEt | Ne | SGt | SGe | SLt | SLe
 
 datatype binop = BPF_ADD | BPF_SUB | BPF_MUL | BPF_DIV | BPF_OR | BPF_AND |
-  BPF_LSH | BPF_RSH | BPF_MOD | BPF_XOR | BPF_MOV | BPF_ARSH
+  BPF_LSH | BPF_RSH | BPF_MOD | BPF_XOR | BPF_MOV | BPF_ARSH 
 
 datatype pqrop = BPF_LMUL | BPF_UDIV | BPF_UREM | BPF_SDIV | BPF_SREM
 
 datatype pqrop2 = BPF_UHMUL | BPF_SHMUL
 
 datatype chunk = Byte | HalfWord | SWord | DWord 
-
+                                                
 datatype SBPFV = V1 (* The legacy format *) |
  V2 (* The current SOImm *)(* |
  V3  The future format with BTF support *)
