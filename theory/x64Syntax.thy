@@ -98,7 +98,7 @@ datatype preg = PC | IR ireg | CR crbit | RA
 
 abbreviation "RIP \<equiv> PC"  \<comment> \<open> the RIP register in x86-64 (x64) architecture is the equivalent of the program counter (PC) in many other architectures.  \<close>
   
-abbreviation "SP \<equiv> RSP"
+abbreviation "SP \<equiv> RSP" 
 
 type_synonym label = nat
 
@@ -164,6 +164,7 @@ datatype instruction =
   | Pleaq ireg addrmode
   | Pnegl ireg
   | Pnegq ireg
+  | Paddq_rr ireg ireg
   | Paddl_ri ireg u32
   | Paddq_ri ireg u64
   | Psubl_rr ireg ireg
