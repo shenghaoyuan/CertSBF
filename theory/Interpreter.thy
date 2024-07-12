@@ -6,26 +6,11 @@ imports
   rBPFCommType rBPFSyntax vm_state vm
 begin
 
-text \<open> TBC \<close>
-
-
-subsection  \<open> Interpreter State \<close>
-text \<open> the state is a record including
-- a list of rBPF instructions (maybe as global varaible of `step`)
-- registers
-- memory_model
-- VM configuration
-- ... \<close>
+subsubsection  \<open> Interpreter State \<close>
 
 type_synonym reg_map = "bpf_preg \<Rightarrow> u64"
 
 type_synonym mem = "(u64, u64) map"
-
-type_synonym func_key = u32
-
-type_synonym func_val = u64
-
-type_synonym func_map = "(func_key, func_val) map"
 
 record stack_state = 
 call_depth :: u64
@@ -42,10 +27,13 @@ location :: Location
 
 consts program_vm_addr::u64 
 
-consts fm::func_map
+type_synonym func_key = u32
 
-subsection  \<open> ALU \<close>
-text \<open> ALU32 semantics \<close>
+type_synonym func_val = u64
+
+type_synonym func_map = "(func_key, func_val) map"
+
+consts fm::func_map
 
 definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
 "eval_reg dst rs = rs (BR dst)"
@@ -56,6 +44,8 @@ definition upd_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64 \<Rightarr
 fun eval_snd_op :: "snd_op \<Rightarrow> reg_map \<Rightarrow> u64" where
 "eval_snd_op (SOImm i) _ = (ucast) i" |
 "eval_snd_op (SOReg r) rs = rs (BR r)"
+
+subsection  \<open> ALU \<close>
 
 abbreviation bit_left_shift ::
   "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix "<<" 50)
@@ -174,12 +164,6 @@ definition eval_alu64 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
   _ \<Rightarrow> None
 )"
 
-definition eval_pc :: "reg_map \<Rightarrow> u64" where
-"eval_pc rs  = rs BPC"
-
-definition upd_pc :: " reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
-"upd_pc rs v =  rs (BPC := v)"
-
 definition eval_neg32 :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_neg32 dst rs is_v1 = (if is_v1 then (let dv::i32 = ucast (eval_reg dst rs) in 
   ( Some (upd_reg dst rs (ucast(-dv)::u64))))
@@ -220,6 +204,8 @@ fun from_bytes :: "u8 list \<Rightarrow> nat \<Rightarrow> int" where
   "from_bytes _ 0 = 0" |
   "from_bytes x (Suc n) = (uint ((ucast(x!n)::u64) << 8*n)) + from_bytes x n"
 
+(*
+text \<open> tests \<close>
 definition a :: u64 where "a = 0x12345678ABCDEF"
 definition b :: u64 where "b = 0x0F0F0F0F0F0F0F0F"
 definition c :: u16 where "c = 0x1234"
@@ -244,6 +230,7 @@ value "of_int(from_bytes (rev(to_be_16 c 4)) 4)::u16"
 value "a"
 
 value "of_int(from_bytes (rev(to_be_64 a 8)) 8)::u64"
+*)
 
 definition eval_le :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_le dst imm rs is_v1 = (if is_v1 then (let dv = eval_reg dst rs in ((
@@ -262,6 +249,15 @@ definition eval_be :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Right
   else None)))
   else None
 )"
+
+definition eval_hor64 :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
+"eval_hor64 dst imm rs is_v1 = 
+(if is_v1 then (let dv::u64 = ucast (eval_reg dst rs); dv2 = or dv (((ucast imm)::u64) << 32) in 
+    ( Some (upd_reg dst rs dv2)))
+  else None
+)"
+
+subsection  \<open> PQR \<close>
 
 definition eval_pqr32_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_pqr32_aux1 pop dst sop rs  = (
@@ -338,6 +334,8 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
   BPF_SHMUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv_i div sv_i)>>64))  
 ))))))"
 
+subsection  \<open> MEM \<close>
+
 definition store_mem::"mem_len \<Rightarrow> i64 \<Rightarrow> usize \<Rightarrow> mem \<Rightarrow> mem" where  
 "store_mem len val vm_addr mem = mem (vm_addr := Some ((ucast val)::u64))" \<comment> \<open> should be size of u8/u16/u32/u64 \<close>
 
@@ -372,12 +370,14 @@ definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<
                   _ \<Rightarrow>  Some (upd_reg dst rs (the val))
 ))))"
 
-definition eval_hor64 :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_hor64 dst imm rs is_v1 = 
-(if is_v1 then (let dv::u64 = ucast (eval_reg dst rs); dv2 = or dv (((ucast imm)::u64) << 32) in 
-    ( Some (upd_reg dst rs dv2)))
-  else None
-)"
+
+subsection  \<open> JUMP \<close>
+
+definition eval_pc :: "reg_map \<Rightarrow> u64" where
+"eval_pc rs  = rs BPC"
+
+definition upd_pc :: " reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
+"upd_pc rs v =  rs (BPC := v)"
 
 definition eval_jmp_aux1 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_jmp_aux1 cond dst sop rs off is_v1 = (
@@ -424,6 +424,8 @@ definition eval_jmp :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Ri
   SLe \<Rightarrow> eval_jmp_aux2 cond dst sop rs off is_v1 
 )"
 
+subsection  \<open> CALL \<close>
+
 definition get_function_registry ::"func_key \<Rightarrow> func_val option" where
 "get_function_registry key = fm key"
 
@@ -459,6 +461,8 @@ definition eval_call_imm :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<
 definition pop_frame:: "stack_state \<Rightarrow> CallFrame" where 
 "pop_frame ss = (call_frames ss)!(unat (call_depth ss)) "
 
+subsection  \<open> EXIT \<close>
+
 definition eval_exit :: "Config \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
 "eval_exit conf rs ss is_v1 = (
   if call_depth ss = 0 then None else 
@@ -468,6 +472,8 @@ definition eval_exit :: "Config \<Rightarrow> reg_map \<Rightarrow> stack_state 
    let pc = target_pc frame; rs' = upd_pc rs' pc in 
    Some (rs',ss')
 ))"
+
+subsection  \<open> step \<close>
 
 fun step :: "Config \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> Location \<Rightarrow> bool \<Rightarrow> rbpf_state option" where
 "step conf ins rs m ss l is_v1 =
@@ -552,15 +558,6 @@ fun steps :: "Config \<Rightarrow> ebpf_asm \<Rightarrow> nat \<Rightarrow> rbpf
      if temp \<noteq> None then steps conf prog (max_steps-1) (the temp) else None
    else None))"
 
-
-
-
-
-subsection  \<open> JUMP \<close>
-subsection  \<open> MEM \<close>
-subsection  \<open> CALL \<close>
-subsection  \<open> EXIT \<close>
-subsection  \<open> step \<close>
 
 
 value "((ucast ((ucast (-1::i32))::u64)) :: u32)"
