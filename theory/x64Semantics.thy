@@ -136,6 +136,7 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   \<comment> \<open> Integer arithmetic \<close>
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg  (rs (IR rd))))) m |
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.negl (rs (IR rd))))) m |
+  Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (rs (IR r1))))) m |
   Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
   Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
   Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
