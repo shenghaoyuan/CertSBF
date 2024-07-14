@@ -38,12 +38,31 @@ consts fm::func_map
 definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
 "eval_reg dst rs = rs (BR dst)"
 
+(*
 definition upd_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
-"upd_reg dst rs v =  rs (BR dst := v)"
+"upd_reg dst rs v =  rs (BR dst := v)" *)
 
-fun eval_snd_op :: "snd_op \<Rightarrow> reg_map \<Rightarrow> u64" where
-"eval_snd_op (SOImm i) _ = (ucast) i" |
-"eval_snd_op (SOReg r) rs = rs (BR r)"
+syntax "_upd_reg" :: "'a => 'b => 'c => 'a" ("_ # _ <-- _" [1000, 1000, 1000] 1)
+
+(* Define the translation for the notation *)
+translations
+  "_upd_reg a b c" => "a(b := c)"
+
+fun eval_snd_op_i32 :: "snd_op \<Rightarrow> reg_map \<Rightarrow> i32" where
+"eval_snd_op_i32 (SOImm i) _ = scast i" |
+"eval_snd_op_i32 (SOReg r) rs = scast (rs (BR r))"
+
+fun eval_snd_op_u32 :: "snd_op \<Rightarrow> reg_map \<Rightarrow> u32" where
+"eval_snd_op_u32 (SOImm i) _ = ucast i" |
+"eval_snd_op_u32 (SOReg r) rs = ucast (rs (BR r))"
+
+fun eval_snd_op_i64 :: "snd_op \<Rightarrow> reg_map \<Rightarrow> i64" where
+"eval_snd_op_i64 (SOImm i) _ = scast i" |
+"eval_snd_op_i64 (SOReg r) rs = scast (rs (BR r))"
+
+fun eval_snd_op_u64 :: "snd_op \<Rightarrow> reg_map \<Rightarrow> u64" where
+"eval_snd_op_u64 (SOImm i) _ = ucast i" |
+"eval_snd_op_u64 (SOReg r) rs = rs (BR r)"
 
 subsection  \<open> ALU \<close>
 
@@ -57,94 +76,96 @@ where "x >> n \<equiv> drop_bit n x"
 
 definition eval_alu32_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_alu32_aux1 bop dst sop rs is_v1 = (
-  let dv :: i32 = ucast (eval_reg dst rs) in (
-  let sv :: i32 = ucast (eval_snd_op sop rs) in (
+  let dv :: i32 = scast (eval_reg dst rs) in (
+  let sv :: i32 = eval_snd_op_i32 sop rs in (
   case bop of
-  BPF_ADD \<Rightarrow> Some (upd_reg dst rs (ucast (dv + sv))) |
-  BPF_SUB \<Rightarrow> (case sop of (SOReg i) \<Rightarrow> Some (upd_reg dst rs (ucast (dv - sv))) |
-                           _ \<Rightarrow> (if is_v1 then Some (upd_reg dst rs (ucast (dv - sv))) 
-                                else Some (upd_reg dst rs (ucast (sv - dv))))) |
-  BPF_MUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv * sv))) |
+  BPF_ADD \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv + sv))) |
+  BPF_SUB \<Rightarrow> (case sop of (SOReg i) \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv - sv))) |
+                           _ \<Rightarrow> (if is_v1 then Some (rs#(BR dst) <-- (ucast (dv - sv))) 
+                                else Some (rs#(BR dst) <-- (ucast (sv - dv))))) |
+  BPF_MUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv * sv))) |
   _ \<Rightarrow> None
 )))"
 
 definition eval_alu32_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_alu32_aux2 bop dst sop rs = (
   let dv :: u32 = ucast (eval_reg dst rs) in (
-  let sv :: u32 = ucast (eval_snd_op sop rs) in (
+  let sv :: u32 = eval_snd_op_u32 sop rs in (
   case bop of
-  BPF_DIV \<Rightarrow> Some (upd_reg dst rs (ucast (dv div sv))) |
-  BPF_OR \<Rightarrow> Some (upd_reg dst rs (ucast (dv * sv))) |
-  BPF_AND \<Rightarrow> Some (upd_reg dst rs (ucast (and dv sv))) |
-  BPF_MOD \<Rightarrow> Some (upd_reg dst rs (ucast (dv mod sv))) |
-  BPF_XOR \<Rightarrow> Some (upd_reg dst rs (ucast (or dv sv))) |
-  BPF_MOV \<Rightarrow> Some (upd_reg dst rs (ucast sv)) |
-  BPF_LSH \<Rightarrow> Some (upd_reg dst rs (ucast sv >> unat sv)) |  
-  BPF_RSH \<Rightarrow> Some (upd_reg dst rs (ucast (sv >> unat sv))) | 
+  BPF_DIV \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv div sv))) | \<comment>  \<open> TODO: Rust code how to deal with `sv = 0`? \<close>
+  BPF_OR  \<Rightarrow> Some (rs#(BR dst) <-- (ucast (or dv sv))) |
+  BPF_AND \<Rightarrow> Some (rs#(BR dst) <-- (ucast (and dv sv))) |
+  BPF_MOD \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv mod sv))) | \<comment>  \<open> TODO: Rust code how to deal with `sv = 0`? \<close>
+  BPF_XOR \<Rightarrow> Some (rs#(BR dst) <-- (ucast (xor dv sv))) |
+  BPF_MOV \<Rightarrow> Some (rs#(BR dst) <-- (ucast sv)) |
+  BPF_LSH \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv << unat sv))) |
+  BPF_RSH \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv >> unat sv))) |
   _ \<Rightarrow> None
 )))"
 
 definition eval_alu32_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_alu32_aux3 bop dst sop rs  = (
-  let dv :: i32 = ucast (eval_reg dst rs) in (
-  let sv :: u32 = ucast (eval_snd_op sop rs) in (
+  let dv :: i32 = scast (eval_reg dst rs) in (
+  let sv :: u32 = eval_snd_op_u32 sop rs in (
   case bop of
-  BPF_ARSH \<Rightarrow> Some (upd_reg dst rs (and (ucast (dv << unat sv)::u64) (ucast u32_MAX)) ) | 
+  BPF_ARSH \<Rightarrow> Some (rs#(BR dst) <-- (and (ucast (dv << unat sv)::u64) (ucast u32_MAX)) ) | 
   _ \<Rightarrow> None
 )))"
 
 definition eval_alu32 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_alu32 bop dst sop rs is_v1 = (
   case bop of
-  BPF_ADD \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
-  BPF_SUB \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
-  BPF_MUL \<Rightarrow> if is_v1 then eval_alu32_aux1 bop dst sop rs is_v1 else None|
-  BPF_DIV \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
-  BPF_OR \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
-  BPF_AND \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
-  BPF_MOD \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
-  BPF_XOR \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
-  BPF_MOV \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
-  BPF_LSH \<Rightarrow> eval_alu32_aux2 bop dst sop rs  | 
-  BPF_RSH \<Rightarrow> eval_alu32_aux2 bop dst sop rs |
-  BPF_ARSH \<Rightarrow> eval_alu32_aux3 bop dst sop rs 
+  BPF_ADD   \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
+  BPF_SUB   \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
+  BPF_MUL   \<Rightarrow> if is_v1 then eval_alu32_aux1 bop dst sop rs is_v1 else None|
+  BPF_DIV   \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
+  BPF_OR    \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_AND   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_MOD   \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
+  BPF_XOR   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_MOV   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_LSH   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  | 
+  BPF_RSH   \<Rightarrow> eval_alu32_aux2 bop dst sop rs |
+  BPF_ARSH  \<Rightarrow> eval_alu32_aux3 bop dst sop rs 
 )"
 
 definition eval_alu64_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_alu64_aux1 bop dst sop rs is_v1 = (
-  let dv :: u64 = ucast (eval_reg dst rs) in (
-  let sv :: u64 = ucast (eval_snd_op sop rs) in (
+  let dv :: u64 = eval_reg dst rs in (
+  let sv :: u64 = eval_snd_op_u64 sop rs in (
   case bop of
-  BPF_ADD \<Rightarrow> Some (upd_reg dst rs (ucast (dv + sv))) |
-  BPF_SUB \<Rightarrow> (case sop of (SOReg i) \<Rightarrow> Some (upd_reg dst rs (ucast (dv - sv))) |
-                           _ \<Rightarrow> (if is_v1 then Some (upd_reg dst rs (ucast (dv - sv))) 
-                                else Some (upd_reg dst rs (ucast (sv - dv))))) |
-  BPF_MUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv * sv))) |
-  BPF_DIV \<Rightarrow> Some (upd_reg dst rs (ucast (dv div sv))) |
-  BPF_OR \<Rightarrow> Some (upd_reg dst rs (ucast (or dv sv))) |
-  BPF_AND \<Rightarrow> Some (upd_reg dst rs (ucast (and dv sv))) |
-  BPF_MOD \<Rightarrow> Some (upd_reg dst rs (ucast (dv mod sv))) |
-  BPF_XOR \<Rightarrow> Some (upd_reg dst rs (ucast (xor dv sv))) |
-  BPF_MOV \<Rightarrow> Some (upd_reg dst rs (ucast sv)) |
+  BPF_ADD \<Rightarrow> Some (rs#(BR dst) <-- (dv + sv)) |
+  BPF_SUB \<Rightarrow> (case sop of (SOReg i) \<Rightarrow> Some (rs#(BR dst) <-- (dv - sv)) |
+                           _ \<Rightarrow> (if is_v1 then Some (rs#(BR dst) <-- (dv - sv)) 
+                                else Some (rs#(BR dst) <-- (sv - dv)))) |
+  BPF_MUL \<Rightarrow> Some (rs#(BR dst) <-- (dv * sv)) |
+  BPF_DIV \<Rightarrow> Some (rs#(BR dst) <-- (dv div sv)) |
+  BPF_OR  \<Rightarrow> Some (rs#(BR dst) <-- (or dv sv)) |
+  BPF_AND \<Rightarrow> Some (rs#(BR dst) <-- (and dv sv)) |
+  BPF_MOD \<Rightarrow> Some (rs#(BR dst) <-- (dv mod sv)) |
+  BPF_XOR \<Rightarrow> Some (rs#(BR dst) <-- (xor dv sv)) |
+  BPF_MOV \<Rightarrow> Some (rs#(BR dst) <-- sv) |
   _ \<Rightarrow> None
 
 )))"
+
+(*
 definition eval_alu64_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_alu64_aux2 bop dst sop rs = (
-  let dv :: u64 = ucast (eval_reg dst rs) in (
-  let sv :: u32 = ucast (eval_snd_op sop rs) in (
+  let dv :: u64 = eval_reg dst rs in (
+  let sv :: u32 = eval_snd_op_u32 sop rs in (
   case bop of
-  BPF_LSH \<Rightarrow> Some (upd_reg dst rs (dv << unat sv) ) |  \<comment> \<open> to unat \<close>
-  BPF_RSH \<Rightarrow> Some (upd_reg dst rs (dv << unat sv)) |  \<comment> \<open> to unat \<close>
+  BPF_LSH \<Rightarrow> Some (rs#(BR dst) <-- (dv << unat sv) ) |  \<comment> \<open> to unat \<close>
+  BPF_RSH \<Rightarrow> Some (rs#(BR dst) <-- (dv >> unat sv)) |  \<comment> \<open> to unat \<close>
   _ \<Rightarrow> None
-)))"
+)))" *)
 
 definition eval_alu64_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_alu64_aux3 bop dst sop rs = (
-  let dv :: i64 = ucast (eval_reg dst rs) in (
-  let sv :: u32 = ucast (eval_snd_op sop rs) in (
+  let dv :: i64 = scast (eval_reg dst rs) in (
+  let sv :: u32 = eval_snd_op_u32 sop rs in (
   case bop of
-  BPF_ARSH \<Rightarrow> Some (upd_reg dst rs (ucast (dv << unat sv)::u64)) |
+  BPF_ARSH \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv >> unat sv)::u64)) |
   _ \<Rightarrow> None
 )))"
 
@@ -165,16 +186,18 @@ definition eval_alu64 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
 )"
 
 definition eval_neg32 :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_neg32 dst rs is_v1 = (if is_v1 then (let dv::i32 = ucast (eval_reg dst rs) in 
-  ( Some (upd_reg dst rs (ucast(-dv)::u64))))
+"eval_neg32 dst rs is_v1 = (if is_v1 then (let dv::i32 = scast (eval_reg dst rs) in 
+    Some ( rs#(BR dst) <-- (and (ucast(-dv)::u64) (ucast u32_MAX))) )
   else None
 )"
 
 definition eval_neg64 :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_neg64 dst rs is_v1 = (if is_v1 then (let dv::i64 = ucast (eval_reg dst rs) in 
-  ( Some (upd_reg dst rs (ucast(-dv)::u64))))
+"eval_neg64 dst rs is_v1 = (if is_v1 then (let dv::i64 = scast (eval_reg dst rs) in 
+    Some ( rs#(BR dst) <-- (ucast(-dv)::u64)) )
   else None
 )"
+
+(**r TODO: stop here *)
 
 fun to_le_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
   "to_le_64 w 0 = []" |
@@ -234,26 +257,26 @@ value "of_int(from_bytes (rev(to_be_64 a 8)) 8)::u64"
 
 definition eval_le :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_le dst imm rs is_v1 = (if is_v1 then (let dv = eval_reg dst rs in ((
-  if imm = 16 then let x = ucast(dv)::u16; val = of_int(from_bytes (rev(to_le_16 x 4)) 4)::u64 in Some (upd_reg dst rs val)
-  else if imm = 32 then let x = ucast(dv)::u32; val = of_int(from_bytes (rev (to_le_32 x 4)) 4)::u64 in  Some (upd_reg dst rs val)
-  else if imm = 64 then let val = of_int(from_bytes (rev (to_le_64 dv 4)) 4)::u64 in Some (upd_reg dst rs val)
+        if imm = 16 then let x = ucast(dv)::u16; v = of_int(from_bytes (rev(to_le_16 x 4)) 4)::u64 in Some (rs#(BR dst) <-- v)
+  else  if imm = 32 then let x = ucast(dv)::u32; v = of_int(from_bytes (rev (to_le_32 x 4)) 4)::u64 in  Some (rs#(BR dst) <-- v)
+  else  if imm = 64 then let v = of_int(from_bytes (rev (to_le_64 dv 4)) 4)::u64 in Some (rs#(BR dst) <-- v)
   else None)))
   else None
 )"
 
 definition eval_be :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_be dst imm rs is_v1 = (if is_v1 then (let dv = eval_reg dst rs in ((
-  if imm = 16 then let x = ucast(dv)::u16; val = of_int(from_bytes (rev (to_be_16 x 4)) 4)::u64 in Some (upd_reg dst rs val)
-  else if imm = 32 then let x = ucast(dv)::u32; val = of_int(from_bytes (rev(to_be_32 x 4)) 4)::u64 in  Some (upd_reg dst rs val)
-  else if imm = 64 then let val = of_int(from_bytes (rev (to_be_64 dv 4)) 4)::u64 in Some (upd_reg dst rs val)
+        if imm = 16 then let x = ucast(dv)::u16; v = of_int(from_bytes (rev (to_be_16 x 4)) 4)::u64 in Some (rs#(BR dst) <-- v)
+  else  if imm = 32 then let x = ucast(dv)::u32; v = of_int(from_bytes (rev(to_be_32 x 4)) 4)::u64 in  Some (rs#(BR dst) <-- v)
+  else  if imm = 64 then let v = of_int(from_bytes (rev (to_be_64 dv 4)) 4)::u64 in Some (rs#(BR dst) <-- v)
   else None)))
   else None
 )"
 
 definition eval_hor64 :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_hor64 dst imm rs is_v1 = 
-(if is_v1 then (let dv::u64 = ucast (eval_reg dst rs); dv2 = or dv (((ucast imm)::u64) << 32) in 
-    ( Some (upd_reg dst rs dv2)))
+(if is_v1 then (let dv::u64 = eval_reg dst rs; dv2 = or dv (((ucast imm)::u64) << 32) in 
+    ( Some (rs#(BR dst) <-- dv2)))
   else None
 )"
 
@@ -262,21 +285,21 @@ subsection  \<open> PQR \<close>
 definition eval_pqr32_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_pqr32_aux1 pop dst sop rs  = (
   let dv :: i32 = ucast (eval_reg dst rs) in (
-  let sv :: i32 = ucast (eval_snd_op sop rs) in (
+  let sv :: i32 = eval_snd_op_i32 sop rs in (
   case pop of
-  BPF_LMUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv * sv))) |
-  BPF_SDIV \<Rightarrow> Some (upd_reg dst rs (ucast (dv div sv))) |
-  BPF_SREM \<Rightarrow> Some (upd_reg dst rs (ucast (dv mod sv))) |
+  BPF_LMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv * sv))) |
+  BPF_SDIV \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv div sv))) |
+  BPF_SREM \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv mod sv))) |
   _ \<Rightarrow> None
 )))"
 
 definition eval_pqr32_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_pqr32_aux2 pop dst sop rs = (
   let dv :: u32 = ucast (eval_reg dst rs) in (
-  let sv :: u32 = ucast (eval_snd_op sop rs) in (
+  let sv :: u32 = eval_snd_op_u32 sop rs in (
   case pop of
-  BPF_UDIV \<Rightarrow> Some (upd_reg dst rs (ucast (dv div sv))) |
-  BPF_UREM \<Rightarrow> Some (upd_reg dst rs (ucast (dv mod sv))) |
+  BPF_UDIV \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv div sv))) |
+  BPF_UREM \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv mod sv))) |
   _ \<Rightarrow> None
 
 )))"
@@ -294,21 +317,21 @@ definition eval_pqr32 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
 
 definition eval_pqr64_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_pqr64_aux1 pop dst sop rs  = (
-  let dv :: u64 = ucast (eval_reg dst rs) in (
-  let sv :: u64 = ucast (eval_snd_op sop rs) in (
+  let dv :: u64 = eval_reg dst rs in (
+  let sv :: u64 = eval_snd_op_u64 sop rs in (
   case pop of
-  BPF_LMUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv * sv))) |  
-  BPF_UDIV \<Rightarrow> Some (upd_reg dst rs (ucast (dv div sv))) | 
-  BPF_UREM \<Rightarrow> Some (upd_reg dst rs (ucast (dv mod sv)))  
+  BPF_LMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv * sv))) |  
+  BPF_UDIV \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv div sv))) | 
+  BPF_UREM \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv mod sv)))  
 )))"
 
 definition eval_pqr64_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
 "eval_pqr64_aux2 pop dst sop rs = (
   let dv :: i64 = ucast (eval_reg dst rs) in (
-  let sv :: i64 = ucast (eval_snd_op sop rs) in (
+  let sv :: i64 = eval_snd_op_i64 sop rs in (
   case pop of
-  BPF_SDIV \<Rightarrow> Some (upd_reg dst rs (ucast (dv div sv))) | 
-  BPF_SREM \<Rightarrow> Some (upd_reg dst rs (ucast (dv mod sv)))   
+  BPF_SDIV \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv div sv))) | 
+  BPF_SREM \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv mod sv)))   
 )))"
 
 definition eval_pqr64 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
@@ -326,24 +349,24 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
 "eval_pqr64_2 pop2 dst sop rs is_v1 = (
   if is_v1 then None else(
   let dv_u :: u128 = ucast (eval_reg dst rs) in (
-  let sv_u :: u128 = ucast (eval_snd_op sop rs) in (
+  let sv_u :: u128 = ucast (eval_snd_op_u64 sop rs) in (
   let dv_i :: u128 = ucast (ucast (eval_reg dst rs)::i64) in (
   let sv_i :: u128 = ucast (ucast (eval_reg dst rs)::i64) in (
   case pop2 of
-  BPF_UHMUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv_u * sv_u)>>64)) |
-  BPF_SHMUL \<Rightarrow> Some (upd_reg dst rs (ucast (dv_i div sv_i)>>64))  
+  BPF_UHMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv_u * sv_u)>>64)) |
+  BPF_SHMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv_i div sv_i)>>64))  \<comment> \<open> TODO: why div? \<close>
 ))))))"
 
 subsection  \<open> MEM \<close>
 
 definition store_mem::"mem_len \<Rightarrow> i64 \<Rightarrow> usize \<Rightarrow> mem \<Rightarrow> mem" where  
-"store_mem len val vm_addr mem = mem (vm_addr := Some ((ucast val)::u64))" \<comment> \<open> should be size of u8/u16/u32/u64 \<close>
+"store_mem len v vm_addr mem = mem (vm_addr := Some ((ucast v)::u64))" \<comment> \<open> should be size of u8/u16/u32/u64 \<close>
 
 definition eval_store :: "chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> mem option" where
 "eval_store chk dst sop off rs mem = (
-  let dv :: i64 = ucast (eval_reg dst rs) in (
-  let vm_addr :: u64 = ucast (dv + (ucast off)) in (
-  let sv :: i64 = ucast (eval_snd_op sop rs) in (
+  let dv :: i64 = scast (eval_reg dst rs) in (
+  let vm_addr :: u64 = ucast (dv + (ucast off)) in (  \<comment> \<open> TODO: + is signed or unsigned? \<close>
+  let sv :: i64 = eval_snd_op_i64 sop rs in (
   let size = case chk of Byte \<Rightarrow> u8 | HalfWord \<Rightarrow> u16 | SWord \<Rightarrow> u32 | DWord \<Rightarrow> u64 in (
   Some (store_mem size sv vm_addr mem)
 )))))"
@@ -353,21 +376,21 @@ definition load_mem::"mem_len \<Rightarrow> usize \<Rightarrow> mem \<Rightarrow
 
 definition eval_load :: "chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
 "eval_load chk dst sop off rs mem = (
-  let sv :: i64 = ucast (eval_snd_op (SOReg sop) rs) in (
-  let vm_addr :: u64 = ucast (sv + (ucast off)) in (
+  let sv :: i64 = eval_snd_op_i64 (SOReg sop) rs in (
+  let vm_addr :: u64 = ucast (sv + (ucast off)) in (  \<comment> \<open> TODO: + is signed or unsigned? \<close>
   let size = case chk of Byte \<Rightarrow> u8 | HalfWord \<Rightarrow> u16 | SWord \<Rightarrow> u32 | DWord \<Rightarrow> u64 in (
-  let val = (load_mem size vm_addr mem) in (
-     case val of None \<Rightarrow> None |
-                  _ \<Rightarrow>  Some (upd_reg dst rs (the val))
+  let v = (load_mem size vm_addr mem) in (
+     case v of None \<Rightarrow> None |
+                  _ \<Rightarrow>  Some (rs#(BR dst) <-- (the v))
 )))))"
 
 definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
 "eval_load_imm dst imm1 imm2 rs mem = (
-  let sv :: i64 = ucast (eval_snd_op (SOImm imm1) rs) in (
+  let sv :: i64 = eval_snd_op_i64 (SOImm imm1) rs in (
   let vm_addr :: u64 = ucast (sv + (ucast imm2)) in (
-  let val = (load_mem u64 vm_addr mem) in (
-     case val of None \<Rightarrow> None |
-                  _ \<Rightarrow>  Some (upd_reg dst rs (the val))
+  let v = (load_mem u64 vm_addr mem) in (
+     case v of None \<Rightarrow> None |
+                  _ \<Rightarrow>  Some (rs#(BR dst) <-- (the v))
 ))))"
 
 
@@ -376,35 +399,36 @@ subsection  \<open> JUMP \<close>
 definition eval_pc :: "reg_map \<Rightarrow> u64" where
 "eval_pc rs  = rs BPC"
 
+(*
 definition upd_pc :: " reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
-"upd_pc rs v =  rs (BPC := v)"
+"upd_pc rs v =  rs (BPC := v)" *)
 
 definition eval_jmp_aux1 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> reg_map option" where
 "eval_jmp_aux1 cond dst sop rs off = (
-  let dv :: u64 = ucast (eval_reg dst rs) in (
-  let sv :: u64 = ucast (eval_snd_op sop rs) in (
-  let pc :: u64 = ucast (ucast off + ucast(eval_pc rs)::i64) in (
+  let dv :: u64 = eval_reg dst rs in (
+  let sv :: u64 = eval_snd_op_u64 sop rs in (
+  let pc :: u64 = ucast (ucast off + ucast(eval_pc rs)::i64) in (  \<comment> \<open> TODO: + is signed or unsigned? \<close>
   case cond of
-  Eq \<Rightarrow> (if dv = sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  Gt \<Rightarrow> (if dv > sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  Ge \<Rightarrow> (if dv \<ge> sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  Lt \<Rightarrow> (if dv < sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  Le \<Rightarrow> (if dv \<le> sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SEt \<Rightarrow> (if (and dv sv\<noteq>0) then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  Ne \<Rightarrow> (if dv \<noteq> sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
+  Eq \<Rightarrow> (if dv = sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  Gt \<Rightarrow> (if dv > sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  Ge \<Rightarrow> (if dv \<ge> sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  Lt \<Rightarrow> (if dv < sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  Le \<Rightarrow> (if dv \<le> sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  SEt \<Rightarrow> (if (and dv sv\<noteq>0) then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  Ne \<Rightarrow> (if dv \<noteq> sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
   _ \<Rightarrow> None
 ))))"
 
 definition eval_jmp_aux2 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> reg_map option" where
 "eval_jmp_aux2 cond dst sop rs off = (
   let dv :: i64 = scast (eval_reg dst rs) in (
-  let sv :: i64 = scast (eval_snd_op sop rs) in (
-  let pc :: u64 = ucast (ucast off + ucast(eval_pc rs)::i64) in (
+  let sv :: i64 = eval_snd_op_i64 sop rs in (
+  let pc :: u64 = ucast (ucast off + ucast(eval_pc rs)::i64) in ( 
   case cond of
-  SGt \<Rightarrow> (if sv <s dv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SGe \<Rightarrow> (if sv \<le>s dv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SLt \<Rightarrow> (if dv <s sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SLe \<Rightarrow> (if dv \<le>s sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
+  SGt \<Rightarrow> (if sv <s dv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  SGe \<Rightarrow> (if sv \<le>s dv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  SLt \<Rightarrow> (if dv <s sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
+  SLe \<Rightarrow> (if dv \<le>s sv then Some (rs#BPC <-- (ucast (dv + sv))) else None) |
   _ \<Rightarrow> None
 ))))"
 
@@ -436,7 +460,7 @@ definition push_frame:: "Config \<Rightarrow> reg_map \<Rightarrow> stack_state 
   let update2 = if is_v1 then stack_pointer ss + stack_frame_size conf else stack_pointer ss;  
   update3 = (call_frames ss)[unat(call_depth ss):= frame] in
   let stack = Some \<lparr>call_depth = update1, stack_pointer = update2, call_frames = update3\<rparr>;
-  reg = upd_reg BR10 rs update2 in (stack,reg)
+  reg = rs#(BR BR10) <-- update2 in (stack,reg)
 )))"
 
 definition eval_call_reg :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
@@ -447,7 +471,7 @@ definition eval_call_reg :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<
   if target_pc < program_vm_addr then None else (
   let next_pc = (target_pc - program_vm_addr)div INSN_SIZE in 
   if get_function_registry (ucast next_pc) = None then None  \<comment> \<open> function lookup \<close> 
-  else Some (upd_pc rs' next_pc, ss')
+  else Some (rs'#BPC <-- next_pc, ss')
 )))"
 
 definition eval_call_imm :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
@@ -455,7 +479,7 @@ definition eval_call_imm :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<
   let target_pc = get_function_registry (ucast imm) in if target_pc = None then None else    \<comment> \<open> function lookup \<close> 
   let target_pc = the target_pc; x = push_frame conf rs ss is_v1 in if fst x = None then None else(
   let ss' = the (fst x); rs' = snd x in 
-  let next_pc = target_pc in Some (upd_pc rs' next_pc, ss')
+  let next_pc = target_pc in Some (rs'#BPC <-- next_pc, ss')
 ))"
 
 definition pop_frame:: "stack_state \<Rightarrow> CallFrame" where 
@@ -466,10 +490,10 @@ subsection  \<open> EXIT \<close>
 definition eval_exit :: "Config \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
 "eval_exit conf rs ss is_v1 = (
   if call_depth ss = 0 then None else 
-  (let x = call_depth ss-1 ; frame = pop_frame ss; rs'= upd_reg BR10 rs (frame_pointer frame) in 
+  (let x = call_depth ss-1 ; frame = pop_frame ss; rs'= rs#(BR BR10) <-- (frame_pointer frame) in 
    let y =  if is_v1 then (stack_pointer ss - stack_frame_size conf) else stack_pointer ss; 
    z = butlast (call_frames ss) ; ss' = \<lparr>call_depth = x, stack_pointer= y, call_frames = z\<rparr> in
-   let pc = target_pc frame; rs' = upd_pc rs' pc in 
+   let pc = target_pc frame; rs' = rs'#BPC <-- pc in 
    Some (rs',ss')
 ))"
 
