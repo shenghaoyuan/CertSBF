@@ -68,8 +68,8 @@ definition eval_alu32_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   _ \<Rightarrow> None
 )))"
 
-definition eval_alu32_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_alu32_aux2 bop dst sop rs is_v1 = (
+definition eval_alu32_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
+"eval_alu32_aux2 bop dst sop rs = (
   let dv :: u32 = ucast (eval_reg dst rs) in (
   let sv :: u32 = ucast (eval_snd_op sop rs) in (
   case bop of
@@ -84,8 +84,8 @@ definition eval_alu32_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   _ \<Rightarrow> None
 )))"
 
-definition eval_alu32_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_alu32_aux3 bop dst sop rs is_v1 = (
+definition eval_alu32_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
+"eval_alu32_aux3 bop dst sop rs  = (
   let dv :: i32 = ucast (eval_reg dst rs) in (
   let sv :: u32 = ucast (eval_snd_op sop rs) in (
   case bop of
@@ -99,15 +99,15 @@ definition eval_alu32 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
   BPF_ADD \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
   BPF_SUB \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
   BPF_MUL \<Rightarrow> if is_v1 then eval_alu32_aux1 bop dst sop rs is_v1 else None|
-  BPF_DIV \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs is_v1 else None|
-  BPF_OR \<Rightarrow> eval_alu32_aux2 bop dst sop rs is_v1  |
-  BPF_AND \<Rightarrow> eval_alu32_aux2 bop dst sop rs is_v1  |
-  BPF_MOD \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs is_v1 else None|
-  BPF_XOR \<Rightarrow> eval_alu32_aux2 bop dst sop rs is_v1  |
-  BPF_MOV \<Rightarrow> eval_alu32_aux2 bop dst sop rs is_v1  |
-  BPF_LSH \<Rightarrow> eval_alu32_aux2 bop dst sop rs is_v1  | 
-  BPF_RSH \<Rightarrow> eval_alu32_aux2 bop dst sop rs is_v1 |
-  BPF_ARSH \<Rightarrow> eval_alu32_aux3 bop dst sop rs is_v1 
+  BPF_DIV \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
+  BPF_OR \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_AND \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_MOD \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
+  BPF_XOR \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_MOV \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_LSH \<Rightarrow> eval_alu32_aux2 bop dst sop rs  | 
+  BPF_RSH \<Rightarrow> eval_alu32_aux2 bop dst sop rs |
+  BPF_ARSH \<Rightarrow> eval_alu32_aux3 bop dst sop rs 
 )"
 
 definition eval_alu64_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
@@ -129,8 +129,8 @@ definition eval_alu64_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   _ \<Rightarrow> None
 
 )))"
-definition eval_alu64_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_alu64_aux2 bop dst sop rs is_v1 = (
+definition eval_alu64_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
+"eval_alu64_aux2 bop dst sop rs = (
   let dv :: u64 = ucast (eval_reg dst rs) in (
   let sv :: u32 = ucast (eval_snd_op sop rs) in (
   case bop of
@@ -139,8 +139,8 @@ definition eval_alu64_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   _ \<Rightarrow> None
 )))"
 
-definition eval_alu64_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_alu64_aux3 bop dst sop rs is_v1 = (
+definition eval_alu64_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option" where
+"eval_alu64_aux3 bop dst sop rs = (
   let dv :: i64 = ucast (eval_reg dst rs) in (
   let sv :: u32 = ucast (eval_snd_op sop rs) in (
   case bop of
@@ -160,7 +160,7 @@ definition eval_alu64 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
   BPF_MOD \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs is_v1 else None|
   BPF_XOR \<Rightarrow> eval_alu64_aux1 bop dst sop rs is_v1 |
   BPF_MOV \<Rightarrow> eval_alu64_aux1 bop dst sop rs is_v1 |
-  BPF_ARSH \<Rightarrow> eval_alu64_aux3 bop dst sop rs is_v1 |
+  BPF_ARSH \<Rightarrow> eval_alu64_aux3 bop dst sop rs |
   _ \<Rightarrow> None
 )"
 
@@ -379,8 +379,8 @@ definition eval_pc :: "reg_map \<Rightarrow> u64" where
 definition upd_pc :: " reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
 "upd_pc rs v =  rs (BPC := v)"
 
-definition eval_jmp_aux1 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_jmp_aux1 cond dst sop rs off is_v1 = (
+definition eval_jmp_aux1 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> reg_map option" where
+"eval_jmp_aux1 cond dst sop rs off = (
   let dv :: u64 = ucast (eval_reg dst rs) in (
   let sv :: u64 = ucast (eval_snd_op sop rs) in (
   let pc :: u64 = ucast (ucast off + ucast(eval_pc rs)::i64) in (
@@ -395,33 +395,33 @@ definition eval_jmp_aux1 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op
   _ \<Rightarrow> None
 ))))"
 
-definition eval_jmp_aux2 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_jmp_aux2 cond dst sop rs off is_v1 = (
-  let dv :: u64 = ucast (eval_reg dst rs) in (
-  let sv :: u64 = ucast (eval_snd_op sop rs) in (
+definition eval_jmp_aux2 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> reg_map option" where
+"eval_jmp_aux2 cond dst sop rs off = (
+  let dv :: i64 = scast (eval_reg dst rs) in (
+  let sv :: i64 = scast (eval_snd_op sop rs) in (
   let pc :: u64 = ucast (ucast off + ucast(eval_pc rs)::i64) in (
   case cond of
-  SGt \<Rightarrow> (if dv > sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SGe \<Rightarrow> (if dv \<ge> sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SLt \<Rightarrow> (if dv < sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
-  SLe \<Rightarrow> (if dv \<le> sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
+  SGt \<Rightarrow> (if sv <s dv then Some (upd_pc rs (ucast (dv + sv))) else None) |
+  SGe \<Rightarrow> (if sv \<le>s dv then Some (upd_pc rs (ucast (dv + sv))) else None) |
+  SLt \<Rightarrow> (if dv <s sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
+  SLe \<Rightarrow> (if dv \<le>s sv then Some (upd_pc rs (ucast (dv + sv))) else None) |
   _ \<Rightarrow> None
 ))))"
 
-definition eval_jmp :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> bool \<Rightarrow> reg_map option" where
-"eval_jmp cond dst sop rs off is_v1 = (
+definition eval_jmp :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> reg_map option" where
+"eval_jmp cond dst sop rs off = (
   case cond of
-  Eq \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  Gt \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  Ge \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  Lt \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  Le \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  SEt \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  Ne \<Rightarrow> eval_jmp_aux1 cond dst sop rs off is_v1 |
-  SGt \<Rightarrow> eval_jmp_aux2 cond dst sop rs off is_v1 |
-  SGe \<Rightarrow> eval_jmp_aux2 cond dst sop rs off is_v1 |
-  SLt \<Rightarrow> eval_jmp_aux2 cond dst sop rs off is_v1 |
-  SLe \<Rightarrow> eval_jmp_aux2 cond dst sop rs off is_v1 
+  Eq \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  Gt \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  Ge \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  Lt \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  Le \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  SEt \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  Ne \<Rightarrow> eval_jmp_aux1 cond dst sop rs off |
+  SGt \<Rightarrow> eval_jmp_aux2 cond dst sop rs off |
+  SGe \<Rightarrow> eval_jmp_aux2 cond dst sop rs off |
+  SLt \<Rightarrow> eval_jmp_aux2 cond dst sop rs off |
+  SLe \<Rightarrow> eval_jmp_aux2 cond dst sop rs off 
 )"
 
 subsection  \<open> CALL \<close>
@@ -531,7 +531,7 @@ fun step :: "Config \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Righta
       let rs'= rs (BPC := eval_pc rs + ucast off_ty) in
       Some \<lparr> registers = rs', memory_mapping = m, stack = ss, location = eval_pc rs'\<rparr> ) |
   BPF_JUMP cond bpf_ireg snd_op off_ty  \<Rightarrow> (
-    case eval_jmp cond bpf_ireg snd_op rs off_ty is_v1 of
+    case eval_jmp cond bpf_ireg snd_op rs off_ty of
       None \<Rightarrow> None |
       Some rs' \<Rightarrow> Some \<lparr> registers = rs', memory_mapping = m, stack = ss, location = eval_pc rs'\<rparr> ) |
   BPF_CALL_IMM src imm \<Rightarrow> (
@@ -557,15 +557,6 @@ fun steps :: "Config \<Rightarrow> ebpf_asm \<Rightarrow> nat \<Rightarrow> rbpf
    let temp = step conf (prog!unat (location sm)) (registers sm) (memory_mapping sm) (stack sm) (location sm) True in 
      if temp \<noteq> None then steps conf prog (max_steps-1) (the temp) else None
    else None))"
-
-
-
-value "((ucast ((ucast (-1::i32))::u64)) :: u32)"
-value "((ucast (-1::i32))::u32)"
-
-thm ucast_eq
-declare [[show_types]]
-
 
 
 lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
