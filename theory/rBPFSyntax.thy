@@ -1,5 +1,7 @@
 theory rBPFSyntax
-imports Main rBPFCommType
+imports
+    Main
+    rBPFCommType Mem
 begin
 
 datatype bpf_ireg = BR0 | BR1 | BR2 | BR3 | BR4 | BR5 | BR6 | BR7 | BR8 | BR9 | BR10
@@ -29,18 +31,19 @@ datatype pqrop = BPF_LMUL | BPF_UDIV | BPF_UREM | BPF_SDIV | BPF_SREM
 
 datatype pqrop2 = BPF_UHMUL | BPF_SHMUL
 
-datatype chunk = Byte | HalfWord | SWord | DWord 
+(*
+datatype chunk = Byte | HalfWord | SWord | DWord *)
 
 datatype SBPFV = V1 (* The legacy format *) |
  V2 (* The current SOImm *)(* |
  V3  The future format with BTF support *)
 
 datatype bpf_instruction = 
-  BPF_LD_IMM          dst_ty imm_ty imm_ty | 
+  BPF_LD_IMM            dst_ty imm_ty imm_ty | 
   (* BPF_LDX class *)
-  BPF_LDX     chunk   dst_ty src_ty off_ty |
+  BPF_LDX memory_chunk  dst_ty src_ty off_ty |
   (* BPF_ST/BPF_STX class *)
-  BPF_ST      chunk   dst_ty snd_op off_ty |
+  BPF_ST  memory_chunk  dst_ty snd_op off_ty |
   (* BPF_ALU class *)
   BPF_ALU     binop   dst_ty snd_op |
   BPF_NEG32_REG       dst_ty        |

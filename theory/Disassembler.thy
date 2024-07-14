@@ -31,53 +31,53 @@ definition disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruc
     Some src \<Rightarrow> (
       if bpf_opc bi = 0x71 then
         if bpf_imm bi = 0 then
-          Some (BPF_LDX Byte      dst src         (bpf_off bi))
+          Some (BPF_LDX M8  dst src         (bpf_off bi))
         else None
       else if bpf_opc bi = 0x69 then
         if bpf_imm bi = 0 then
-          Some (BPF_LDX HalfWord  dst src         (bpf_off bi))
+          Some (BPF_LDX M16 dst src         (bpf_off bi))
         else None
       else if bpf_opc bi = 0x61 then
         if bpf_imm bi = 0 then
-          Some (BPF_LDX SWord     dst src         (bpf_off bi))
+          Some (BPF_LDX M32 dst src         (bpf_off bi))
         else None
       else if bpf_opc bi = 0x79 then
         if bpf_imm bi = 0 then
-          Some (BPF_LDX DWord     dst src         (bpf_off bi))
+          Some (BPF_LDX M64 dst src         (bpf_off bi))
         else None
 
       else if bpf_opc bi = 0x72 then
         if bpf_src bi = 0 then
-        Some (BPF_ST  Byte      dst (SOImm (bpf_imm bi)) (bpf_off bi))
+          Some (BPF_ST  M8  dst (SOImm (bpf_imm bi)) (bpf_off bi))
         else None
       else if bpf_opc bi = 0x6a then
         if bpf_src bi = 0 then
-        Some (BPF_ST  HalfWord  dst (SOImm (bpf_imm bi)) (bpf_off bi))
+          Some (BPF_ST  M16 dst (SOImm (bpf_imm bi)) (bpf_off bi))
         else None
       else if bpf_opc bi = 0x62 then
         if bpf_src bi = 0 then
-        Some (BPF_ST  SWord     dst (SOImm (bpf_imm bi)) (bpf_off bi))
+          Some (BPF_ST  M32 dst (SOImm (bpf_imm bi)) (bpf_off bi))
         else None
       else if bpf_opc bi = 0x7a then
         if bpf_src bi = 0 then
-        Some (BPF_ST  DWord     dst (SOImm (bpf_imm bi)) (bpf_off bi))
+          Some (BPF_ST  M64 dst (SOImm (bpf_imm bi)) (bpf_off bi))
         else None
 
       else if bpf_opc bi = 0x73 then
         if bpf_imm bi = 0 then
-          Some (BPF_ST  Byte      dst (SOReg src) (bpf_off bi))
+          Some (BPF_ST  M8  dst (SOReg src) (bpf_off bi))
         else None
       else if bpf_opc bi = 0x6b then
         if bpf_imm bi = 0 then
-          Some (BPF_ST  HalfWord  dst (SOReg src) (bpf_off bi))
+          Some (BPF_ST  M16 dst (SOReg src) (bpf_off bi))
         else None
       else if bpf_opc bi = 0x63 then
         if bpf_imm bi = 0 then
-          Some (BPF_ST  SWord     dst (SOReg src) (bpf_off bi))
+          Some (BPF_ST  M32 dst (SOReg src) (bpf_off bi))
         else None
       else if bpf_opc bi = 0x7b then
         if bpf_imm bi = 0 then
-          Some (BPF_ST  DWord     dst (SOReg src) (bpf_off bi))
+          Some (BPF_ST  M64 dst (SOReg src) (bpf_off bi))
         else None
 
       else if bpf_opc bi = 0x04 then

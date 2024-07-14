@@ -1,7 +1,7 @@
 theory ConsistencyProof1
 imports
   Main
-  rBPFCommType rBPFSyntax Assembler Disassembler ConsistencyCommProof
+  rBPFCommType rBPFSyntax Mem Assembler Disassembler ConsistencyCommProof
 begin
 
 declare if_split_asm [split]
