@@ -46,6 +46,18 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (op:: u8) = 0x29 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
       Some [prefix, rex, op, rop] |
+  \<comment> \<open> P2884 `NEG register2` -> `0100 000B : 1111 011w : 11011reg` \<close>
+  Pnegq     rd \<Rightarrow>
+    let (prefix:: u8) = 0x66 in
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xf7 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b011 (u8_of_ireg rd) in
+      Some [prefix, rex, op, rop] |
   \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
   Pnop \<Rightarrow> Some [0x90] |
   _ \<Rightarrow> None
