@@ -158,17 +158,22 @@ datatype instruction =
   | Pmovsw_rm ireg addrmode
   | Pmovzl_rr ireg ireg     (**r [movzl] (32-bit zero-extension) *)
   | Pmovsl_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
-  | Pmovls_rr ireg                (** 64 to 32 bit conversion (pseudo) *)
+  | Pmovls_rr ireg          (** 64 to 32 bit conversion (pseudo) *)
+
   (** Integer arithmetic *)
   | Pleal ireg addrmode
   | Pleaq ireg addrmode
   | Pnegl ireg
   | Pnegq ireg
   | Paddq_rr ireg ireg
+  | Paddl_rr ireg ireg
   | Paddl_ri ireg u32
   | Paddq_ri ireg u64
   | Psubl_rr ireg ireg
-  | Psubq_rr ireg ireg (*
+  | Psubq_rr ireg ireg
+  | Psubl_ri ireg u32
+  | Psubq_ri ireg u64
+   (*
   | Pimull_rr ireg ireg
   | Pimulq_rr ireg ireg
   | Pimull_ri ireg u32
@@ -183,6 +188,7 @@ datatype instruction =
   | Pdivq ireg
   | Pidivl ireg
   | Pidivq ireg *)
+  (*
   | Pandl_rr ireg ireg
   | Pandq_rr ireg ireg
   | Pandl_ri ireg u32
@@ -197,8 +203,8 @@ datatype instruction =
   | Pxorq_rr ireg ireg
   | Pxorl_ri ireg u32
   | Pxorq_ri ireg u64
-  | Pnotl ireg
-  | Pnotq ireg (*
+  | Pnotl ireg*)
+(*| Pnotq ireg 
   | Psall_rcl ireg
   | Psalq_rcl ireg
   | Psall_ri ireg u32

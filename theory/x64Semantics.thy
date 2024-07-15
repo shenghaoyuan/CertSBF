@@ -133,15 +133,18 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   \<comment> \<open> Moves with conversion \<close>
   Pmovb_mr  a r1  \<Rightarrow> exec_store  sz M8  m a rs (IR r1) [] |
   Pmovw_mr  a r1  \<Rightarrow> exec_store  sz M16 m a rs (IR r1) [] |
+  Pmovsl_rr rd r1 \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (rs (IR r1)))) m |  \<comment> \<open> tocheck: bit mode \<close>
   \<comment> \<open> Integer arithmetic \<close>
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg  (rs (IR rd))))) m |
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.negl (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (rs (IR r1))))) m |
-  Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
+  Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (rs (IR r1))))) m |
   Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
-  Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
+  Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
   Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (rs (IR r1))))) m |
-
+  Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
+  Psubq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (Vlong n)))) m |
+  Psubl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (Vint n)))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"
