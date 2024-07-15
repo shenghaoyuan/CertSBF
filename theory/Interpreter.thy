@@ -203,9 +203,13 @@ fun to_le_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
   "to_le_64 w 0 = []" |
   "to_le_64 w n = (ucast(and w 0xFF)) # to_le_64 (w >> 8) (n - 1)"
 
+definition to_be_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
+  "to_be_64 w n = rev (to_le_64 w n)"
+
+(*
 fun to_be_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
   "to_be_64 w 0 = []" |
-  "to_be_64 w n =  to_be_64 (w >> 8) (n - 1) @ [(ucast(and w 0xFF))]"
+  "to_be_64 w n =  to_be_64 (w >> 8) (n - 1) @ [(ucast(and w 0xFF))]" *)
 
 fun to_le_32 :: "u32 \<Rightarrow> nat \<Rightarrow> u8 list" where
   "to_le_32 w 0 = []" |
@@ -226,6 +230,17 @@ fun to_be_16 :: "u16 \<Rightarrow> nat \<Rightarrow> u8 list" where
 fun from_bytes :: "u8 list \<Rightarrow> nat \<Rightarrow> int" where
   "from_bytes _ 0 = 0" |
   "from_bytes x (Suc n) = (uint ((ucast(x!n)::u64) << 8*n)) + from_bytes x n"
+
+fun u64_of_u8_list_aux :: "u8 list \<Rightarrow> u64" where
+"u64_of_u8_list_aux [] = 0" |
+"u64_of_u8_list_aux (h#t) = or (ucast h) ((u64_of_u8_list_aux t) << 8)"
+
+definition u64_of_u8_list :: "u8 list \<Rightarrow> u64" where
+"u64_of_u8_list l = u64_of_u8_list_aux (rev l)"
+
+fun u64_of_u8_list1 :: "u8 list \<Rightarrow> u64" where
+"u64_of_u8_list1 [] = 0" |
+"u64_of_u8_list1 (h#t) = or ((ucast h) << (8*length(t))) (u64_of_u8_list1 t)"
 
 (*
 text \<open> tests \<close>
@@ -251,9 +266,11 @@ value "c"
 value "of_int(from_bytes (rev(to_be_16 c 4)) 4)::u16"
 
 value "a"
+value "u64_of_u8_list [0x12, 0x34]"
+value "u64_of_u8_list1 [0x12, 0x34]"
 
-value "of_int(from_bytes (rev(to_be_64 a 8)) 8)::u64"
-*)
+value "of_int(from_bytes (rev(to_be_64 a 8)) 8)::u64" *)
+
 
 definition eval_le :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_le dst imm rs is_v1 = (if is_v1 then (let dv = eval_reg dst rs in ((
