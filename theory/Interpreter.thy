@@ -604,6 +604,10 @@ fun step :: "Config \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Righta
     case eval_store chk dst sop off rs m of
       None \<Rightarrow> None |
       Some m' \<Rightarrow> Some \<lparr> registers = rs, memory_mapping = m', stack = ss, location = next_pc\<rparr> ) |
+  BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
+    case eval_load_imm dst imm1 imm2 rs m of
+      None \<Rightarrow> None |
+      Some rs' \<Rightarrow> Some \<lparr> registers = rs', memory_mapping = m, stack = ss, location = next_pc\<rparr> ) |
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
       None \<Rightarrow> None |
@@ -638,8 +642,7 @@ fun step :: "Config \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Righta
   BPF_EXIT \<Rightarrow> (
     case eval_exit conf rs ss is_v1  of
       None \<Rightarrow> None |
-      Some x \<Rightarrow> Some \<lparr> registers = fst x, memory_mapping = m, stack = snd x, location = eval_pc (fst x)\<rparr> ) |
-  _ \<Rightarrow> None
+      Some x \<Rightarrow> Some \<lparr> registers = fst x, memory_mapping = m, stack = snd x, location = eval_pc (fst x)\<rparr> ) 
   ))
 "
 
