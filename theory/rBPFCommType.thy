@@ -103,4 +103,8 @@ definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
     (ucast (i >> 56))
   ]"
 
+lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
+
+lemma [simp]: "u8_of_bool True = 1" by (unfold u8_of_bool_def, simp)
+
 end
