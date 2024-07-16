@@ -227,30 +227,18 @@ fun from_bytes :: "u8 list \<Rightarrow> nat \<Rightarrow> int" where
   "from_bytes _ 0 = 0" |
   "from_bytes x (Suc n) = (uint ((ucast(x!n)::u64) << 8*n)) + from_bytes x n"
 
-fun u64_of_u8_list_aux :: "u8 list \<Rightarrow> u64" where
-"u64_of_u8_list_aux [] = 0" |
-"u64_of_u8_list_aux (h#t) = or (ucast h) ((u64_of_u8_list_aux t) << 8)"
+fun ua_of_u8_list_aux :: "u8 list \<Rightarrow> 'a :: len word" where
+"ua_of_u8_list_aux [] = 0" |
+"ua_of_u8_list_aux (h#t) = or (ucast h) ((ua_of_u8_list_aux t) << 8)"
 
 definition u64_of_u8_list :: "u8 list \<Rightarrow> u64" where
-"u64_of_u8_list l = u64_of_u8_list_aux (rev l)"
-
-fun u64_of_u16_list1 :: "u8 list \<Rightarrow> u16" where
-"u64_of_u16_list1 [] = 0" |
-"u64_of_u16_list1 (h#t) = or ((ucast h) << (8*length(t))) (u64_of_u16_list1 t)"
-
-fun u32_of_u8_list_aux :: "u8 list \<Rightarrow> u32" where
-"u32_of_u8_list_aux [] = 0" |
-"u32_of_u8_list_aux (h#t) = or (ucast h) ((u32_of_u8_list_aux t) << 8)"
+"u64_of_u8_list l = ua_of_u8_list_aux (rev l)"
 
 definition u32_of_u8_list :: "u8 list \<Rightarrow> u32" where
-"u32_of_u8_list l = u32_of_u8_list_aux (rev l)"
-
-fun u16_of_u8_list_aux :: "u8 list \<Rightarrow> u16" where
-"u16_of_u8_list_aux [] = 0" |
-"u16_of_u8_list_aux (h#t) = or (ucast h) ((u16_of_u8_list_aux t) << 8)"
+"u32_of_u8_list l = ua_of_u8_list_aux (rev l)"
 
 definition u16_of_u8_list :: "u8 list \<Rightarrow> u16" where
-"u16_of_u8_list l = u16_of_u8_list_aux (rev l)"
+"u16_of_u8_list l = ua_of_u8_list_aux (rev l)"
 
 (*text \<open> tests \<close>
 definition a :: u64 where "a = 0x123456"
