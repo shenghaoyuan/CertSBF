@@ -9,8 +9,6 @@ begin
 subsubsection  \<open> Interpreter State \<close>
 
 type_synonym reg_map = "bpf_preg \<Rightarrow> u64"
-                             
-type_synonym mem = "(u64, val) map"
 
 record stack_state = 
 call_depth :: u64
@@ -37,10 +35,6 @@ consts fm::func_map
 
 definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
 "eval_reg dst rs = rs (BR dst)"
-
-(*
-definition upd_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
-"upd_reg dst rs v =  rs (BR dst := v)" *)
 
 syntax "_upd_reg" :: "'a => 'b => 'c => 'a" ("_ # _ <-- _" [1000, 1000, 1000] 1)
 
@@ -109,15 +103,15 @@ definition eval_alu32 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
   case bop of
   BPF_ADD   \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
   BPF_SUB   \<Rightarrow> eval_alu32_aux1 bop dst sop rs is_v1 |
-  BPF_MUL   \<Rightarrow> if is_v1 then eval_alu32_aux1 bop dst sop rs is_v1 else None|
-  BPF_DIV   \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
+  BPF_MUL   \<Rightarrow> if is_v1 then eval_alu32_aux1 bop dst sop rs is_v1 else None  |
+  BPF_DIV   \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None  |
   BPF_OR    \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
   BPF_AND   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
-  BPF_MOD   \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None|
+  BPF_MOD   \<Rightarrow> if is_v1 then eval_alu32_aux2 bop dst sop rs else None  |
   BPF_XOR   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
   BPF_MOV   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
-  BPF_LSH   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  | 
-  BPF_RSH   \<Rightarrow> eval_alu32_aux2 bop dst sop rs |
+  BPF_LSH   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
+  BPF_RSH   \<Rightarrow> eval_alu32_aux2 bop dst sop rs  |
   BPF_ARSH  \<Rightarrow> eval_alu32_aux3 bop dst sop rs 
 )"
 
@@ -165,8 +159,12 @@ definition eval_alu64_aux4 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   let sv :: u64 = eval_snd_op_u64 sop rs in (
   let sp = stack_pointer ss in 
   case bop of
-  BPF_ADD \<Rightarrow> (case sop of SOImm _ \<Rightarrow> if \<not>is_v1 \<and> dst = BR10 then Some (rs, ss\<lparr>stack_pointer := sp+sv\<rparr>) else None |
-                                _ \<Rightarrow> None)|
+  BPF_ADD \<Rightarrow> (
+    if \<not>is_v1 \<and> dst = BR10 then
+          Some (rs, ss\<lparr>stack_pointer := sp+sv\<rparr>)
+    else
+          Some (rs#(BR dst) <-- (dv+sv), ss)
+    ) |
   _ \<Rightarrow> None
 
 )))"
@@ -174,18 +172,18 @@ definition eval_alu64_aux4 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
 definition eval_alu64 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
 "eval_alu64 bop dst sop rs ss is_v1 = (
   case bop of
-  BPF_ADD \<Rightarrow> eval_alu64_aux4 bop dst sop rs ss is_v1 |
-  BPF_SUB \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
-  BPF_MUL \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs ss is_v1 else None |
-  BPF_DIV \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs ss is_v1 else None |
-  BPF_OR \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
-  BPF_AND \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
-  BPF_MOD \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs ss is_v1 else None |
-  BPF_XOR \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
-  BPF_MOV \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
-  BPF_LSH \<Rightarrow> eval_alu64_aux2 bop dst sop rs ss |
-  BPF_RSH \<Rightarrow> eval_alu64_aux2 bop dst sop rs ss |
-  BPF_ARSH \<Rightarrow> eval_alu64_aux3 bop dst sop rs ss
+  BPF_ADD   \<Rightarrow> eval_alu64_aux4 bop dst sop rs ss is_v1 |
+  BPF_SUB   \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
+  BPF_MUL   \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs ss is_v1 else None |
+  BPF_DIV   \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs ss is_v1 else None |
+  BPF_OR    \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
+  BPF_AND   \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
+  BPF_MOD   \<Rightarrow> if is_v1 then eval_alu64_aux1 bop dst sop rs ss is_v1 else None |
+  BPF_XOR   \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
+  BPF_MOV   \<Rightarrow> eval_alu64_aux1 bop dst sop rs ss is_v1 |
+  BPF_LSH   \<Rightarrow> eval_alu64_aux2 bop dst sop rs ss |
+  BPF_RSH   \<Rightarrow> eval_alu64_aux2 bop dst sop rs ss |
+  BPF_ARSH  \<Rightarrow> eval_alu64_aux3 bop dst sop rs ss
 )"
 
 definition eval_neg32 :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
@@ -208,11 +206,6 @@ fun to_le_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
 
 definition to_be_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
   "to_be_64 w n = rev (to_le_64 w n)"
-
-(*
-fun to_be_64 :: "u64 \<Rightarrow> nat \<Rightarrow> u8 list" where
-  "to_be_64 w 0 = []" |
-  "to_be_64 w n =  to_be_64 (w >> 8) (n - 1) @ [(ucast(and w 0xFF))]" *)
 
 fun to_le_32 :: "u32 \<Rightarrow> nat \<Rightarrow> u8 list" where
   "to_le_32 w 0 = []" |
@@ -293,7 +286,7 @@ value "u64_of_u8_list (to_be_64 a 8)"
 definition eval_le :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_le dst imm rs is_v1 = (if is_v1 then (let dv = eval_reg dst rs in ((
         if imm = 16 then let x = ucast(dv)::u16; v = ucast (u16_of_u8_list (to_le_16 x 4)) in Some (rs#(BR dst) <-- v)
-  else  if imm = 32 then let x = ucast(dv)::u32; v = ucast (u32_of_u8_list (to_le_32 x 6)) in  Some (rs#(BR dst) <-- v)
+  else  if imm = 32 then let x = ucast(dv)::u32; v = ucast (u32_of_u8_list (to_le_32 x 6)) in Some (rs#(BR dst) <-- v)
   else  if imm = 64 then let v = u64_of_u8_list (to_le_64 dv 8) in Some (rs#(BR dst) <-- v)
   else None)))
   else None
