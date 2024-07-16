@@ -394,35 +394,33 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
 
 subsection  \<open> MEM \<close>
 
-definition eval_store :: "chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> mem option" where
+definition eval_store :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> mem option" where
 "eval_store chk dst sop off rs mem = (
   let dv :: i64 = scast (eval_reg dst rs) in (
   let vm_addr :: u64 = ucast (dv + (scast off)) in (  
   let sv :: u64 = eval_snd_op_u64 sop rs in ( \<comment> \<open> TODO: sv is signed for imm and unsigned for src reg? \<close>
-  let size = case chk of Byte \<Rightarrow> M8 | HalfWord \<Rightarrow> M16 | SWord \<Rightarrow> M32 | DWord \<Rightarrow> M64 in (
-  (storev size mem (Vlong vm_addr) (Vlong sv))
-)))))"
+  (storev chk mem (Vlong vm_addr) (Vlong sv))
+))))"
 
 
-definition eval_load :: "chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
+definition eval_load :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
 "eval_load chk dst sop off rs mem = (
   let sv :: u64 = eval_snd_op_u64 (SOReg sop) rs in (
   let vm_addr :: u64 = ucast (sv + (scast off)) in (  
-  let size = case chk of Byte \<Rightarrow> M8 | HalfWord \<Rightarrow> M16 | SWord \<Rightarrow> M32 | DWord \<Rightarrow> M64 in (
-  let v = (loadv size mem (Vlong vm_addr)) in (
+  let v = (loadv chk mem (Vlong vm_addr)) in (
      case v of None \<Rightarrow> None |
                Some Vundef \<Rightarrow>  None | 
                Some (Vlong v) \<Rightarrow>  Some (rs#(BR dst) <-- v) |
                Some (Vint v) \<Rightarrow> Some (rs#(BR dst) <-- (ucast v))
-)))))"
+))))"
 
 (*definition store_mem::"mem_len \<Rightarrow> i64 \<Rightarrow> usize \<Rightarrow> mem \<Rightarrow> mem" where  
-"store_mem len v vm_addr mem = mem (vm_addr := Some ((ucast v)::u64))" \<comment> \<open> should be size of u8/u16/u32/u64 \<close>
+"store_mem len v vm_addr mem = mem (vm_addr := Some ((ucast v)::u64))" 
 
 definition eval_store :: "chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> mem option" where
 "eval_store chk dst sop off rs mem = (
   let dv :: i64 = scast (eval_reg dst rs) in (
-  let vm_addr :: u64 = ucast (dv + (ucast off)) in (  \<comment> \<open> TODO: + is signed or unsigned? \<close>
+  let vm_addr :: u64 = ucast (dv + (ucast off)) in (  
   let sv :: i64 = eval_snd_op_i64 sop rs in (
   let size = case chk of Byte \<Rightarrow> u8 | HalfWord \<Rightarrow> u16 | SWord \<Rightarrow> u32 | DWord \<Rightarrow> u64 in (
   Some (store_mem size sv vm_addr mem)
@@ -434,7 +432,7 @@ definition load_mem::"mem_len \<Rightarrow> usize \<Rightarrow> mem \<Rightarrow
 definition eval_load :: "chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
 "eval_load chk dst sop off rs mem = (
   let sv :: i64 = eval_snd_op_i64 (SOReg sop) rs in (
-  let vm_addr :: u64 = ucast (sv + (ucast off)) in (  \<comment> \<open> TODO: + is signed or unsigned? \<close>
+  let vm_addr :: u64 = ucast (sv + (ucast off)) in ( 
   let size = case chk of Byte \<Rightarrow> u8 | HalfWord \<Rightarrow> u16 | SWord \<Rightarrow> u32 | DWord \<Rightarrow> u64 in (
   let v = (load_mem size vm_addr mem) in (
      case v of None \<Rightarrow> None |
@@ -527,13 +525,13 @@ definition eval_call_reg :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<
   let ss' = the (fst x); rs' = snd x in
   if target_pc < program_vm_addr then None else (
   let next_pc = (target_pc - program_vm_addr)div INSN_SIZE in 
-  if get_function_registry (ucast next_pc) = None then None  \<comment> \<open> function lookup \<close> 
+  if get_function_registry (ucast next_pc) = None then None 
   else Some (rs'#BPC <-- next_pc, ss')
 )))"
 
 definition eval_call_imm :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
-"eval_call_imm conf src imm rs ss is_v1 = ( \<comment> \<open> should add decision of internal or external call \<close> 
-  let target_pc = get_function_registry (ucast imm) in if target_pc = None then None else    \<comment> \<open> function lookup \<close> 
+"eval_call_imm conf src imm rs ss is_v1 = ( 
+  let target_pc = get_function_registry (ucast imm) in if target_pc = None then None else   
   let target_pc = the target_pc; x = push_frame conf rs ss is_v1 in if fst x = None then None else(
   let ss' = the (fst x); rs' = snd x in 
   let next_pc = target_pc in Some (rs'#BPC <-- next_pc, ss')
