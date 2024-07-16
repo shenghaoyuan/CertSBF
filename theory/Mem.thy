@@ -1,4 +1,4 @@
-section  \<open> Axiom Memory model \<close> 
+section \<open> Axiom Memory model \<close>
 
 theory Mem
 imports

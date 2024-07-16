@@ -17,23 +17,23 @@ definition insn :: "u8 \<Rightarrow> u4 \<Rightarrow> u4 \<Rightarrow> i16 \<Rig
             bpf_imm = (scast imm) \<rparr> )"
 
 subsection \<open> get instruction opcode \<close>
-fun ldx_chunk2opcode :: "chunk \<Rightarrow> u8" where
-"ldx_chunk2opcode Byte = 0x71" |
-"ldx_chunk2opcode HalfWord = 0x69" |
-"ldx_chunk2opcode SWord = 0x61" |
-"ldx_chunk2opcode DWord = 0x79"
+fun ldx_chunk2opcode :: "memory_chunk \<Rightarrow> u8" where
+"ldx_chunk2opcode M8 = 0x71" |
+"ldx_chunk2opcode M16 = 0x69" |
+"ldx_chunk2opcode M32 = 0x61" |
+"ldx_chunk2opcode M64 = 0x79"
 
-fun st_chunk2opcode_imm :: "chunk \<Rightarrow> u8" where
-"st_chunk2opcode_imm Byte = 0x72" |
-"st_chunk2opcode_imm HalfWord  = 0x6a" |
-"st_chunk2opcode_imm SWord = 0x62" |
-"st_chunk2opcode_imm DWord  = 0x7a"
+fun st_chunk2opcode_imm :: "memory_chunk \<Rightarrow> u8" where
+"st_chunk2opcode_imm M8 = 0x72" |
+"st_chunk2opcode_imm M16  = 0x6a" |
+"st_chunk2opcode_imm M32 = 0x62" |
+"st_chunk2opcode_imm M64  = 0x7a"
 
-fun st_chunk2opcode_reg :: "chunk \<Rightarrow> u8" where
-"st_chunk2opcode_reg Byte = 0x73" |
-"st_chunk2opcode_reg HalfWord  = 0x6b" |
-"st_chunk2opcode_reg SWord = 0x63" |
-"st_chunk2opcode_reg DWord = 0x7b"
+fun st_chunk2opcode_reg :: "memory_chunk \<Rightarrow> u8" where
+"st_chunk2opcode_reg M8 = 0x73" |
+"st_chunk2opcode_reg M16  = 0x6b" |
+"st_chunk2opcode_reg M32 = 0x63" |
+"st_chunk2opcode_reg M64 = 0x7b"
 
 fun alu2opcode_imm :: "binop \<Rightarrow> u8" where
 "alu2opcode_imm BPF_ADD  = 0x04" |
