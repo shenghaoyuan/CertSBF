@@ -192,19 +192,19 @@ datatype instruction =
   | Pandl_rr ireg ireg
   | Pandq_rr ireg ireg
   | Pandl_ri ireg u32
-  | Pandq_ri ireg u64
+  | Pandq_ri ireg u64*)
   | Porl_rr ireg ireg
   | Porq_rr ireg ireg
   | Porl_ri ireg u32
   | Porq_ri ireg u64
-  | Pxorl_r ireg                  (**r [xor] with self = set to zero *)
+(*| Pxorl_r ireg                  (**r [xor] with self = set to zero *)
   | Pxorq_r ireg
   | Pxorl_rr ireg ireg
   | Pxorq_rr ireg ireg
   | Pxorl_ri ireg u32
   | Pxorq_ri ireg u64
-  | Pnotl ireg*)
-(*| Pnotq ireg 
+  | Pnotl ireg
+  | Pnotq ireg 
   | Psall_rcl ireg
   | Psalq_rcl ireg
   | Psall_ri ireg u32
