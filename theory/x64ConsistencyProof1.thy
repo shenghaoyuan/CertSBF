@@ -7,10 +7,6 @@ begin
 (*
 declare if_split_asm [split] *)
 
-lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
-
-lemma [simp]: "u8_of_bool True = 1" by (unfold u8_of_bool_def, simp)
-
 (*
 lemma list_eq_rewrite: "x#y = l \<Longrightarrow> f l = f (x#y)" by auto *)
 
@@ -49,12 +45,15 @@ lemma rbx_simp [simp]: "or (or 192 (and 56 (u8_of_ireg r1 << 3))) (and x86CommTy
   subgoal by (cases rd, auto)
   done
 
-lemma pmov_src [simp]: "or 64
+lemma pmov_src [simp]: "
+     prefix = 102 \<and>
+     or 64
      (or (u8_of_bool (and (u8_of_ireg r1) x86CommType.R8 \<noteq> x86CommType.RAX) << 2)
        (u8_of_bool (and (u8_of_ireg rd) x86CommType.R8 \<noteq> x86CommType.RAX))) =
     rex \<and>
     op = 137 \<and>
-    or (or 192 (and 56 (u8_of_ireg r1 << 3))) (and x86CommType.RDI (u8_of_ireg rd)) = rop \<Longrightarrow>
+    or (or 192 (and 56 (u8_of_ireg r1 << 3))) (and x86CommType.RDI (u8_of_ireg rd)) = rop \<and>
+    l2 = l1 \<Longrightarrow>
     ireg_of_u8
             (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (rop >> 3)) (and x86CommType.RCX (rex >> 2)))
        = Some r1"
@@ -110,30 +109,29 @@ lemma x64assemble_disassemble_consistency:
               subgoal by fastforce
               subgoal for rop l1
                 apply simp \<comment> \<open> TBC \<close>
-
-\<comment> \<open>
-              proof -
-                have "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (rop >> 3))
+\<comment> \<open> 
+                apply (frule conjunct2)
+                apply (frule conjunct2)
+                apply(frule pmov_src[of prefix r1 rd rex op rop])
+              apply (subgoal_tac "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (rop >> 3))
                   (and x86CommType.RCX (rex >> 2)))
-                = Some r1" using pmov_src \<close>
+                = Some r1")
+                 prefer 2
+                 apply (auto simp add:  pmov_src[of r1 rd])[1]
+              proof -
+                assume r1:"or (or 192 (and 56 (u8_of_ireg r1 << 3))) (and x86CommType.RDI (u8_of_ireg rd)) = rop"
+                assume r2:"or 64
+   (or (u8_of_bool (and (u8_of_ireg r1) x86CommType.R8 \<noteq> x86CommType.RAX) << 2)
+     (u8_of_bool (and (u8_of_ireg rd) x86CommType.R8 \<noteq> x86CommType.RAX))) =
+  rex"
+                show "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (rop >> 3))
+                  (and x86CommType.RCX (rex >> 2)))
+                = Some r1" using r2 r1 pmov_src[OF] by auto
+   
 
-                apply (cases r1)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-                subgoal by (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                apply (auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def split: ireg.split)\<close>
+
+                apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
                 done
               done
             done
