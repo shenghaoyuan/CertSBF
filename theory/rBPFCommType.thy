@@ -41,12 +41,11 @@ bpf_imm :: i32
 
 type_synonym ebpf_bin = "ebpf_binary list"
 
-<<<<<<< HEAD
 consts INSN_SIZE::usize
 
 definition INSN_SIZE_def :: "usize" where
 "INSN_SIZE_def = 8"
-=======
+
 abbreviation bit_left_shift ::
   "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix "<<" 50)
 where "x << n \<equiv> push_bit n x"
@@ -112,6 +111,5 @@ definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
     (ucast (i >> 48)),
     (ucast (i >> 56))
   ]"
->>>>>>> origin/interpreter
 
 end
