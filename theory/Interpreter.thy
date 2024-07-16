@@ -66,14 +66,6 @@ fun eval_snd_op_u64 :: "snd_op \<Rightarrow> reg_map \<Rightarrow> u64" where
 
 subsection  \<open> ALU \<close>
 
-abbreviation bit_left_shift ::
-  "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix "<<" 50)
-where "x << n \<equiv> push_bit n x"
-
-abbreviation bit_right_shift ::
-  "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix ">>" 50)
-where "x >> n \<equiv> drop_bit n x"
-
 definition eval_alu32_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option" where
 "eval_alu32_aux1 bop dst sop rs is_v1 = (
   let dv :: i32 = scast (eval_reg dst rs) in (
