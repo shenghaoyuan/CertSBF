@@ -38,10 +38,6 @@ bpf_imm :: i32
 
 type_synonym ebpf_bin = "ebpf_binary list"
 
-datatype mem_len = u8 | u16 | u32 | u64
-
-datatype mem_op = store | load
-
 consts INSN_SIZE::usize
 
 definition INSN_SIZE_def :: "usize" where

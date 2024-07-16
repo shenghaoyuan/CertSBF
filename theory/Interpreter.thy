@@ -397,7 +397,7 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
   let sv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
   case pop2 of
   BPF_UHMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv_u * sv_u)>>64)) |
-  BPF_SHMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv_i * sv_i)>>64))  \<comment> \<open> TODO: why div? \<close>
+  BPF_SHMUL \<Rightarrow> Some (rs#(BR dst) <-- (ucast (dv_i * sv_i)>>64)) 
 ))))))"
 
 subsection  \<open> MEM \<close>
@@ -466,10 +466,6 @@ subsection  \<open> JUMP \<close>
 
 definition eval_pc :: "reg_map \<Rightarrow> u64" where
 "eval_pc rs  = rs BPC"
-
-(*
-definition upd_pc :: " reg_map \<Rightarrow> u64 \<Rightarrow> reg_map" where
-"upd_pc rs v =  rs (BPC := v)" *)
 
 definition eval_jmp_aux1 :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> off_ty \<Rightarrow> reg_map option" where
 "eval_jmp_aux1 cond dst sop rs off = (
