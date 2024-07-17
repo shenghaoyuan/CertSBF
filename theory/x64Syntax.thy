@@ -188,7 +188,6 @@ datatype instruction =
   | Pdivq ireg
   | Pidivl ireg
   | Pidivq ireg *)
-  
   | Pandl_rr ireg ireg
   | Pandq_rr ireg ireg
   | Pandl_ri ireg u32
@@ -198,12 +197,12 @@ datatype instruction =
   | Porl_ri ireg u32
   | Porq_ri ireg u64
 (*| Pxorl_r ireg                  (**r [xor] with self = set to zero *)
-  | Pxorq_r ireg
+  | Pxorq_r ireg*)
   | Pxorl_rr ireg ireg
   | Pxorq_rr ireg ireg
   | Pxorl_ri ireg u32
   | Pxorq_ri ireg u64
-  | Pnotl ireg
+(*| Pnotl ireg
   | Pnotq ireg 
   | Psall_rcl ireg
   | Psalq_rcl ireg
@@ -229,16 +228,16 @@ datatype instruction =
   | Ptestl_ri ireg u32
   | Ptestq_ri ireg u64
   | Pcmov testcond ireg ireg
-  | Psetcc testcond ireg
+  | Psetcc testcond ireg*)
   (** Branches and calls *)
-  | Pjmp_l label
+(*| Pjmp_l label
   | Pjcc testcond label
   | Pjcc2 testcond testcond label   (**r pseudo *)
   | Pjmptbl ireg "label list" (**r pseudo *)
   | Pcall_r (r: ireg)
-  | Pret
+  | Pret*)
   (** Saving and restoring registers *)
-  | Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
+(*| Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
   | Pmov_mr_a addrmode ireg  (**r like [Pmov_mr], using [Many64] chunk *) *)
   | Pnop
 
