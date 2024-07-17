@@ -188,11 +188,11 @@ datatype instruction =
   | Pdivq ireg
   | Pidivl ireg
   | Pidivq ireg *)
-  (*
+  
   | Pandl_rr ireg ireg
   | Pandq_rr ireg ireg
   | Pandl_ri ireg u32
-  | Pandq_ri ireg u64*)
+  | Pandq_ri ireg u64
   | Porl_rr ireg ireg
   | Porq_rr ireg ireg
   | Porl_ri ireg u32
