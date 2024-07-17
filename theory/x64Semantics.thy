@@ -145,7 +145,8 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
   Psubq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (Vlong n)))) m |
   Psubl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (Vint n)))) m |
-  Porq_rr   rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.orl (rs (IR rd)) (rs (IR r1))))) m |
+  Porq_rr   rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
+  Porl_rr   rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"
