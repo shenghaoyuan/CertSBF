@@ -141,12 +141,22 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (rs (IR r1))))) m |
   Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
   Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
-  Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (rs (IR r1))))) m |
-  Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
+  Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (rs (IR r1))))) m |
+  Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
   Psubq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (Vlong n)))) m |
   Psubl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (Vint n)))) m |
-  Porq_rr   rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
-  Porl_rr   rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
+  Pandq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andl (rs (IR rd)) (rs (IR r1))))) m |
+  Pandl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andd (rs (IR rd)) (rs (IR r1))))) m |
+  Pandq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andl (rs (IR rd)) (Vlong n)))) m |
+  Pandl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andd (rs (IR rd)) (Vint n)))) m |
+  Porq_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
+  Porl_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
+  Porq_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
+  Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
+  Pxorq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
+  Pxorl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
+  Pxorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
+  Pxorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"
