@@ -30,7 +30,6 @@ definition neg :: "val \<Rightarrow> val" where
   _ => Vundef
 )"
 
-
 definition maketotal :: "val option \<Rightarrow> val" where
 "maketotal ov = (case ov of Some v \<Rightarrow> v | None \<Rightarrow> Vundef)"
 
@@ -68,6 +67,14 @@ definition negative :: "val \<Rightarrow> val" where
   Vint n \<Rightarrow> Vint (if (scast n) <s (0::i32) then 1 else 0 ) |
   _ \<Rightarrow> Vundef
 )"
+
+definition or :: "val \<Rightarrow> val \<Rightarrow> val" where
+"or v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (Bit_Operations.or n1 n2) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
 
 subsection \<open> 64-bit Arithmetic operations \<close>
 
@@ -113,6 +120,12 @@ definition negativel :: "val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition orl :: "val \<Rightarrow> val \<Rightarrow> val" where
+"orl v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (Bit_Operations.or n1 n2) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
 
 subsection \<open> Comparisons \<close>
 
