@@ -135,8 +135,8 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pmovw_mr  a r1  \<Rightarrow> exec_store  sz M16 m a rs (IR r1) [] |
   Pmovsl_rr rd r1 \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (rs (IR r1)))) m |  \<comment> \<open> tocheck: bit mode \<close>
   \<comment> \<open> Integer arithmetic \<close>
-  Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg  (rs (IR rd))))) m |
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.negl (rs (IR rd))))) m |
+  Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg  (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (rs (IR r1))))) m |
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (rs (IR r1))))) m |
   Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
