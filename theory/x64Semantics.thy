@@ -123,10 +123,10 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
   \<comment> \<open> Moves \<close>
-  Pmovq_rr  rd r1 \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovl_rr  rd r1 \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovl_ri  rd n  \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (Vint n))) m |
-  Pmovq_ri  rd n  \<Rightarrow> Next (nextinstr     sz (rs#(IR rd) <- (Vlong n))) m |
+  Pmovq_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovl_rr  rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovl_ri  rd n  \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vint n))) m |
+  Pmovq_ri  rd n  \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vlong n))) m |
   Pmovl_rm  rd a  \<Rightarrow> exec_load   sz M32 m a rs (IR rd) |
   Pmovq_rm  rd a  \<Rightarrow> exec_load   sz M64 m a rs (IR rd) |
   Pmovl_mr  a r1  \<Rightarrow> exec_store  sz M32 m a rs (IR r1) [] |
@@ -140,27 +140,41 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg  (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (rs (IR r1))))) m |
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (rs (IR r1))))) m |
-  Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
-  Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
   Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (rs (IR r1))))) m |
   Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
-  Psubq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (Vlong n)))) m |
-  Psubl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (Vint n)))) m |
   Pandq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andl (rs (IR rd)) (rs (IR r1))))) m |
   Pandl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andd (rs (IR rd)) (rs (IR r1))))) m |
-  Pandq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andl (rs (IR rd)) (Vlong n)))) m |
-  Pandl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andd (rs (IR rd)) (Vint n)))) m |
   Porq_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
   Porl_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
-  Porq_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
-  Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
   Pxorq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
   Pxorl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
-  Pxorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
-  Pxorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
+  Pmull_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs (IR RAX))(rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mulhu  (rs (IR RAX))(rs (IR r1))))) m |
+  Pmulq_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull  (rs (IR RAX))(rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mullhu  (rs (IR RAX))(rs (IR r1))))) m |
+  Pimull_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs (IR RAX))(rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mulhs  (rs (IR RAX))(rs (IR r1))))) m |
+  Pimulq_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull  (rs (IR RAX))(rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mullhs  (rs (IR RAX))(rs (IR r1))))) m |
+
+  Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shlu (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"
+
+(*
+  Paddq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.addl (rs (IR rd)) (Vlong n)))) m |
+  Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add  (rs (IR rd)) (Vint n)))) m |
+  Psubq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (Vlong n)))) m |
+  Psubl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (Vint n)))) m |
+  Pandq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andl (rs (IR rd)) (Vlong n)))) m |
+  Pandl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andd (rs (IR rd)) (Vint n)))) m |
+  Porq_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
+  Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
+  Pxorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
+  Pxorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
+
+*)
 
 (**r
   | Pmovzb_rr rd r1 =>

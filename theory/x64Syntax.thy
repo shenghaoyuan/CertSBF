@@ -144,6 +144,8 @@ datatype instruction =
   | Pmovq_ri ireg u64
   | Pmovl_rm ireg addrmode
   | Pmovq_rm ireg addrmode
+  | Pmovb_rm ireg addrmode
+  | Pmovw_rm ireg addrmode
   | Pmovl_mr addrmode ireg
   | Pmovq_mr addrmode ireg
   (** Moves with conversion *)
@@ -174,6 +176,11 @@ datatype instruction =
   | Psubq_rr ireg ireg
   | Psubl_ri ireg u32
   | Psubq_ri ireg u64
+  | Pmull_r ireg
+  | Pmulq_r ireg
+  | Pimull_r ireg
+  | Pimulq_r ireg
+  | Pshll_ri ireg u8
    (*
   | Pimull_rr ireg ireg
   | Pimulq_rr ireg ireg

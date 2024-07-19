@@ -19,7 +19,7 @@ definition sub_overflowi64 :: "u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightar
 )"
 
 
-datatype val = Vundef | Vint u32 | Vlong u64
+datatype val = Vundef | Vbyte u8 | Vint u32 | Vlong u64
 
 subsection \<open> 32-bit Arithmetic operations \<close>
 
@@ -54,6 +54,21 @@ definition mul :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition mulhu :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mulhu v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint ((n1 * n2) div (2 ^ 32) ) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition mulhs :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mulhs v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> 
+              Vint ( ((scast n1) * (scast n2)) div (2 ^ 32) )  | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
 definition sub_overflow :: "val \<Rightarrow> val \<Rightarrow> val" where
 "sub_overflow v1 v2 = (
   case v1 of
@@ -82,6 +97,26 @@ definition andd :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition shlu :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shlu v n = (
+  case v of
+  Vint i  \<Rightarrow> Vint (i << (unsigned n)) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition shru :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shru v n = (
+  case v of
+  Vint i  \<Rightarrow> Vint (i >> (unsigned n)) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition shri :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shri v n = (
+  case v of
+  Vint i  \<Rightarrow> Vint (ucast (((scast i)::i32) >> (unsigned n))) |
+  _ \<Rightarrow> Vundef
+)"
 
 subsection \<open> 64-bit Arithmetic operations \<close>
 
@@ -113,6 +148,21 @@ definition mull :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition mullhu :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mullhu v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong ((n1 * n2) div (2 ^ 64) ) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition mullhs :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mullhs v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> 
+                Vlong (((scast n1) * (scast n2)) div (2 ^ 64) ) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
 definition subl_overflow :: "val \<Rightarrow> val \<Rightarrow> val" where
 "subl_overflow v1 v2 = (
   case v1 of
@@ -140,6 +190,29 @@ definition andl :: "val \<Rightarrow> val \<Rightarrow> val" where
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (Bit_Operations.and n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
+
+definition shllu :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shllu v n = (
+  case v of
+  Vlong i  \<Rightarrow> Vlong (i << (unsigned n)) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition shrlu :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shrlu v n = (
+  case v of
+  Vlong i  \<Rightarrow> Vlong (i >> (unsigned n)) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition shrli :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shrli v n = (
+  case v of
+  Vlong i  \<Rightarrow> Vlong (ucast (((scast i)::i64) >> (unsigned n))) |
+  _ \<Rightarrow> Vundef
+)"
+
+
 
 subsection \<open> Comparisons \<close>
 
