@@ -25,7 +25,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           if modrm = 0b11 then (
             case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
             case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmov_rr dst src # l) )))
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovq_rr dst src # l) )))
           else
             None
       else if op = 0x01 then

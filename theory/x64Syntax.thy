@@ -138,7 +138,8 @@ datatype testcond =
 
 datatype instruction =
   (** Moves *)
-    Pmov_rr ireg ireg       (**r [mov] (integer) *)
+    Pmovq_rr ireg ireg       (**r [mov] (integer) *)
+  | Pmovl_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovl_ri ireg u32
   | Pmovq_ri ireg u64
   | Pmovl_rm ireg addrmode
