@@ -148,16 +148,21 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Porl_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
   Pxorq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
   Pxorl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
-  Pmull_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs (IR RAX))(rs (IR r1)))) in
-                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mulhu  (rs (IR RAX))(rs (IR r1))))) m |
-  Pmulq_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull  (rs (IR RAX))(rs (IR r1)))) in
-                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mullhu  (rs (IR RAX))(rs (IR r1))))) m |
-  Pimull_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs (IR RAX))(rs (IR r1)))) in
-                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mulhs  (rs (IR RAX))(rs (IR r1))))) m |
-  Pimulq_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull  (rs (IR RAX))(rs (IR r1)))) in
-                     Next (nextinstr_nf sz (rs1#(IR RDX)<- (Val.mullhs  (rs (IR RAX))(rs (IR r1))))) m |
+  Pmull_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs(IR RAX)) (rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhu(rs (IR RAX))(rs (IR r1))))) m |
+  Pmulq_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull (rs(IR RAX)) (rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mullhu(rs (IR RAX))(rs (IR r1))))) m |
+  Pimull_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs(IR RAX)) (rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhs(rs (IR RAX))(rs (IR r1))))) m |
+  Pimulq_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull (rs(IR RAX)) (rs (IR r1)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mullhs(rs (IR RAX))(rs (IR r1))))) m |
 
-  Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shlu (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shll (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Pshrl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Pshrq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shrl (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Psarl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Psarq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarl (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"

@@ -97,22 +97,22 @@ definition andd :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-definition shlu :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shlu v n = (
+definition shl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shl v n = (
   case v of
   Vint i  \<Rightarrow> Vint (i << (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shru :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shru v n = (
+definition shr :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shr v n = (
   case v of
   Vint i  \<Rightarrow> Vint (i >> (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shri :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shri v n = (
+definition sar :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"sar v n = (
   case v of
   Vint i  \<Rightarrow> Vint (ucast (((scast i)::i32) >> (unsigned n))) |
   _ \<Rightarrow> Vundef
@@ -191,22 +191,22 @@ definition andl :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-definition shllu :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shllu v n = (
+definition shll :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shll v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (i << (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shrlu :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shrlu v n = (
+definition shrl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shrl v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (i >> (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shrli :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shrli v n = (
+definition sarl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"sarl v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (ucast (((scast i)::i64) >> (unsigned n))) |
   _ \<Rightarrow> Vundef

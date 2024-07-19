@@ -170,18 +170,17 @@ datatype instruction =
   | Pnegq ireg
   | Paddq_rr ireg ireg
   | Paddl_rr ireg ireg
-  | Paddl_ri ireg u32
-  | Paddq_ri ireg u64
   | Psubl_rr ireg ireg
   | Psubq_rr ireg ireg
-  | Psubl_ri ireg u32
-  | Psubq_ri ireg u64
   | Pmull_r ireg
   | Pmulq_r ireg
   | Pimull_r ireg
   | Pimulq_r ireg
-  | Pshll_ri ireg u8
-   (*
+(*
+  | Paddl_ri ireg u32
+  | Paddq_ri ireg u64
+  | Psubl_ri ireg u32
+  | Psubq_ri ireg u64
   | Pimull_rr ireg ireg
   | Pimulq_rr ireg ireg
   | Pimull_ri ireg u32
@@ -198,19 +197,31 @@ datatype instruction =
   | Pidivq ireg *)
   | Pandl_rr ireg ireg
   | Pandq_rr ireg ireg
-  | Pandl_ri ireg u32
-  | Pandq_ri ireg u64
   | Porl_rr ireg ireg
   | Porq_rr ireg ireg
-  | Porl_ri ireg u32
-  | Porq_ri ireg u64
-(*| Pxorl_r ireg                  (**r [xor] with self = set to zero *)
-  | Pxorq_r ireg*)
   | Pxorl_rr ireg ireg
   | Pxorq_rr ireg ireg
+  | Pshll_ri ireg u8
+  | Pshlq_ri ireg u8
+  | Pshll_r ireg
+  | Pshlq_r ireg
+  | Pshrl_ri ireg u8
+  | Pshrq_ri ireg u8
+  | Pshrl_r ireg
+  | Pshrq_r ireg
+  | Psarl_ri ireg u8
+  | Psarq_ri ireg u8
+  | Psarl_r ireg
+  | Psarq_r ireg
+(*| Pxorl_r ireg                  (**r [xor] with self = set to zero *)
+  | Pxorq_r ireg
+  | Pandl_ri ireg u32
+  | Pandq_ri ireg u64
+  | Porl_ri ireg u32
+  | Porq_ri ireg u64 
   | Pxorl_ri ireg u32
   | Pxorq_ri ireg u64
-(*| Pnotl ireg
+  | Pnotl ireg
   | Pnotq ireg 
   | Psall_rcl ireg
   | Psalq_rcl ireg
