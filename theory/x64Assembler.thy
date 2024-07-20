@@ -114,7 +114,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg r1) in
       Some [ rex, op, rop] |
- \<comment> \<open> P2884 `MUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 100w : 11 reg1 reg2` \<close>
+  \<comment> \<open> P2884 `MUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 100w : 11 reg1 reg2` \<close>
   Pmulq_r r1 \<Rightarrow>
     let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
       True \<comment> \<open> W \<close>
@@ -136,7 +136,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg r1) in
       Some [ rex, op, rop] |
- \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 101w : 11 reg1 reg2` \<close>
+  \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 101w : 11 reg1 reg2` \<close>
   Pimulq_r r1 \<Rightarrow>
     let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
       True \<comment> \<open> W \<close>
@@ -147,6 +147,146 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg r1) in
       Some [ rex, op, rop] |
+  \<comment> \<open> P2889 `SHL register by immediate count`      -> ` 0100 000B 1100 000w : 11 100 reg : imm8 ` \<close>
+  Pshll_ri rd n \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc1 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+      Some [ rex, op, rop, imm] |
+  \<comment> \<open> P2889 `SHL qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 100 reg : imm8 ` \<close>
+  Pshlq_ri rd n \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc1 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+      Some [ rex, op, rop, imm] |
+  \<comment> \<open> P2889 `SHL register by CL`                   -> ` 0100 000B 1101 001w : 11 100 reg ` \<close>
+  Pshll_r rd  \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xd3 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
+      Some [ rex, op, rop] |
+  \<comment> \<open> P2889 `SHL qwordregister by CL`              -> ` 0100 100B 1101 001w : 11 100 reg ` \<close>
+  Pshlq_r rd  \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xd3 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
+      Some [ rex, op, rop ] |
+  \<comment> \<open> P2890 `SHR register by immediate count`      -> ` 0100 000B 1100 000w : 11 101 reg : imm8 ` \<close>
+  Pshrl_ri rd n \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc1 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+      Some [ rex, op, rop, imm] |
+  \<comment> \<open> P2890 `SHR qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 101 reg : imm8 ` \<close>
+  Pshrq_ri rd n \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc1 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+      Some [ rex, op, rop, imm] |
+  \<comment> \<open> P2890 `SHR register by CL`                   -> ` 0100 000B 1101 001w : 11 101 reg ` \<close>
+  Pshrl_r rd  \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xd3 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
+      Some [ rex, op, rop ] |
+  \<comment> \<open> P2890 `SHR qwrodregister by CL`              -> ` 0100 100B 1101 001w : 11 101 reg ` \<close>
+  Pshrq_r rd  \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xd3 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
+      Some [ rex, op, rop ] |
+  \<comment> \<open> P2888 `SAR register by immediate count`      -> ` 0100 000B 1100 000w : 11 111 reg : imm8 ` \<close>
+  Psarl_ri rd n \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc1 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+      Some [ rex, op, rop, imm] |
+  \<comment> \<open> P2888 `SAR qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 111 reg : imm8 ` \<close>
+  Psarq_ri rd n \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc1 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+      Some [ rex, op, rop, imm] |
+  \<comment> \<open> P2888 `SAR register by CL`                   -> ` 0100 000B 1101 001w : 11 111 reg ` \<close>
+  Psarl_r rd  \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xd3 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
+      Some [ rex, op, rop ] |
+  \<comment> \<open> P2888 `SAR qwordregister by CL`              -> ` 0100 100B 1101 001w : 11 111 reg ` \<close>
+  Psarq_r rd  \<Rightarrow>
+    let (rex:: u8) = or 0x40 (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xd3 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
+      Some [ rex, op, rop ] |
+
+
   \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
   Pnop \<Rightarrow> Some [0x90] |
   _ \<Rightarrow> None
