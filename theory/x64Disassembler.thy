@@ -67,7 +67,11 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           else
             None
       else if op = 0xf7 then
-      \<comment> \<open> P2884 `NEG register2` -> `0100 W00B : 1111 011w : 11011reg` \<close>
+      \<comment> \<open> P2884 `NEG  register2`                           -> ` 0100 W00B : 1111 011w : 11011reg` \<close>
+      \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 100w : 11 reg1 reg2` \<close>
+      \<comment> \<open> P2884 `MUL  RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 100w : 11 reg1 reg2` \<close>
+      \<comment> \<open> P2884 `IMUL AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 101w : 11 reg1 reg2` \<close>
+      \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 101w : 11 reg1 reg2` \<close>
         let w     = unsigned_bitfield_extract_u8 3 1 rex in
         let r     = unsigned_bitfield_extract_u8 2 1 rex in
         let b     = unsigned_bitfield_extract_u8 0 1 rex in
@@ -75,14 +79,26 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
         let opex  = unsigned_bitfield_extract_u8 3 3 reg in
         let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
         let dst   = bitfield_insert_u8 3 1 reg2 b in
-          if (modrm = 0b11) \<and> (opex = 0b011) then (
+        if modrm = 0b11 \<and> opex = 0b011 then 
+          case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+            if w = 1 then
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegq dst # l) 
+            else 
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegl dst # l)) 
+           
+        else if modrm = 0b11 \<and> opex = 0b100 then
             case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-              if w = 1 then
-                case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegq dst # l) 
-              else 
-                case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegl dst # l))) 
-          else
-            None
+            if w = 1 then
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmulq_r dst # l) 
+            else 
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmull_r dst # l)) 
+        else if modrm = 0b11 \<and> opex = 0b101 then
+            case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+            if w = 1 then
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pimulq_r dst # l) 
+            else 
+              case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pimull_r dst # l)) 
+        else None
       else if op = 0x09 then
       \<comment> \<open> P2884 `OR register1 to register2` -> ` 0100 WR0B : 0000 100w : 11 reg1 reg2` \<close>
         let w     = unsigned_bitfield_extract_u8 3 1 rex in
@@ -95,11 +111,11 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
         let dst   = bitfield_insert_u8 3 1 reg2 b in
           if modrm = 0b11 then (
             case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-            case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-              if w = 1 then
-                case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Porq_rr dst src # l) 
-              else 
-                case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Porl_rr dst src # l) )))
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                if w = 1 then
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Porq_rr dst src # l) 
+                else 
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Porl_rr dst src # l) )))
           else
             None
       else if op = 0x21 then
