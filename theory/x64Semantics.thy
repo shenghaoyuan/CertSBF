@@ -159,10 +159,16 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
 
   Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shll (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shlr (rs (IR rd)) (rs(IR RCX))))) m |
+  Pshlq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shllr(rs (IR rd)) (rs(IR RCX))))) m |
   Pshrl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pshrq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shrl (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Pshrl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shrr (rs (IR rd)) (rs(IR RCX))))) m |
+  Pshrq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shrlr(rs (IR rd)) (rs(IR RCX))))) m |
   Psarl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Psarq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarl (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
+  Psarl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarr (rs (IR rd)) (rs(IR RCX))))) m |
+  Psarq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarlr(rs (IR rd)) (rs(IR RCX))))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"

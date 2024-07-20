@@ -104,10 +104,24 @@ definition shl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition shlr :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shlr v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL::u8`\<close>
+  _ \<Rightarrow> Vundef
+)"
+
 definition shr :: "val \<Rightarrow> u8 \<Rightarrow> val" where
 "shr v n = (
   case v of
   Vint i  \<Rightarrow> Vint (i >> (unsigned n)) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition shrr :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shrr v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL::u8`\<close>
   _ \<Rightarrow> Vundef
 )"
 
@@ -117,6 +131,14 @@ definition sar :: "val \<Rightarrow> u8 \<Rightarrow> val" where
   Vint i  \<Rightarrow> Vint (ucast (((scast i)::i32) >> (unsigned n))) |
   _ \<Rightarrow> Vundef
 )"
+
+definition sarr :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sarr v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open>`v2 = RCX - CL::u8`\<close>
+  _ \<Rightarrow> Vundef
+)"
+
 
 subsection \<open> 64-bit Arithmetic operations \<close>
 
@@ -198,10 +220,24 @@ definition shll :: "val \<Rightarrow> u8 \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition shllr :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shllr v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (n1 << (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL`\<close>
+  _ \<Rightarrow> Vundef
+)"
+
 definition shrl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
 "shrl v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (i >> (unsigned n)) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition shrlr :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shrlr v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef
 )"
 
@@ -212,7 +248,12 @@ definition sarl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-
+definition sarlr :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sarlr v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open>`v2 = RCX - CL`\<close>
+  _ \<Rightarrow> Vundef
+)"
 
 subsection \<open> Comparisons \<close>
 
