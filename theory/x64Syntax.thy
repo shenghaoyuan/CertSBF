@@ -176,6 +176,10 @@ datatype instruction =
   | Pmulq_r ireg
   | Pimull_r ireg
   | Pimulq_r ireg
+  | Pdivl_r ireg
+  | Pdivq_r ireg
+  | Pidivl_r ireg
+  | Pidivq_r ireg
 (*
   | Paddl_ri ireg u32
   | Paddq_ri ireg u64

@@ -143,20 +143,26 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.subl (rs (IR rd)) (rs (IR r1))))) m |
   Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub  (rs (IR rd)) (rs (IR r1))))) m |
   Pandq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andl (rs (IR rd)) (rs (IR r1))))) m |
-  Pandl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andd (rs (IR rd)) (rs (IR r1))))) m |
+  Pandl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.andu (rs (IR rd)) (rs (IR r1))))) m |
   Porq_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
   Porl_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
   Pxorq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (rs (IR r1))))) m |
   Pxorl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (rs (IR r1))))) m |
-  Pmull_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs(IR RAX)) (rs (IR r1)))) in
+  Pmull_r   r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mul  (rs(IR RAX)) (rs (IR r1)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhu(rs (IR RAX))(rs (IR r1))))) m |
-  Pmulq_r   r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull (rs(IR RAX)) (rs (IR r1)))) in
+  Pmulq_r   r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mull (rs(IR RAX)) (rs (IR r1)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mullhu(rs (IR RAX))(rs (IR r1))))) m |
-  Pimull_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mul  (rs(IR RAX)) (rs (IR r1)))) in
+  Pimull_r  r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mul  (rs(IR RAX)) (rs (IR r1)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhs(rs (IR RAX))(rs (IR r1))))) m |
-  Pimulq_r  r1    \<Rightarrow> let rs1= (rs#(IR RAX)<- (Val.mull (rs(IR RAX)) (rs (IR r1)))) in
+  Pimulq_r  r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mull (rs(IR RAX)) (rs (IR r1)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mullhs(rs (IR RAX))(rs (IR r1))))) m |
-
+  Pdivl_r   r1    \<Rightarrow> ( let nh = rs (IR RDX) in 
+                       let nl = rs (IR RAX) in
+                       let d  = rs (IR r1) in
+                       case Val.divu nh nl d of Some (Vint q, Vint r) \<Rightarrow> (
+                         let rs1= (rs#(IR RAX) <- (Vint q)) in 
+                         Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m)
+                       | _  \<Rightarrow> Stuck ) |
   Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shll (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shlr (rs (IR rd)) (rs(IR RCX))))) m |

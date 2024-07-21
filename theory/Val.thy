@@ -69,6 +69,18 @@ definition mulhs :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition divu :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divu v1 v2 v3 = (
+  case v1 of 
+    Vint nh \<Rightarrow> (case v2 of 
+      Vint nl \<Rightarrow> (case v3 of 
+        Vint d \<Rightarrow> Some (Vint 1, Vint 1)
+      | _ \<Rightarrow> None)
+    | _ \<Rightarrow> None)
+  | _ \<Rightarrow> None
+)"
+
+
 definition sub_overflow :: "val \<Rightarrow> val \<Rightarrow> val" where
 "sub_overflow v1 v2 = (
   case v1 of
@@ -90,8 +102,8 @@ definition or :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-definition andd :: "val \<Rightarrow> val \<Rightarrow> val" where
-"andd v1 v2 = (
+definition andu :: "val \<Rightarrow> val \<Rightarrow> val" where
+"andu v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (Bit_Operations.and n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
