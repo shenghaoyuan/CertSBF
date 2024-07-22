@@ -24,6 +24,7 @@ value "ireg_of_u8
 
 value "and x86CommType.RBX (195 >> 6) = x86CommType.RBX"
 
+(*
 lemma rbx_simp [simp]: "or (or 192 (and 56 (u8_of_ireg r1 << 3))) (and x86CommType.RDI (u8_of_ireg rd)) = rop
   \<Longrightarrow> and x86CommType.RBX (rop >> 6) = x86CommType.RBX"
   apply (cases r1; cases rd, auto)
@@ -43,7 +44,7 @@ lemma pmov_src [simp]: "
        = Some r1"
   apply (unfold u8_of_bool_def bitfield_insert_u8_def Let_def)
   apply (cases r1; cases rd, auto simp add: ireg_of_u8_def)
-  done
+  done *)
 
 lemma x64assemble_disassemble_consistency_pmovq_rr: "\<And>x11 x12.
        (\<And>l_bin. x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm) \<Longrightarrow>
