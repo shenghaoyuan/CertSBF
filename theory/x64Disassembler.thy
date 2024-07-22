@@ -14,8 +14,12 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
     if h = 0x66 then \<comment> \<open> `16-bit op`  \<close>
       None
     else  \<comment> \<open> h is rex  \<close>
+      if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then \<comment> \<open> TODO: it should also be 0100?  \<close>
+        None
+      else
       let w = unsigned_bitfield_extract_u8 3 1 h in
       let r = unsigned_bitfield_extract_u8 2 1 h in
+      let x = unsigned_bitfield_extract_u8 1 1 h in
       let b = unsigned_bitfield_extract_u8 0 1 h in
         case t of [] \<Rightarrow> None | h1#[] \<Rightarrow> None | op#reg#t1 \<Rightarrow> (
           let modrm = unsigned_bitfield_extract_u8 6 2 reg in
@@ -25,7 +29,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           let dst   = bitfield_insert_u8 3 1 reg2 b in
             \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 0R0B : 1000 100w : 11 reg1 reg2` \<close>
             if op = 0x89 then
-              if modrm = 0b11 then (
+              if w = 1 \<and> x = 0 \<and> modrm = 0b11 then (  \<comment> \<open> rex should be `W=1` and `X=0`\<close>
                 case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                   case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovq_rr dst src # l) )))
