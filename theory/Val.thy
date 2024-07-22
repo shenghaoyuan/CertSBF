@@ -19,12 +19,12 @@ definition sub_overflowi64 :: "u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightar
 )"
 
 
-datatype val = Vundef | Vbyte u8 | Vint u32 | Vlong u64
+datatype val = Vundef | Vbyte u8 | Vshort | Vint u32 | Vlong u64
 
 subsection \<open> 32-bit Arithmetic operations \<close>
 
-definition neg :: "val \<Rightarrow> val" where
-"neg v = (
+definition neg32 :: "val \<Rightarrow> val" where
+"neg32 v = (
   case v of
   Vint n \<Rightarrow> Vint (- n) |
   _ => Vundef
@@ -33,44 +33,44 @@ definition neg :: "val \<Rightarrow> val" where
 definition maketotal :: "val option \<Rightarrow> val" where
 "maketotal ov = (case ov of Some v \<Rightarrow> v | None \<Rightarrow> Vundef)"
 
-definition add :: "val \<Rightarrow> val \<Rightarrow> val" where
-"add v1 v2 = (
+definition add32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"add32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 + n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition sub :: "val \<Rightarrow> val \<Rightarrow> val" where
-"sub v1 v2 = (
+definition sub32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sub32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 - n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition mul :: "val \<Rightarrow> val \<Rightarrow> val" where
-"mul v1 v2 = (
+definition mul32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mul32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 * n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition mulhu :: "val \<Rightarrow> val \<Rightarrow> val" where
-"mulhu v1 v2 = (
+definition mulhu32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mulhu32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint ((n1 * n2) div (2 ^ 32) ) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition mulhs :: "val \<Rightarrow> val \<Rightarrow> val" where
-"mulhs v1 v2 = (
+definition mulhs32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mulhs32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> 
               Vint ( ((scast n1) * (scast n2)) div (2 ^ 32) )  | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition divu :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
-"divu v1 v2 v3 = (
+definition divu32 :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divu32 v1 v2 v3 = (
   case v1 of 
     Vint nh \<Rightarrow> (case v2 of 
       Vint nl \<Rightarrow> (case v3 of 
@@ -81,71 +81,71 @@ definition divu :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \
 )"
 
 
-definition sub_overflow :: "val \<Rightarrow> val \<Rightarrow> val" where
-"sub_overflow v1 v2 = (
+definition sub_overflow32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sub_overflow32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (sub_overflowi32 n1 n2 0) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition negative :: "val \<Rightarrow> val" where
-"negative v = (
+definition negative32 :: "val \<Rightarrow> val" where
+"negative32 v = (
   case v of
   Vint n \<Rightarrow> Vint (if (scast n) <s (0::i32) then 1 else 0 ) |
   _ \<Rightarrow> Vundef
 )"
 
-definition or :: "val \<Rightarrow> val \<Rightarrow> val" where
-"or v1 v2 = (
+definition or32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"or32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (Bit_Operations.or n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition andu :: "val \<Rightarrow> val \<Rightarrow> val" where
-"andu v1 v2 = (
+definition and32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"and32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (Bit_Operations.and n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shl v n = (
+definition shl32 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shl32 v n = (
   case v of
   Vint i  \<Rightarrow> Vint (i << (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shlr :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shlr v1 v2 = (
+definition shlr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shlr32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL::u8`\<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition shr :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shr v n = (
+definition shr32 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shr32 v n = (
   case v of
   Vint i  \<Rightarrow> Vint (i >> (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shrr :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shrr v1 v2 = (
+definition shrr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shrr32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL::u8`\<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition sar :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"sar v n = (
+definition sar32 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"sar32 v n = (
   case v of
   Vint i  \<Rightarrow> Vint (ucast (((scast i)::i32) >> (unsigned n))) |
   _ \<Rightarrow> Vundef
 )"
 
-definition sarr :: "val \<Rightarrow> val \<Rightarrow> val" where
-"sarr v1 v2 = (
+definition sarr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sarr32 v1 v2 = (
   case v1 of
   Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open>`v2 = RCX - CL::u8`\<close>
   _ \<Rightarrow> Vundef
@@ -154,114 +154,114 @@ definition sarr :: "val \<Rightarrow> val \<Rightarrow> val" where
 
 subsection \<open> 64-bit Arithmetic operations \<close>
 
-definition negl :: "val \<Rightarrow> val" where
-"negl v = (
+definition neg64 :: "val \<Rightarrow> val" where
+"neg64 v = (
   case v of
   Vlong n \<Rightarrow> Vlong (- n) |
   _ => Vundef
 )"
 
-definition addl :: "val \<Rightarrow> val \<Rightarrow> val" where
-"addl v1 v2 = (
+definition add64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"add64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (n1 + n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition subl :: "val \<Rightarrow> val \<Rightarrow> val" where
-"subl v1 v2 = (
+definition sub64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sub64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (n1 - n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition mull :: "val \<Rightarrow> val \<Rightarrow> val" where
-"mull v1 v2 = (
+definition mul64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mul64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (n1 * n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition mullhu :: "val \<Rightarrow> val \<Rightarrow> val" where
-"mullhu v1 v2 = (
+definition mullhu64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mullhu64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong ((n1 * n2) div (2 ^ 64) ) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition mullhs :: "val \<Rightarrow> val \<Rightarrow> val" where
-"mullhs v1 v2 = (
+definition mullhs64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"mullhs64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> 
                 Vlong (((scast n1) * (scast n2)) div (2 ^ 64) ) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition subl_overflow :: "val \<Rightarrow> val \<Rightarrow> val" where
-"subl_overflow v1 v2 = (
+definition sub_overflow64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sub_overflow64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vint (ucast (sub_overflowi64 n1 n2 0)) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition negativel :: "val \<Rightarrow> val" where
-"negativel v = (
+definition negative64 :: "val \<Rightarrow> val" where
+"negative64 v = (
   case v of
   Vlong n \<Rightarrow> Vlong (if (scast n) <s (0::i64) then 1 else 0 ) |
   _ \<Rightarrow> Vundef
 )"
 
-definition orl :: "val \<Rightarrow> val \<Rightarrow> val" where
-"orl v1 v2 = (
+definition or64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"or64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (Bit_Operations.or n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition andl :: "val \<Rightarrow> val \<Rightarrow> val" where
-"andl v1 v2 = (
+definition and64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"and64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (Bit_Operations.and n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shll :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shll v n = (
+definition shl64 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shl64 v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (i << (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shllr :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shllr v1 v2 = (
+definition shllr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shllr64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (n1 << (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition shrl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shrl v n = (
+definition shr64 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"shr64 v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (i >> (unsigned n)) |
   _ \<Rightarrow> Vundef
 )"
 
-definition shrlr :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shrlr v1 v2 = (
+definition shrlr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shrlr64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition sarl :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"sarl v n = (
+definition sar64 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
+"sar64 v n = (
   case v of
   Vlong i  \<Rightarrow> Vlong (ucast (((scast i)::i64) >> (unsigned n))) |
   _ \<Rightarrow> Vundef
 )"
 
-definition sarlr :: "val \<Rightarrow> val \<Rightarrow> val" where
-"sarlr v1 v2 = (
+definition sarlr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sarlr64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef

@@ -3,7 +3,7 @@ section \<open> x64 Syntax \<close>
 theory x64Syntax
 imports
   Main
-  rBPFCommType
+  rBPFCommType Mem
 begin
   
 subsection  \<open> x64 Syntax \<close>
@@ -142,15 +142,9 @@ datatype instruction =
   | Pmovl_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovl_ri ireg u32
   | Pmovq_ri ireg u64
-  | Pmovl_rm ireg addrmode
-  | Pmovq_rm ireg addrmode
-  | Pmovb_rm ireg addrmode
-  | Pmovw_rm ireg addrmode
-  | Pmovl_mr addrmode ireg
-  | Pmovq_mr addrmode ireg
+  | Pmov_rm  ireg addrmode memory_chunk
+  | Pmov_mr  addrmode ireg memory_chunk
   (** Moves with conversion *)
-  | Pmovb_mr addrmode ireg   (**r [mov] (8-bit int) *)
-  | Pmovw_mr addrmode ireg   (**r [mov] (16-bit int) *)
   | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
   | Pmovzb_rm ireg addrmode
   | Pmovsb_rr ireg ireg     (**r [movsb] (8-bit sign-extension) *)
