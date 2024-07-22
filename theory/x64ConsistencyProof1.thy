@@ -62,28 +62,15 @@ lemma x64assemble_disassemble_consistency_pmovq_rr: "\<And>x11 x12.
       apply (cases l_bin)
       subgoal by fastforce
       subgoal for rex l1
-        apply (cases "rex = 102")
-        subgoal
+        apply (cases l1)
+        subgoal by fastforce
+        subgoal for op l1
           apply simp
-          apply (cases r1; cases rd,auto simp add: ireg_of_u8_def)
-          done
-        subgoal
-          apply (cases "rex = 144")
-          subgoal
-            apply simp
-            apply (cases r1; cases rd,auto simp add: ireg_of_u8_def)
-            done
-
           apply (cases l1)
           subgoal by fastforce
-          subgoal for op l1
+          subgoal for reg l1
             apply simp
-            apply (cases l1)
-            subgoal by fastforce
-            subgoal for reg l1
-              apply simp
-              apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-              done
+            apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
             done
           done
         done
@@ -114,6 +101,110 @@ lemma x64assemble_disassemble_consistency_pmovq_rr: "\<And>x11 x12.
                 apply (auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def split: ireg.split)\<close>
 
 
+lemma x64assemble_disassemble_consistency_pneg: "\<And>x21a.
+       (\<And>l_bin. x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm) \<Longrightarrow>
+       (case x64_assemble l_asm of None \<Rightarrow> None
+        | Some l \<Rightarrow> Some ([or 64 (construct_rex_to_u8 True False False (and (u8_of_ireg x21a) x86CommType.R8 \<noteq> x86CommType.RAX)), 247, construct_modsib_to_u8 x86CommType.RBX x86CommType.RBX (u8_of_ireg x21a)] @ l)) =
+       Some l_bin \<Longrightarrow>
+       a = Pnegq x21a \<Longrightarrow> x64_disassemble l_bin = Some (Pnegq x21a # l_asm)"
+  subgoal for rd
+    apply (cases "x64_assemble l_asm")
+    subgoal by simp
+    subgoal for l1
+      apply simp
+      apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)
+      apply simp
+      apply (cases l_bin)
+      subgoal by fastforce
+      subgoal for rex l1
+        apply (cases l1)
+        subgoal by fastforce
+        subgoal for op l1
+          apply simp
+          apply (cases l1)
+          subgoal by fastforce
+          subgoal for reg l1
+            apply simp
+            apply (cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma x64assemble_disassemble_consistency_paddq_rr :"\<And>x221 x222.
+       (\<And>l_bin. x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm) \<Longrightarrow>
+       (case x64_assemble l_asm of None \<Rightarrow> None
+        | Some l \<Rightarrow>
+            Some
+             ([or 64 (construct_rex_to_u8 True (and (u8_of_ireg x222) x86CommType.R8 \<noteq> x86CommType.RAX) False (and (u8_of_ireg x221) x86CommType.R8 \<noteq> x86CommType.RAX)), x86CommType.RCX,
+               construct_modsib_to_u8 x86CommType.RBX (u8_of_ireg x222) (u8_of_ireg x221)] @
+              l)) =
+       Some l_bin \<Longrightarrow>
+       a = Paddq_rr x221 x222 \<Longrightarrow> x64_disassemble l_bin = Some (Paddq_rr x221 x222 # l_asm)"
+  subgoal for rd r1
+    apply (cases "x64_assemble l_asm")
+    subgoal by simp
+    subgoal for l1
+      apply simp
+      apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)
+      apply simp
+      apply (cases l_bin)
+      subgoal by fastforce
+      subgoal for rex l1
+        apply (cases l1)
+        subgoal by fastforce
+        subgoal for op l1
+          apply simp
+          apply (cases l1)
+          subgoal by fastforce
+          subgoal for reg l1
+            apply simp
+            apply (cases r1; cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma x64assemble_disassemble_consistency_psubq_rr: "\<And>x251 x252.
+       (\<And>l_bin. x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm) \<Longrightarrow>
+       (case x64_assemble l_asm of None \<Rightarrow> None
+        | Some l \<Rightarrow>
+            Some
+             ([or 64 (construct_rex_to_u8 True (and (u8_of_ireg x252) x86CommType.R8 \<noteq> x86CommType.RAX) False (and (u8_of_ireg x251) x86CommType.R8 \<noteq> x86CommType.RAX)), 41,
+               construct_modsib_to_u8 x86CommType.RBX (u8_of_ireg x252) (u8_of_ireg x251)] @
+              l)) =
+       Some l_bin \<Longrightarrow>
+       a = Psubq_rr x251 x252 \<Longrightarrow> x64_disassemble l_bin = Some (Psubq_rr x251 x252 # l_asm)"
+  subgoal for rd r1
+    apply (cases "x64_assemble l_asm")
+    subgoal by simp
+    subgoal for l1
+      apply simp
+      apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)
+      apply simp
+      apply (cases l_bin)
+      subgoal by fastforce
+      subgoal for rex l1
+        apply (cases l1)
+        subgoal by fastforce
+        subgoal for op l1
+          apply simp
+          apply (cases l1)
+          subgoal by fastforce
+          subgoal for reg l1
+            apply simp
+            apply (cases r1; cases rd, auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            done
+          done
+        done
+      done
+    done
+  done
+
 lemma x64assemble_disassemble_consistency:
   "x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm"
   apply (induction l_asm arbitrary: l_bin)
@@ -127,11 +218,14 @@ lemma x64assemble_disassemble_consistency:
       by blast
 
       \<comment> \<open> Pnegq \<close>
-    subgoal  sorry
+    subgoal for rd using x64assemble_disassemble_consistency_pneg
+      by blast
       \<comment> \<open> Paddq_rr \<close>
-    subgoal  sorry
+    subgoal for rd using x64assemble_disassemble_consistency_paddq_rr
+      by blast
       \<comment> \<open> Psubq_rr \<close>
-    subgoal  sorry
+    subgoal for rd using x64assemble_disassemble_consistency_psubq_rr
+      by blast
       \<comment> \<open> Pmull_r \<close>
     subgoal  sorry
       \<comment> \<open> Pmulq_r \<close>
