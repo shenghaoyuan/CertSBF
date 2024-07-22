@@ -152,13 +152,12 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhs32 (rs (IR RAX))(rs (IR r1))))) m |
   Pimulq_r  r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mul64 (rs(IR RAX)) (rs (IR r1)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhs32 (rs (IR RAX))(rs (IR r1))))) m |
-  Pdivl_r   r1    \<Rightarrow> ( let nh = rs (IR RDX) in 
-                       let nl = rs (IR RAX) in
-                       let d  = rs (IR r1) in
-                       case Val.divu32 nh nl d of Some (Vint q, Vint r) \<Rightarrow> (
+  Pdivl_r   r1    \<Rightarrow> (case Val.divmod32u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vint q)) in 
-                         Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m)
-                       | _  \<Rightarrow> Stuck ) |
+                     Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
+  Pdivq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
+                         let rs1= (rs#(IR RAX) <- (Vint q)) in 
+                     Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
   Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl64 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shlr32 (rs (IR rd)) (rs(IR RCX))))) m |
