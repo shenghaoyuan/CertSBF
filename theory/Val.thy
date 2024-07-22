@@ -69,17 +69,52 @@ definition mulhs32 :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-definition divu32 :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
-"divu32 v1 v2 v3 = (
+\<comment>\<open> ` x86 style extended division and modulusv` \<close>
+definition divmod32u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divmod32u v1 v2 v3 = (
   case v1 of 
     Vint nh \<Rightarrow> (case v2 of 
       Vint nl \<Rightarrow> (case v3 of 
-        Vint d \<Rightarrow> Some (Vint 1, Vint 1)
+        Vint d \<Rightarrow> if d \<noteq> 0 then
+           let
+              divisor::u64 = ucast d;
+              dividend::u64 = Bit_Operations.or ((ucast nh) << 32)(ucast nl);
+              quotient::u64 = dividend div divisor;
+              remainder::u64 = dividend mod divisor
+            in
+              if quotient \<le> 0xffffffff then
+                Some (Vint (ucast quotient), Vint (ucast remainder))
+              else
+                None
+            else
+              None
       | _ \<Rightarrow> None)
     | _ \<Rightarrow> None)
   | _ \<Rightarrow> None
 )"
 
+definition divmod32s :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divmod32s v1 v2 v3 = (
+  case v1 of 
+    Vint nh \<Rightarrow> (case v2 of 
+      Vint nl \<Rightarrow> (case v3 of 
+        Vint d \<Rightarrow> if d \<noteq> 0 then
+           let
+              divisor::i64 =scast d;
+              dividend::i64 = Bit_Operations.or ((scast nh) << 32) (scast nl);
+              quotient::i64 = dividend div divisor;
+              remainder::i64 = dividend mod divisor
+            in
+              if quotient \<le>s(scast i32_MAX) \<and> (scast i32_MIN) \<le>s quotient then
+                Some (Vint (ucast quotient), Vint(ucast remainder))
+              else
+                None
+            else
+              None
+      | _ \<Rightarrow> None)
+    | _ \<Rightarrow> None)
+  | _ \<Rightarrow> None
+)"
 
 definition sub_overflow32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "sub_overflow32 v1 v2 = (
@@ -196,6 +231,31 @@ definition mullhs64 :: "val \<Rightarrow> val \<Rightarrow> val" where
                 Vlong (((scast n1) * (scast n2)) div (2 ^ 64) ) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
+
+\<comment>\<open> ` x86 style extended division and modulusv` \<close>
+definition divmod64 :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divmod64 v1 v2 v3 = (
+  case v1 of 
+    Vlong nh \<Rightarrow> (case v2 of 
+      Vlong nl \<Rightarrow> (case v3 of 
+        Vlong d \<Rightarrow> if d \<noteq> 0 then
+           let
+              divisor = d;
+              dividend = Bit_Operations.or (nh << 64) nl;
+              quotient = dividend div divisor;
+              remainder = dividend mod divisor
+            in
+              if quotient \<le> 0xffffffff then
+                Some (Vlong quotient, Vlong remainder)
+              else
+                None
+            else
+              None
+      | _ \<Rightarrow> None)
+    | _ \<Rightarrow> None)
+  | _ \<Rightarrow> None
+)"
+
 
 definition sub_overflow64 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "sub_overflow64 v1 v2 = (
