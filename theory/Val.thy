@@ -19,7 +19,7 @@ definition sub_overflowi64 :: "u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightar
 )"
 
 
-datatype val = Vundef | Vbyte u8 | Vshort | Vint u32 | Vlong u64
+datatype val = Vundef | Vbyte u8 | Vshort u16 | Vint u32 | Vlong u64
 
 subsection \<open> 32-bit Arithmetic operations \<close>
 
