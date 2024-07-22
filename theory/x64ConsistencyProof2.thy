@@ -19,46 +19,71 @@ lemma x64_disassemble_nil [simp]: "x64_disassemble l_bin = Some [] \<Longrightar
         by (metis list.distinct(1) not_Some_eq option.simps(4) option.simps(5))
       done
     subgoal
-      apply (cases l_bin)
-      subgoal by simp
+      apply (unfold Let_def)
+      apply (cases l_bin, simp_all)
       subgoal for b lb
-        apply simp
-        apply (cases lb)
-        subgoal by simp
+        apply (cases lb, simp_all)
         subgoal for c lc
-          apply simp
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (c >> 3)) (and x86CommType.RCX (a >> 2)))", simp_all)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))", simp_all)
+
+
+          apply (cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (c >> 3)) (and x86CommType.RCX (a >> 2)))", simp_all)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (c >> 3)) (and x86CommType.RCX (a >> 2)))", simp_all)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (c >> 3)) (and x86CommType.RCX (a >> 2)))", simp_all)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (c >> 3)) (and x86CommType.RCX (a >> 2)))", simp_all)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (c >> 3)) (and x86CommType.RCX (a >> 2)))", simp_all)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
           apply (cases lc)
           subgoal by simp
-          subgoal for d ld
-            apply simp
-            subgoal  \<comment> \<open> Pmov_rr \<close>
-              apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (d >> 3)) (and x86CommType.RCX (b >> 2)))")
-              subgoal by simp
-              subgoal for src
-                apply simp
-                apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI d) (and x86CommType.RCX b))")
-                subgoal by simp
-                subgoal for dst
-                  apply simp
-                  apply (cases "x64_disassemble ld", simp_all)
-                  done
-                done
-              done
+          subgoal for d ld by (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble ld", simp_all)
+          done
 
-            subgoal  \<comment> \<open> Paddq_rr \<close>
-              apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI (d >> 3)) (and x86CommType.RCX (b >> 2)))")
-              subgoal by simp
-              subgoal for src
-                apply simp
-                apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI d) (and x86CommType.RCX b))")
-                subgoal by simp
-                subgoal for dst
-                  apply simp
-                  apply (cases "x64_disassemble ld", simp_all)
-                  done
-                done
-              done
-            done
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and x86CommType.RDI c) (and x86CommType.RCX a))"; cases "x64_disassemble lc", simp_all)
           done
         done
       done
