@@ -123,8 +123,8 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
   \<comment> \<open> Moves \<close>
-  Pmovq_rr  rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
   Pmovl_rr  rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovq_rr  rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
   Pmovl_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vint n))) m |
   Pmovq_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vlong n))) m |
   Pmov_rm   rd a c  \<Rightarrow> exec_load   sz c m a rs (IR rd) |

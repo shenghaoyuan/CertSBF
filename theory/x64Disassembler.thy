@@ -14,7 +14,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
     if h = 0x66 then \<comment> \<open> `16-bit op`  \<close>
       None
     else  \<comment> \<open> h is rex  \<close>
-      if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then \<comment> \<open> TODO: it should also be 0100?  \<close>
+      if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then
         None
       else
       let w = unsigned_bitfield_extract_u8 3 1 h in
@@ -27,12 +27,16 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
           let src   = bitfield_insert_u8 3 1 reg1 r in
           let dst   = bitfield_insert_u8 3 1 reg2 b in
-            \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 0R0B : 1000 100w : 11 reg1 reg2` \<close>
+            \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 WR0B : 1000 100w : 11 reg1 reg2` \<close>
             if op = 0x89 then
-              if w = 1 \<and> x = 0 \<and> modrm = 0b11 then (  \<comment> \<open> rex should be `W=1` and `X=0`\<close>
+              if modrm = 0b11 then (
                 case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovq_rr dst src # l) )))
+                  if w = 1 \<and> x = 0 then   \<comment> \<open> rex should be `W=1` and `X=0`\<close>
+                    case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovq_rr dst src # l) 
+                  else if w = 0 \<and> x = 0 then 
+                    case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)
+                  else None))) 
               else
                 None
             else if op = 0x01 then
@@ -42,7 +46,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                   if w = 1 then
                     case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Paddq_rr dst src # l)
-                  else 
+                  else
                     case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Paddl_rr dst src # l) )))
               else
                 None
