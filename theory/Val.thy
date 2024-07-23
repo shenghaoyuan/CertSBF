@@ -82,7 +82,7 @@ definition divmod32u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
               quotient::u64 = dividend div divisor;
               remainder::u64 = dividend mod divisor
             in
-              if quotient \<le> 0xffffffff then
+              if quotient \<le> ucast u32_MAX then
                 Some (Vint (ucast quotient), Vint (ucast remainder))
               else
                 None
@@ -105,7 +105,7 @@ definition divmod32s :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
               quotient::i64 = dividend div divisor;
               remainder::i64 = dividend mod divisor
             in
-              if quotient \<le>s(scast i32_MAX) \<and> (scast i32_MIN) \<le>s quotient then
+              if quotient \<le>s (scast i32_MAX) \<and> (scast i32_MIN) \<le>s quotient then
                 Some (Vint (ucast quotient), Vint(ucast remainder))
               else
                 None
@@ -233,20 +233,43 @@ definition mullhs64 :: "val \<Rightarrow> val \<Rightarrow> val" where
 )"
 
 \<comment>\<open> ` x86 style extended division and modulusv` \<close>
-definition divmod64 :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
-"divmod64 v1 v2 v3 = (
+definition divmod64u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divmod64u v1 v2 v3 = (
   case v1 of 
     Vlong nh \<Rightarrow> (case v2 of 
       Vlong nl \<Rightarrow> (case v3 of 
         Vlong d \<Rightarrow> if d \<noteq> 0 then
            let
-              divisor = d;
-              dividend = Bit_Operations.or (nh << 64) nl;
-              quotient = dividend div divisor;
-              remainder = dividend mod divisor
+              divisor::u128 = ucast d;
+              dividend::u128 = Bit_Operations.or ((ucast nh) << 64) (ucast nl);
+              quotient::u128 = dividend div divisor;
+              remainder::u128 = dividend mod divisor
             in
-              if quotient \<le> 0xffffffff then
-                Some (Vlong quotient, Vlong remainder)
+              if quotient \<le> ucast u64_MAX then
+                Some (Vlong (ucast quotient), Vlong (ucast remainder))
+              else
+                None
+            else
+              None
+      | _ \<Rightarrow> None)
+    | _ \<Rightarrow> None)
+  | _ \<Rightarrow> None
+)"
+
+definition divmod64s :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
+"divmod64s v1 v2 v3 = (
+  case v1 of 
+    Vlong nh \<Rightarrow> (case v2 of 
+      Vlong nl \<Rightarrow> (case v3 of 
+        Vlong d \<Rightarrow> if d \<noteq> 0 then
+           let
+              divisor::i128 =scast d;
+              dividend::i128 = Bit_Operations.or ((scast nh) << 64) (scast nl);
+              quotient::i128 = dividend div divisor;
+              remainder::i128 = dividend mod divisor
+            in
+              if quotient \<le>s(scast i64_MAX) \<and> (scast i64_MIN) \<le>s quotient then
+                Some (Vlong (ucast quotient), Vlong (ucast remainder))
               else
                 None
             else

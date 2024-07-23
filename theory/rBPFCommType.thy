@@ -11,6 +11,8 @@ type_synonym i32 = "32 sword"
 type_synonym u32 = "32 word"
 type_synonym i64 = "64 sword"
 type_synonym u64 = "64 word"
+type_synonym i128 = "128 sword"
+type_synonym u128 = "128 word"
 
 type_synonym usize = "64 word" \<comment> \<open> Assume the hardware is 64-bit \<close>
 
@@ -20,11 +22,18 @@ definition i32_MIN :: "i32" where
 definition i32_MAX :: "i32" where
 "i32_MAX = 0x7FFFFFFF"
 
+definition u32_MAX :: "u32" where
+"u32_MAX = 0xFFFFFFFF"
+
 definition i64_MIN :: "i64" where
 "i64_MIN = 0x8000000000000000"
 
 definition i64_MAX :: "i64" where
 "i64_MAX = 0x7FFFFFFFFFFFFFFF"
+
+definition u64_MAX :: "u64" where
+"u64_MAX = 0xFFFFFFFFFFFFFFFF"
+
 
 type_synonym u4 = "4 word"
 

@@ -275,7 +275,6 @@ lemma x64assemble_disassemble_consistency:
     subgoal for rd using x64assemble_disassemble_consistency_pnegq
       by blast
 
-
       \<comment> \<open> Paddq_rr \<close>
     subgoal for rd using x64assemble_disassemble_consistency_paddq_rr
       by blast

@@ -54,30 +54,46 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
               else
                 None
             else if op = 0xf7 then
-            \<comment> \<open> P2884 `NEG  register2`                           -> ` 0100 W00B : 1111 011w : 11011reg` \<close>
-            \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 100w : 11 reg1 reg2` \<close>
-            \<comment> \<open> P2884 `MUL  RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 100w : 11 reg1 reg2` \<close>
-            \<comment> \<open> P2884 `IMUL AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 101w : 11 reg1 reg2` \<close>
-            \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 101w : 11 reg1 reg2` \<close>
+            \<comment> \<open> P2884 `NEG  register2`                           -> ` 0100 W00B : 1111 011w : 11 011 reg` \<close>
+            \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 100 reg` \<close>
+            \<comment> \<open> P2884 `MUL  RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 100 qowrdreg` \<close>
+            \<comment> \<open> P2880 `IMUL AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 101 reg` \<close>
+            \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 101 qwordreg` \<close>
+            \<comment> \<open> P2879 `DIV AL, AX, or EAX by register2`          -> ` 0100 000B : 1111 011w : 11 110 reg` \<close>
+            \<comment> \<open> P2879 `DIV EAX by qwordregister (to RDX:RAX)`    -> ` 0100 100B : 1111 011w : 11 110 qwordreg` \<close>
+            \<comment> \<open> P2879 `IDIV AL, AX, or EAX by register2`         -> ` 0100 000B : 1111 011w : 11 111 reg` \<close>
+            \<comment> \<open> P2879 `IDIV RAX by qwordregister (to RDX:RAX)`   -> ` 0100 100B : 1111 011w : 11 111 qwordreg` \<close>
             if modrm = 0b11 \<and> reg1 = 0b011 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then
                   case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegq dst # l) 
                 else 
-                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegl dst # l)) 
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnegl dst # l))
                
             else if modrm = 0b11 \<and> reg1 = 0b100 then
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then
                   case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmulq_r dst # l) 
                 else 
-                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmull_r dst # l)) 
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmull_r dst # l))
             else if modrm = 0b11 \<and> reg1 = 0b101 then
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then
                   case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pimulq_r dst # l) 
                 else 
-                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pimull_r dst # l)) 
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pimull_r dst # l))
+            else if modrm = 0b11 \<and> reg1 = 0b110 then
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                if w = 1 then
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pdivq_r dst # l) 
+                else 
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pdivl_r dst # l))
+            else if modrm = 0b11 \<and> reg1 = 0b111 then
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                if w = 1 then
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pidivq_r dst # l) 
+                else 
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pidivl_r dst # l))
             else None
           else if op = 0x09 then
           \<comment> \<open> P2884 `OR register1 to register2` -> ` 0100 WR0B : 0000 100w : 11 reg1 reg2` \<close>
