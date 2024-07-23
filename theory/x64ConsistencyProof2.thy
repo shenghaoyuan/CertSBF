@@ -4,7 +4,8 @@ imports
   rBPFCommType rBPFSyntax
   x64Assembler x64Disassembler
   x64ConsistencyProof2Aux0
-  x64ConsistencyProof2Pmov
+  x64ConsistencyProof2Pmov0
+  x64ConsistencyProof2Pmov1
 begin
 
 declare if_split_asm [split]
@@ -45,7 +46,7 @@ lemma x64disassemble_assemble_consistency:
                   apply (cases "x64_disassemble ld", simp_all)
                   apply (rule conjI)
                   subgoal using mov_goal_0 by blast
-                  subgoal sorry (** using mov_goal_1 by blast *)
+                  subgoal using mov_goal_1 by blast
                   done
                 done
               done

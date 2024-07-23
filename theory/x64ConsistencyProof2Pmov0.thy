@@ -1,4 +1,4 @@
-theory x64ConsistencyProof2Pmov
+theory x64ConsistencyProof2Pmov0
 imports
   Main
   rBPFCommType rBPFSyntax
@@ -293,8 +293,7 @@ lemma mov_subgoal6_6: "bit rex 0 \<Longrightarrow>
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
   done
 
-lemma mov_subgoal6: "(rex::u8) \<noteq> 144 \<Longrightarrow> rex \<noteq> 102 \<Longrightarrow>
-    and 15 (rex >> 4) = 4 \<Longrightarrow>
+lemma mov_subgoal6: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     and 1 (rex >> 3) = 1 \<Longrightarrow>
     and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
     n < 8 \<Longrightarrow>
@@ -436,15 +435,10 @@ lemma mov_subgoal6: "(rex::u8) \<noteq> 144 \<Longrightarrow> rex \<noteq> 102 \
     done
   done
 
-lemma mov_goal_0: "(rex::u8) \<noteq> 144 \<Longrightarrow>
-    rex \<noteq> 102 \<Longrightarrow>
-    and 15 (rex >> 4) = 4 \<Longrightarrow>
+lemma mov_goal_0: " and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     and 1 (rex >> 3) = 1 \<Longrightarrow>
     and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
     and 3 (rop >> 6) = 3 \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) (and 1 (rex >> 2))) =
-    Some r1 \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 rop) (and 1 rex)) = Some rd \<Longrightarrow>
     or (64::u8)
      (construct_rex_to_u8 True
        (and (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) (and 1 (rex >> 2))) 8 \<noteq> 0) False
