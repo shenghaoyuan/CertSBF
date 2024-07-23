@@ -48,6 +48,7 @@ lemma x64disassemble_assemble_consistency:
                   subgoal using mov_goal_0 by blast
                   subgoal using mov_goal_1 by blast
                   done
+                subgoal sorry
                 done
               done
             sorry

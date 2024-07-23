@@ -25,9 +25,8 @@ lemma x64_disassemble_nil [simp]: "x64_disassemble l_bin = Some [] \<Longrightar
         subgoal for c lc
           apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (c >> 3)) (and 1 (a >> 2)))", simp_all)
           apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 c) (and 1 a))", simp_all)
-
-
-          apply (cases "x64_disassemble lc", simp_all)
+          subgoal by (cases "x64_disassemble lc", simp_all)
+          subgoal by (cases "x64_disassemble lc", simp_all)
           done
 
         subgoal for c lc
@@ -50,6 +49,18 @@ lemma x64_disassemble_nil [simp]: "x64_disassemble l_bin = Some [] \<Longrightar
 
         subgoal for c lc
           apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 c) (and 1 a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (c >> 3)) (and 1 (a >> 2)))", simp_all)
+          subgoal by (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 c) (and 1 a))"; cases "x64_disassemble lc", simp_all)
+          subgoal by (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 c) (and 1 a))"; cases "x64_disassemble lc", simp_all)
+          done
+
+        subgoal for c lc
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (c >> 3)) (and 1 (a >> 2)))", simp_all)
+          subgoal by (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 c) (and 1 a))"; cases "x64_disassemble lc", simp_all)
+          subgoal by (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 c) (and 1 a))"; cases "x64_disassemble lc", simp_all)
           done
 
         subgoal for c lc
