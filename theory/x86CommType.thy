@@ -54,10 +54,6 @@ x86_sib_scale :: u8
 x86_sib_index :: u8
 x86_sib_base  :: u8
 
-definition rex_complete :: "u8 \<Rightarrow> u8" where
-"rex_complete t = bitfield_insert_u8 4 4 t 0x4
-"
-
 definition construct_rex_to_u8 :: "bool\<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow>u8" where
 "construct_rex_to_u8 w r x b =
   bitfield_insert_u8 3 1
