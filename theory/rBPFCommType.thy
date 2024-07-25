@@ -3,6 +3,8 @@ imports
   Main
   "Word_Lib.Signed_Words"
 begin
+
+type_synonym u4 = "4 word"
 type_synonym u8 = "8 word"
 type_synonym i8 = "8 sword"
 type_synonym i16 = "16 sword"
@@ -35,8 +37,6 @@ definition u64_MAX :: "u64" where
 "u64_MAX = 0xFFFFFFFFFFFFFFFF"
 
 
-type_synonym u4 = "4 word"
-
 record ebpf_binary =
 bpf_opc :: u8
 bpf_dst :: u4
@@ -61,7 +61,7 @@ definition bitfield_insert_u8 :: "nat \<Rightarrow> nat \<Rightarrow> u8 \<Right
 "bitfield_insert_u8 pos width n p = (
   let mask = ((2 ^ width) - 1) << pos in
     or ((and ((2 ^ width) - 1) p) << pos)
-       (and n (not mask)) 
+       (and n (not mask))
 )"
 
 (* something is wrong
@@ -81,6 +81,13 @@ value "(scast (unsigned_bitfield_extract_i8 3 4 0b11101010)) :: i16" *)
 
 definition u8_of_bool :: "bool \<Rightarrow> u8" where
 "u8_of_bool b = (
+  case b of
+    True \<Rightarrow> 1 |
+    False \<Rightarrow> 0
+)"
+
+definition u4_of_bool :: "bool \<Rightarrow> u4" where
+"u4_of_bool b = (
   case b of
     True \<Rightarrow> 1 |
     False \<Rightarrow> 0

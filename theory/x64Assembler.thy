@@ -14,7 +14,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
   case ins of
   \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 0R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovl_rr rd r1 \<Rightarrow>
-    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+    let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
       (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
@@ -25,7 +25,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     if rex = 0 then
       Some [op,rop]
     else 
-      Some [ rex, op, rop] |
+      Some [rex_complete rex, op, rop] |
   \<comment> \<open> P2882 `MOV qwordregister1 to qwordregister2` -> `0100 1R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
