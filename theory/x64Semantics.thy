@@ -176,6 +176,7 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Psarq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
   Psarl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarr32 (rs (IR rd)) (rs(IR RCX))))) m |
   Psarq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarlr64 (rs (IR rd)) (rs(IR RCX))))) m |
+  Prdtsc          \<Rightarrow> Next (nextinstr sz rs) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"

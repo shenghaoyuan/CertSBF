@@ -174,6 +174,28 @@ datatype instruction =
   | Pdivq_r ireg
   | Pidivl_r ireg
   | Pidivq_r ireg
+
+  | Pandl_rr ireg ireg
+  | Pandq_rr ireg ireg
+  | Porl_rr ireg ireg
+  | Porq_rr ireg ireg
+  | Pxorl_rr ireg ireg
+  | Pxorq_rr ireg ireg
+  | Pshll_ri ireg u8
+  | Pshlq_ri ireg u8
+  | Pshll_r ireg
+  | Pshlq_r ireg
+  | Pshrl_ri ireg u8
+  | Pshrq_ri ireg u8
+  | Pshrl_r ireg
+  | Pshrq_r ireg
+  | Psarl_ri ireg u8
+  | Psarq_ri ireg u8
+  | Psarl_r ireg
+  | Psarq_r ireg
+
+  | Prdtsc
+  | Pnop
 (*
   | Paddl_ri ireg u32
   | Paddq_ri ireg u64
@@ -193,24 +215,6 @@ datatype instruction =
   | Pdivq ireg
   | Pidivl ireg
   | Pidivq ireg *)
-  | Pandl_rr ireg ireg
-  | Pandq_rr ireg ireg
-  | Porl_rr ireg ireg
-  | Porq_rr ireg ireg
-  | Pxorl_rr ireg ireg
-  | Pxorq_rr ireg ireg
-  | Pshll_ri ireg u8
-  | Pshlq_ri ireg u8
-  | Pshll_r ireg
-  | Pshlq_r ireg
-  | Pshrl_ri ireg u8
-  | Pshrq_ri ireg u8
-  | Pshrl_r ireg
-  | Pshrq_r ireg
-  | Psarl_ri ireg u8
-  | Psarq_ri ireg u8
-  | Psarl_r ireg
-  | Psarq_r ireg
 (*| Pxorl_r ireg                  (**r [xor] with self = set to zero *)
   | Pxorq_r ireg
   | Pandl_ri ireg u32
@@ -256,7 +260,6 @@ datatype instruction =
   (** Saving and restoring registers *)
 (*| Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
   | Pmov_mr_a addrmode ireg  (**r like [Pmov_mr], using [Many64] chunk *) *)
-  | Pnop
 
 type_synonym x64_asm = "instruction list"
 type_synonym x64_bin = "u8 list"
