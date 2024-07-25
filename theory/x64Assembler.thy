@@ -24,7 +24,9 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
     if rex = 0 then
       Some [op,rop]
-    else 
+    else \<comment> \<open> Better, in my opinion:
+      let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+        Some [rex, op, rop] \<close>
       Some [rex_complete rex, op, rop] |
   \<comment> \<open> P2882 `MOV qwordregister1 to qwordregister2` -> `0100 1R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovq_rr rd r1 \<Rightarrow>
