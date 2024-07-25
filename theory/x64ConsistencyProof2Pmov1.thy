@@ -246,8 +246,7 @@ lemma mov_subgoal1_1: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
        (- 193)) =
     rop"
   apply (rule bit_eqI)
-  subgoal for n
-    apply (simp add: bit_or_iff)
+  subgoal for n apply (simp add: bit_or_iff)
     apply (auto simp add: bit_simps)
     subgoal using mov_subgoal1 by blast
     subgoal using mov_subgoal2 by blast
@@ -292,12 +291,9 @@ lemma mov_subgoal9 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
-      subgoal for n3
-        apply (cases n3, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
         done
       done
     done
@@ -309,12 +305,9 @@ lemma [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarr
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
-      subgoal for n3
-        apply (cases n3, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
         done
       done
     done
@@ -326,17 +319,40 @@ lemma mov_subgoal10 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done
+
+lemma [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (64::int) n \<Longrightarrow> bit (56::int) n \<Longrightarrow> 3 \<le> n"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done
+
+lemma mov_subgoal11 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (64::int) n \<Longrightarrow> bit (56::int) n \<Longrightarrow>
+  bit (71::int) n \<Longrightarrow> False"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
       done
     done
   done
 
 lemma mov_subgoal1_2: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
-  or (or 192 (and 56 (or 64 (and (and 56 ((rop >> 3) << 3)) (- 72)))))
-     (and 7 (and (and 7 rop) (- 9))) =
+    or 192
+     (and (or (and 56 (or 64 (and (and 56 ((rop >> 3) << 3)) (- 72))))
+            (and (and 7 (and (and 7 rop) (- 9))) (- 57)))
+       (- 193)) =
     rop"
   apply (rule bit_eqI)
   subgoal for n
@@ -346,6 +362,7 @@ lemma mov_subgoal1_2: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
     subgoal using mov_subgoal8 by blast
     subgoal using mov_subgoal9 by blast
     subgoal using mov_subgoal10 by blast
+    subgoal using mov_subgoal11 by blast
     done
   done
 
@@ -362,7 +379,7 @@ lemma [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarr
     done
   done
 
-lemma mov_subgoal11 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+lemma mov_subgoal12 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
   bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (7::int) n \<Longrightarrow> bit (71::int) n \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -387,7 +404,7 @@ lemma mov_subgoal11 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 
     done
   done
 
-lemma mov_subgoal12: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+lemma mov_subgoal13 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
   bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (8::int) n \<Longrightarrow> \<not> bit (56::int) n \<Longrightarrow> bit (7::int) n"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -412,7 +429,19 @@ lemma mov_subgoal12: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longr
     done
   done
 
-lemma mov_subgoal13 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+lemma mov_subgoal14 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (8::int) n \<Longrightarrow>
+  \<not> 3 \<le> n \<Longrightarrow> bit (7::int) n"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done
+
+lemma mov_subgoal15 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
   bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (8::int) n \<Longrightarrow>
   \<not> bit (7::int) n \<Longrightarrow> bit (71::int) n \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
@@ -438,35 +467,28 @@ lemma mov_subgoal13 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 
     done
   done
 
-lemma mov_subgoal1_3: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
-  or (or 192 (and 56 (and (and 56 ((rop >> 3) << 3)) (- 72))))
-     (and 7 (or 8 (and (and 7 rop) (- 9)))) =
-    rop"
-  apply (rule bit_eqI)
-  subgoal for n
-    apply (simp add: bit_or_iff)
-    apply (auto simp add: bit_simps)
-    subgoal using mov_subgoal11 by blast
-    subgoal using mov_subgoal12 by blast
-    subgoal using mov_subgoal13 by blast
-    done
-  done
-
-lemma mov_subgoal14: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
-  bit (56::int) n \<Longrightarrow> bit (64::int) n \<Longrightarrow> bit rop n"
+lemma [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> bit (56::int) n \<Longrightarrow> 3 \<le> n"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
-      subgoal for n3
-        apply (cases n3, simp_all)
-        subgoal for n4
-          apply (cases n4, simp_all)
-          subgoal for n5
-            apply (cases n5, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done
+
+lemma mov_subgoal16 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> bit (56::int) n \<Longrightarrow>
+  bit (71::int) n \<Longrightarrow> False"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
+        subgoal for n4 apply (cases n4, simp_all)
+          subgoal for n5 apply (cases n5, simp_all)
             done
           done
         done
@@ -474,38 +496,64 @@ lemma mov_subgoal14: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longr
     done
   done
 
-lemma mov_subgoal15 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+lemma mov_subgoal1_3: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
+   or 192
+     (and (or (and 56 (and (and 56 ((rop >> 3) << 3)) (- 72)))
+            (and (and 7 (or 8 (and (and 7 rop) (- 9)))) (- 57)))
+       (- 193)) =
+    rop"
+  apply (rule bit_eqI)
+  subgoal for n apply (simp add: bit_or_iff)
+    apply (auto simp add: bit_simps)
+    subgoal using mov_subgoal12 by blast
+    subgoal using mov_subgoal13 by blast
+    subgoal using mov_subgoal14 by blast
+    subgoal using mov_subgoal15 by blast
+    subgoal using mov_subgoal16 by blast
+    done
+  done
+
+lemma mov_subgoal17: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit (56::int) n \<Longrightarrow> bit (64::int) n \<Longrightarrow> bit rop n"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
+        subgoal for n4 apply (cases n4, simp_all)
+          subgoal for n5 apply (cases n5, simp_all)
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma mov_subgoal18 [simp]: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
   bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (7::int) n \<Longrightarrow>
   \<not> bit (64::int) n \<Longrightarrow> bit (71::int) n \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
       done
     done
   done
 
-lemma mov_subgoal16 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+lemma mov_subgoal19 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
   bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (8::int) n \<Longrightarrow>
   \<not> bit (56::int) n \<Longrightarrow> bit (7::int) n"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
-      subgoal for n3
-        apply (cases n3, simp_all)
-        subgoal for n4
-          apply (cases n4, simp_all)
-          subgoal for n5
-            apply (cases n5, simp_all)
-            subgoal for n6
-              apply (cases n6, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
+        subgoal for n4 apply (cases n4, simp_all)
+          subgoal for n5 apply (cases n5, simp_all)
+            subgoal for n6 apply (cases n6, simp_all)
               done
             done
           done
@@ -514,32 +562,66 @@ lemma mov_subgoal16 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Long
     done
   done
 
-lemma mov_subgoal17 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+lemma mov_subgoal20 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (64::int) n \<Longrightarrow>
+  \<not> bit (8::int) n \<Longrightarrow> \<not> bit (56::int) n \<Longrightarrow> bit (7::int) n"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
+        subgoal for n4 apply (cases n4, simp_all)
+          subgoal for n5 apply (cases n5, simp_all)
+            subgoal for n6 apply (cases n6, simp_all)
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma mov_subgoal21 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
   bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (8::int) n \<Longrightarrow>
   \<not> bit (64::int) n \<Longrightarrow> \<not> bit (7::int) n \<Longrightarrow> bit (71::int) n \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (cases n, simp_all)
-  subgoal for n1
-    apply (cases n1, simp_all)
-    subgoal for n2
-      apply (cases n2, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done
+
+lemma mov_subgoal22 : "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  bit rop n \<Longrightarrow> \<not> bit (192::int) n \<Longrightarrow> \<not> bit (64::int) n \<Longrightarrow>
+  bit (56::int) n \<Longrightarrow> bit (71::int) n \<Longrightarrow> False"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
       done
     done
   done
 
 lemma mov_subgoal1_4: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
-  or (or 192 (and 56 (or 64 (and (and 56 ((rop >> 3) << 3)) (- 72)))))
-     (and 7 (or 8 (and (and 7 rop) (- 9)))) =
+  or 192
+     (and (or (and 56 (or 64 (and (and 56 ((rop >> 3) << 3)) (- 72))))
+            (and (and 7 (or 8 (and (and 7 rop) (- 9)))) (- 57)))
+       (- 193)) =
     rop"
   apply (rule bit_eqI)
   subgoal for n
     apply (simp add: bit_or_iff)
     apply (auto simp add: bit_simps)
-    subgoal using mov_subgoal14 by blast
-    subgoal using mov_subgoal15 by blast
-    subgoal using mov_subgoal16 by blast
     subgoal using mov_subgoal17 by blast
+    subgoal using mov_subgoal18 by blast
+    subgoal using mov_subgoal19 by blast
+    subgoal using mov_subgoal20 by blast
+    subgoal using mov_subgoal21 by blast
+    subgoal using mov_subgoal22 by blast
     done
   done
 
@@ -556,13 +638,13 @@ lemma mov_goal_1: "and 3 ((rop::u8) >> 6) = 3 \<Longrightarrow>
     apply (insert and_64_shl_6 [of "rex >> 2"])
     apply (erule disjE, simp_all)
     subgoal using mov_subgoal1_1 by blast
-    subgoal sorry (* using mov_subgoal1_2 by blast *) (**r change the proof goal of mov_subgoal1_2 *)
+    subgoal using mov_subgoal1_2 by blast
     done
   subgoal
     apply (insert and_64_shl_6 [of "rex >> 2"])
     apply (erule disjE, simp_all)
-    subgoal using mov_subgoal1_3 by blast (**r same *)
-    subgoal using mov_subgoal1_4 by blast (**r same *)
+    subgoal using mov_subgoal1_3 by blast
+    subgoal using mov_subgoal1_4 by blast
     done
   done
 

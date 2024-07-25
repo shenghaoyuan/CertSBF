@@ -7,8 +7,7 @@ begin
 
 lemma [simp]: "((and (and 7 d) (- 9))) = ((and 7 d)::u8)"
   apply (rule bit_eqI)
-  subgoal for n
-    apply (auto simp add: bit_simps)
+  subgoal for n apply (auto simp add: bit_simps)
     apply (simp add: bit_iff_odd)
     apply (cases n, simp_all)
     subgoal for n1 apply (cases n1, simp_all)
@@ -20,7 +19,7 @@ lemma [simp]: "((and (and 7 d) (- 9))) = ((and 7 d)::u8)"
 
 lemma [simp]: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     bit 64 (Suc (Suc (Suc (Suc (Suc (Suc 0)))))) \<Longrightarrow>
-bit rex (Suc (Suc (Suc (Suc (Suc (Suc 0))))))"
+      bit rex (Suc (Suc (Suc (Suc (Suc (Suc 0))))))"
   apply (simp add: bit_eq_iff) (**r I get this dependent type? `\<forall>n<8.` *)
   apply (auto simp add: bit_simps)
   apply (drule_tac x="2" in spec)
@@ -273,8 +272,8 @@ lemma mov_subgoal6: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
     n < 8 \<Longrightarrow>
     bit rex n \<Longrightarrow>
-    \<not> bit 64 n \<Longrightarrow>
-    \<not> bit 8 n \<Longrightarrow>
+    \<not> bit (64::int) n \<Longrightarrow>
+    \<not> bit (8::int) n \<Longrightarrow>
     \<not> bit (case and (or (and 8 (rex << 3)) (and 7 rop)) 8 \<noteq> 0 of True \<Rightarrow> 1
             | False \<Rightarrow> 0)
         n \<Longrightarrow>
@@ -283,24 +282,124 @@ lemma mov_subgoal6: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
   subgoal
     apply (cases n, simp_all)
     subgoal using bit_1_iff by blast
-    subgoal for n1
-      apply (cases n1, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
       by (simp add: and.commute bit_iff_and_drop_bit_eq_1)
     done
   subgoal
     apply (cases n, simp_all)
     subgoal using mov_subgoal6_1 by blast
-    subgoal for n1
-      apply (cases n1, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
       subgoal using mov_subgoal6_2 by blast
       done
     done
   done
 
-lemma [simp]: "\<not> bit (8::int) (Suc (Suc (Suc 0))) = False" by simp  
+lemma not_bit_8_3_false [simp]: "\<not> bit (8::int) (Suc (Suc (Suc 0))) = False" by simp  
+
+lemma  [simp]: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+    and 1 (rex >> 3) = 1 \<Longrightarrow>
+    and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
+    n < 8 \<Longrightarrow>
+    bit rex n \<Longrightarrow>
+    \<not> bit (64::int) n \<Longrightarrow>
+    \<not> bit (8::int) n \<Longrightarrow>
+    \<not> bit (case and (or (and 8 (rex << 3)) (and 7 rop)) 8 \<noteq> 0 of True \<Rightarrow> 1 | False \<Rightarrow> 0) n \<Longrightarrow>
+    bit (case and (or (and 8 ((rex >> 2) << 3)) (and 7 (rop >> 3))) 8 \<noteq> 0 of True \<Rightarrow> 1
+         | False \<Rightarrow> 0)
+     (n - 2)"
+  apply (cases "and (or (and 8 (rex << 3)) (and 7 rop)) 8 \<noteq> 0", simp_all)
+  subgoal
+    apply (cases n, simp_all)
+    subgoal using bit_1_iff by blast
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal using mov_subgoal6_2 by blast
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal
+          by (smt (verit, best) bit_0 bit_and_iff bit_iff_and_drop_bit_eq_1 mov_subgoal6_1 numeral_2_eq_2 odd_one)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal
+              using mov_subgoal5_1 by blast 
+            subgoal for n5 apply (cases n5, simp_all)
+            subgoal
+              using mov_subgoal5_2 by blast
+            subgoal for n6 apply (cases n6, simp_all)
+              subgoal for n7 apply (cases n7, simp_all)
+                subgoal
+                  using mov_subgoal5_3 by blast
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+  subgoal
+    apply (cases n, simp_all)
+    subgoal using mov_subgoal6_1 by blast
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal using mov_subgoal6_2 by blast
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal
+          by (smt (verit, best) bit_0 bit_and_iff bit_iff_and_drop_bit_eq_1 mov_subgoal6_1 numeral_2_eq_2 odd_one)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal
+              using mov_subgoal5_1 by blast 
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal
+                using mov_subgoal5_2 by blast
+              subgoal for n6 apply (cases n6, simp_all)
+                subgoal for n7 apply (cases n7, simp_all)
+                  subgoal
+                    using mov_subgoal5_3 by blast
+                  done
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma mov_subgoal7 [simp]: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+    and 1 (rex >> 3) = 1 \<Longrightarrow>
+    and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
+    bit rex (Suc 0) \<Longrightarrow> n = Suc 0 \<Longrightarrow> False"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal using mov_subgoal6_2 by blast
+    done
+  done
+
+
+lemma [simp]: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+    and 1 (rex >> 3) = 1 \<Longrightarrow>
+    and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
+    bit rex (Suc 0) \<Longrightarrow>
+    n = Suc 0 \<Longrightarrow>
+    bit (case and (or (and 8 ((rex >> 2) << 3)) (and 7 (rop >> 3))) 8 \<noteq> 0 of True \<Rightarrow> 1
+         | False \<Rightarrow> 0) 0"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal using mov_subgoal6_2 by blast
+    done
+  done
+
+lemma [simp]: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+    and 1 (rex >> 3) = 1 \<Longrightarrow>
+    and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
+    n < 8 \<Longrightarrow> bit rex n \<Longrightarrow> \<not> bit (64::int) n \<Longrightarrow>
+    \<not> bit (8::int) n \<Longrightarrow> bit (4::int) n \<Longrightarrow> 2 \<le> n"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    done
+  done
 
 (*
-lemma mov_subgoal12_1: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+lemma mov_subgoal8_1: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     bit rex (Suc (Suc (Suc (Suc 0)))) \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -308,17 +407,18 @@ lemma mov_subgoal12_1: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
   done
 
-lemma mov_subgoal12_2: "and 15 (rex >> 4) = (4::u8) \<Longrightarrow>
+lemma mov_subgoal8_2: "and 15 (rex >> 4) = (4::u8) \<Longrightarrow>
     bit rex (Suc (Suc (Suc (Suc (Suc 0))))) \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (drule_tac x="1" in spec)
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
-  done
+  done *)
 
 lemma [simp]: "\<not> bit (64::int) (Suc (Suc (Suc (Suc (Suc (Suc 0)))))) \<Longrightarrow> False" by simp
 
-lemma mov_subgoal12_3: "and 15 (rex >> 4) = (4::u8) \<Longrightarrow>
+(*
+lemma mov_subgoal8_3: "and 15 (rex >> 4) = (4::u8) \<Longrightarrow>
     bit rex (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))) \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -326,7 +426,7 @@ lemma mov_subgoal12_3: "and 15 (rex >> 4) = (4::u8) \<Longrightarrow>
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
   done
 
-lemma mov_subgoal12_4: "and 1 (rex >> Suc 0) = (0::u8) \<Longrightarrow>
+lemma mov_subgoal8_4: "and 1 (rex >> Suc 0) = (0::u8) \<Longrightarrow>
     bit rex (Suc 0) \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -334,7 +434,7 @@ lemma mov_subgoal12_4: "and 1 (rex >> Suc 0) = (0::u8) \<Longrightarrow>
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
   done
 
-lemma mov_subgoal12_5: "bit rex (Suc (Suc 0)) \<Longrightarrow>
+lemma mov_subgoal8_5: "bit rex (Suc (Suc 0)) \<Longrightarrow>
     and (or (and 8 ((rex >> 2) << 3)) (and 7 (rop >> 3))) 8 = (0::u8) \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -342,83 +442,43 @@ lemma mov_subgoal12_5: "bit rex (Suc (Suc 0)) \<Longrightarrow>
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
   done
 
-lemma mov_subgoal12_6: "bit rex 0 \<Longrightarrow>
+lemma mov_subgoal8_6: "bit rex 0 \<Longrightarrow>
     and (or (and 8 (rex << 3)) (and 7 rop)) 8 = (0::u8) \<Longrightarrow> False"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   apply (drule_tac x="3" in spec)
   apply (simp add: eval_nat_numeral(2) eval_nat_numeral(3))
-  done
+  done *)
 
-lemma mov_subgoal12: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+lemma mov_subgoal8: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     and 1 (rex >> 3) = 1 \<Longrightarrow>
     and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
     n < 8 \<Longrightarrow>
     bit rex n \<Longrightarrow>
     \<not> bit (64::int) n \<Longrightarrow>
     \<not> bit (8::int) n \<Longrightarrow>
-    \<not> bit (case and (or (and 8 (rex << 3)) (and 7 rop)) 8 \<noteq> 0 of True \<Rightarrow> 1
-            | False \<Rightarrow> 0)
-        n \<Longrightarrow>
+    bit 4 n \<Longrightarrow>
     bit (case and (or (and 8 ((rex >> 2) << 3)) (and 7 (rop >> 3))) 8 \<noteq> 0 of True \<Rightarrow> 1
          | False \<Rightarrow> 0)
      (n - 2)"
   apply (cases "and (or (and 8 (rex << 3)) (and 7 rop)) 8 \<noteq> 0", simp_all)
   subgoal
-    apply (cases "and (or (and 8 ((rex >> 2) << 3)) (and 7 (rop >> 3))) 8 \<noteq> 0", simp_all)
-    subgoal
-      apply (cases n, simp_all)
-      subgoal using bit_1_iff by blast
-      subgoal for n1
-        apply (cases n1, simp_all)
-        subgoal using bit_1_iff by blast
-        subgoal for n2
-          apply (cases n2, simp_all)
-          subgoal using bit_1_iff by blast
-          subgoal for n3
-            apply (cases n3, simp_all)
-            subgoal for n4
-              apply (cases n4, simp_all add: bit_1_iff)
-              subgoal using mov_subgoal6_1 by blast
-              subgoal for n5
-                apply (cases n5, simp_all)
-                subgoal using mov_subgoal6_2 by blast
-                subgoal for n6
-                  apply (cases n6, simp_all)
-                  subgoal for n7
-                    apply (cases n7, simp_all)
-                    subgoal using mov_subgoal6_3 by blast
-                    done
-                  done
-                done
-              done
-            done
-          done
-        done
-      done
-    subgoal
-      apply (cases n, simp_all)
-      subgoal using bit_1_iff by blast
-      subgoal for n1
-        apply (cases n1, simp_all)
-        subgoal using mov_subgoal6_4 by blast
-        subgoal for n2
-          apply (cases n2, simp_all)
-          subgoal using mov_subgoal6_5 by blast
-          subgoal for n3
-            apply (cases n3, simp_all)
-            subgoal for n4
-              apply (cases n4, simp_all add: bit_1_iff)
-              subgoal using mov_subgoal6_1 by blast
-              subgoal for n5
-                apply (cases n5, simp_all)
-                subgoal using mov_subgoal6_2 by blast
-                subgoal for n6
-                  apply (cases n6, simp_all)
-                  subgoal for n7
-                    apply (cases n7, simp_all)
-                    subgoal using mov_subgoal6_3 by blast
-                    done
+    apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal
+          by (smt (verit, best) bit_0 bit_and_iff bit_iff_and_drop_bit_eq_1 mov_subgoal6_1 numeral_2_eq_2 odd_one)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal
+              using mov_subgoal5_1 by blast 
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal
+                using mov_subgoal5_2 by blast
+              subgoal for n6 apply (cases n6, simp_all)
+                subgoal for n7 apply (cases n7, simp_all)
+                  subgoal
+                    using mov_subgoal5_3 by blast
                   done
                 done
               done
@@ -427,62 +487,28 @@ lemma mov_subgoal12: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
         done
       done
     done
-  subgoal
-    apply (cases "and (or (and 8 ((rex >> 2) << 3)) (and 7 (rop >> 3))) 8 \<noteq> 0", simp_all)
-    subgoal
-      apply (cases n, simp_all)
-      subgoal using bit_1_iff by blast
-      subgoal for n1
-        apply (cases n1, simp_all)
-        subgoal using bit_1_iff by blast
-        subgoal for n2
-          apply (cases n2, simp_all)
-          subgoal using bit_1_iff by blast
-          subgoal for n3
-            apply (cases n3, simp_all)
-            subgoal for n4
-              apply (cases n4, simp_all add: bit_1_iff)
-              subgoal using mov_subgoal6_1 by blast
-              subgoal for n5
-                apply (cases n5, simp_all)
-                subgoal using mov_subgoal6_2 by blast
-                subgoal for n6
-                  apply (cases n6, simp_all)
-                  subgoal for n7
-                    apply (cases n7, simp_all)
-                    subgoal using mov_subgoal6_3 by blast
-                    done
-                  done
-                done
-              done
-            done
-          done
-        done
-      done
-    subgoal
-      apply (cases n, simp_all)
-      subgoal using mov_subgoal6_6 by blast
-      subgoal for n1
-        apply (cases n1, simp_all)
-        subgoal using mov_subgoal6_4 by blast
-        subgoal for n2
-          apply (cases n2, simp_all)
-          subgoal using mov_subgoal6_5 by blast
-          subgoal for n3
-            apply (cases n3, simp_all)
-            subgoal for n4
-              apply (cases n4, simp_all add: bit_1_iff)
-              subgoal using mov_subgoal6_1 by blast
-              subgoal for n5
-                apply (cases n5, simp_all)
-                subgoal using mov_subgoal6_2 by blast
-                subgoal for n6
-                  apply (cases n6, simp_all)
-                  subgoal for n7
-                    apply (cases n7, simp_all)
-                    subgoal using mov_subgoal6_3 by blast
-                    done
-                  done
+  done
+
+lemma mov_subgoal9 [simp]: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
+    and 1 (rex >> 3) = 1 \<Longrightarrow>
+    and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
+    n < 8 \<Longrightarrow>
+    bit rex n \<Longrightarrow>
+    \<not> bit (64::int) n \<Longrightarrow> bit (240::int) n \<Longrightarrow> False"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
+        subgoal for n4 apply (cases n4, simp_all)
+          subgoal
+            using mov_subgoal5_1 by blast 
+          subgoal for n5 apply (cases n5, simp_all)
+            subgoal
+              using mov_subgoal5_2 by blast
+            subgoal for n6 apply (cases n6, simp_all)
+              subgoal for n7 apply (cases n7, simp_all)
+                subgoal
+                  using mov_subgoal5_3 by blast
                 done
               done
             done
@@ -490,16 +516,17 @@ lemma mov_subgoal12: "and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
         done
       done
     done
-  done *)
+  done
+
 
 lemma mov_goal_0: " and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     and 1 (rex >> 3) = 1 \<Longrightarrow>
     and 1 (rex >> Suc 0) = 0 \<Longrightarrow>
     and 3 (rop >> 6) = 3 \<Longrightarrow>
-    or (64::u8)
-     (construct_rex_to_u8 True
-       (and (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) (and 1 (rex >> 2))) 8 \<noteq> 0) False
-       (and (bitfield_insert_u8 3 (Suc 0) (and 7 rop) (and 1 rex)) 8 \<noteq> 0)) =
+    construct_rex_to_u8 True
+     (and (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) (and 1 (rex >> 2))) 8 \<noteq>
+      0)
+     False (and (bitfield_insert_u8 3 (Suc 0) (and 7 rop) (and 1 rex)) 8 \<noteq> 0) =
     rex"
   apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)
   apply simp
@@ -515,7 +542,10 @@ lemma mov_goal_0: " and 15 ((rex::u8) >> 4) = 4 \<Longrightarrow>
     subgoal using mov_subgoal4 by blast
     subgoal using mov_subgoal5 by blast
     subgoal using mov_subgoal6 by blast
-    subgoal using mov_subgoal12 [of rex n rop] by blast
+    subgoal using mov_subgoal7 by blast
+    subgoal using mov_subgoal7 by blast
+    subgoal using mov_subgoal8 by blast
+    subgoal using mov_subgoal9 by blast
     done
   done
 (* 64 = 0b1000000
