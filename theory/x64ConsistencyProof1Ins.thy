@@ -5,14 +5,18 @@ imports
   x64Assembler x64Disassembler
 begin
 
+lemma [simp]: " bitfield_insert_u8 3 (Suc 0) 1 0 = 1 " 
+  apply(unfold bitfield_insert_u8_def Let_def)
+  apply simp
+  done
 
 lemma x64assemble_disassemble_consistency_pmovq_rr: "\<And>x11 x12.
        (\<And>l_bin. x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm) \<Longrightarrow>
        (case x64_assemble l_asm of None \<Rightarrow> None
         | Some l \<Rightarrow>
             Some
-             ([or 64 (construct_rex_to_u8 True (and (u8_of_ireg x12) 8 \<noteq> 0) False (and (u8_of_ireg x11) 8 \<noteq> 0)),
-               137, construct_modsib_to_u8 3 (u8_of_ireg x12) (u8_of_ireg x11)] @
+             ([construct_rex_to_u8 True (and (u8_of_ireg x12) 8 \<noteq> 0) False (and (u8_of_ireg x11) 8 \<noteq> 0), 137,
+               construct_modsib_to_u8 3 (u8_of_ireg x12) (u8_of_ireg x11)] @
               l)) =
        Some l_bin \<Longrightarrow>
        a = Pmovq_rr x11 x12 \<Longrightarrow> x64_disassemble l_bin = Some (Pmovq_rr x11 x12 # l_asm)"
@@ -33,12 +37,38 @@ lemma x64assemble_disassemble_consistency_pmovq_rr: "\<And>x11 x12.
           subgoal by fastforce
           subgoal for reg l1
             apply simp
-            apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (reg >> 3)) 0)",simp_all)
+            subgoal 
+              apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+              done
+            subgoal for src
+              apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 reg) 0)",simp_all)
+              subgoal
+               apply (unfold Let_def)
+                apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (reg >> 3)) (and 1 (rex >> 2)))",simp_all)
+                subgoal 
+                  apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                  done
+                subgoal for dst
+                  apply (cases " ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 reg) (and 1 rex))",simp_all)
+                subgoal 
+                  apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                  done
+                subgoal for dst
+                subgoal 
+                  apply (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                  done
             done
           done
         done
+      subgoal for t1 sorry
       done
+
     done
+  done
+  done
+    done
+  done
   done
 
 
