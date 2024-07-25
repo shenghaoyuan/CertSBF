@@ -22,6 +22,9 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
       ) in
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
+    if rex = 0 then
+      Some [op,rop]
+    else 
       Some [ rex, op, rop] |
   \<comment> \<open> P2882 `MOV qwordregister1 to qwordregister2` -> `0100 1R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovq_rr rd r1 \<Rightarrow>
@@ -392,6 +395,10 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
       Some [ rex, op, rop ] |
+  Prdtsc \<Rightarrow> 
+    let (opes::u8) = 0x0f in
+    let (op::u8)   = 0x31 in
+      Some [opes,op] |
   \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
   Pnop \<Rightarrow> Some [0x90] |
   _ \<Rightarrow> None
