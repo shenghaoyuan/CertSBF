@@ -5,17 +5,65 @@ imports
   x64Syntax
 begin
 
+(*    *)
+
 fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
 "x64_disassemble [] = Some []" |  
 "x64_disassemble (h#t) = (
-  if h = 0b10010000 then \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
+  
+  if h = 0x90 then \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
     case x64_disassemble t of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnop # l)
-  else if h = 0x66 then \<comment> \<open> `16-bit op`  \<close>
-      None
+  else 
+    if h = 0x66 then 
+      case t of [] \<Rightarrow> None | h1#t1 \<Rightarrow>(
+      if unsigned_bitfield_extract_u8 4 4 h1 \<noteq> 0b0100 then \<comment> \<open> h1 is not rex \<close>
+        case t1 of [] \<Rightarrow> None | reg#t2 \<Rightarrow>(
+          let modrm = unsigned_bitfield_extract_u8 6 2 reg in
+          let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
+          let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+          let src   = bitfield_insert_u8 3 1 reg1 0 in
+          let dst   = bitfield_insert_u8 3 1 reg2 0 in
+          if h1 = 0xc1 then 
+            case t2 of [] \<Rightarrow> None | imm#t3 \<Rightarrow> (
+            if modrm = 0b11 \<and> src = 0b000 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Prolw_ri dst imm # l))
+             else None )
+          else if h1 = 0x89 then 
+             if modrm = 0b11 then
+               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                  case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)))
+               else None
+          else None)
+      else 
+        let w = unsigned_bitfield_extract_u8 3 1 h1 in
+        let r = unsigned_bitfield_extract_u8 2 1 h1 in
+        let x = unsigned_bitfield_extract_u8 1 1 h1 in
+        let b = unsigned_bitfield_extract_u8 0 1 h1 in
+        case t1 of [] \<Rightarrow> None | h1#[] \<Rightarrow> None | op#reg#t2 \<Rightarrow>( 
+          let modrm = unsigned_bitfield_extract_u8 6 2 reg in
+          let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
+          let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+          let src   = bitfield_insert_u8 3 1 reg1 r in
+          let dst   = bitfield_insert_u8 3 1 reg2 b in
+          if h1 = 0xc1 then 
+            case t2 of [] \<Rightarrow> None | imm#t3 \<Rightarrow> (
+            if modrm = 0b11 \<and> src = 0b000 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Prolw_ri dst imm # l))
+             else None )
+          else if op = 0x89 then 
+            if modrm = 0b11 then
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)))
+            else None
+          else None))
   else
     if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then  \<comment> \<open> h is not rex  \<close>
-     \<comment> \<open> 32-bit instructions \<close>
-        if h = 0x0f then \<comment> \<open> with opcode escape sequence ox0f \<close>
+     \<comment> \<open> 32-bit instructions and default 64-bit instruction\<close>
+        if h = 0x0f then \<comment> \<open> with opcode escape sequence 0x0f \<close>
         \<comment> \<open> P2885 `RDTSC – Read Time-Stamp Counter` -> `0000 1111 : 0011 0001` \<close>
           case t of [] \<Rightarrow> None | h1#t1 \<Rightarrow>(
             if h1 = 0x31 then 
@@ -25,7 +73,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
             else
               None)
         else 
-        \<comment> \<open> without opcode escape sequence \<close>
+        \<comment> \<open> without rex and  opcode escape sequence \<close>
           case t of [] \<Rightarrow> None | reg#t1 \<Rightarrow> ( 
             let modrm = unsigned_bitfield_extract_u8 6 2 reg in
             let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
@@ -59,6 +107,8 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
         let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
         let src   = bitfield_insert_u8 3 1 reg1 r in
         let dst   = bitfield_insert_u8 3 1 reg2 b in
+          if h = 0x0f then None
+          else
           \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 WR0B : 1000 100w : 11 reg1 reg2` \<close>
           if op = 0x89 then
             if modrm = 0b11 then (

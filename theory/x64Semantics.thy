@@ -128,9 +128,9 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pmovl_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vint n))) m |
   Pmovq_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vlong n))) m |
   Pmov_rm   rd a c  \<Rightarrow> exec_load   sz c m a rs (IR rd) |
-  Pmov_mr  a r1 c   \<Rightarrow> exec_store  sz c m a rs (IR r1) [] |
+  Pmov_mr   a r1 c  \<Rightarrow> exec_store  sz c m a rs (IR r1) [] |
   \<comment> \<open> Moves with conversion \<close>
-  Pmovsl_rr rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |  \<comment> \<open> tocheck: bit mode \<close>
+  Pmovsl_rr rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |  \<comment> \<open> todo \<close>
   \<comment> \<open> Integer arithmetic \<close>
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg64 (rs (IR rd))))) m |
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |
@@ -158,24 +158,27 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pdivq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vint q)) in 
                      Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
-  Pidivl_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
+  Pidivl_r  r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vint q)) in 
                      Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
-  Pidivq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
+  Pidivq_r  r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vint q)) in 
                      Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
-  Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
-  Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl64 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
-  Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shlr32 (rs (IR rd)) (rs(IR RCX))))) m |
-  Pshlq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shllr64 (rs (IR rd)) (rs(IR RCX))))) m |
-  Pshrl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr32  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
-  Pshrq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr64 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
-  Pshrl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shrr32 (rs (IR rd)) (rs(IR RCX))))) m |
-  Pshrq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shrlr64 (rs (IR rd)) (rs(IR RCX))))) m |
-  Psarl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar32  (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
-  Psarq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64 (rs (IR rd)) (ucast n)))) m |  \<comment>\<open>imm8\<close>
-  Psarl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarr32 (rs (IR rd)) (rs(IR RCX))))) m |
-  Psarq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sarlr64 (rs (IR rd)) (rs(IR RCX))))) m |
+  Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
+  Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl64  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
+  Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32  (rs (IR rd)) (rs(IR RCX))))) m |
+  Pshlq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl64  (rs (IR rd)) (rs(IR RCX))))) m |
+  Pshrl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr32  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
+  Pshrq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr64  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
+  Pshrl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr32  (rs (IR rd)) (rs(IR RCX))))) m |
+  Pshrq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shr64  (rs (IR rd)) (rs(IR RCX))))) m |
+  Psarl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar32  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
+  Psarq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
+  Psarl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar32  (rs (IR rd)) (rs(IR RCX))))) m |
+  Psarq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64  (rs (IR rd)) (rs(IR RCX))))) m | \<comment>\<open> bswap16 \<close>
+  Prolw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.rol16  (rs (IR rd)) (Vbyte n)))) m | 
+  Prorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror32  (rs (IR rd)) (Vbyte n)))) m |  
+  Prorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror64  (rs (IR rd)) (Vbyte n)))) m |  
   Prdtsc          \<Rightarrow> Next (nextinstr sz rs) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck

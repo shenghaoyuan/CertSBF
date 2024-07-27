@@ -9,10 +9,50 @@ begin
 
 fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" where
 "x64_assemble_one_instruction ins = (
-  \<comment> \<open> P518 `Operand-size override prefix is encoded using 66H` \<close> 
-  \<comment> \<open> let (prefix:: u8) = 0x66 in \<close>
   case ins of
-  \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 0R0B : 1000 1001 : 11 reg1 reg2` \<close>
+  \<comment> \<open> P518 `Operand-size override prefix is encoded using 66H` \<close> 
+  \<comment> \<open> P2887 `ROL : register by immediate count` -> `0x66 1100 000w : 11 000 reg : imm8` \<close>
+  Prolw_ri rd n \<Rightarrow>
+    let (prefix:: u8) = 0x66 in
+    let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
+        False \<comment> \<open> W \<close>
+        False \<comment> \<open> R \<close>
+        False \<comment> \<open> X \<close>
+        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        ) in
+    let (op:: u8) = 0x89 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
+    let (imm::u8) = ucast n in
+    if rex = 0 then
+      Some [prefix, op, rop, imm]
+    else
+      let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+        Some [prefix, rex, op, rop, imm] |
+  Pmov_rm rd a c \<Rightarrow> 
+    if rd = R10 then 
+      case a of Addrmode (Some r11) None z \<Rightarrow> 
+        if r11 =  R11  \<and> z = 0 then (
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 0R0B \<close>
+            (c = M64) \<comment> \<open> W \<close>
+            True \<comment> \<open> R \<close>
+            True \<comment> \<open> X \<close>
+            True \<comment> \<open> B \<close>
+            ) in
+          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in
+          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
+          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
+          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1001 : mod reg r/m` \<close>
+          \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
+          case c of 
+            M8  \<Rightarrow> Some [rex, 0x88, rop] |
+            M16 \<Rightarrow> Some [0x66,rex, 0x89, rop] |
+            M32 \<Rightarrow> Some [rex, 0x89, rop] |
+            M64 \<Rightarrow> Some [rex, 0x89, rop]
+          )
+        else None
+     | _ \<Rightarrow> None else None |
+    
+  \<comment> \<open> P2887 `MOV register1 to register2` -> `0100 0R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovl_rr rd r1 \<Rightarrow>
     let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
@@ -23,7 +63,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
     if rex = 0 then
-      Some [op,rop]
+      Some [op, rop]
     else
       let rex = bitfield_insert_u8 4 4 rex 0x4 in 
         Some [rex, op, rop] |

@@ -21,6 +21,18 @@ definition sub_overflowi64 :: "u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightar
 
 datatype val = Vundef | Vbyte u8 | Vshort u16 | Vint u32 | Vlong u64
 
+subsection \<open> 16-bit Arithmetic operations \<close>
+
+definition rol16 :: "val \<Rightarrow> val \<Rightarrow> val" where \<comment> \<open> bswap 16 \<close>
+"rol16 v n = (
+  case v of                     
+  Vshort v1 \<Rightarrow> (case n of Vbyte n1 \<Rightarrow>
+    let n1 = n1 mod 16 in
+    Vshort (Bit_Operations.or (v1 << (unat n1)) (v1 >> (unat (16 - n1))))
+  | _ \<Rightarrow> Vundef)  
+ |  _ \<Rightarrow> Vundef
+)"
+
 subsection \<open> 32-bit Arithmetic operations \<close>
 
 definition neg32 :: "val \<Rightarrow> val" where
@@ -77,9 +89,9 @@ definition divmod32u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
       Vint nl \<Rightarrow> (case v3 of 
         Vint d \<Rightarrow> if d \<noteq> 0 then
            let
-              divisor::u64 = ucast d;
-              dividend::u64 = Bit_Operations.or ((ucast nh) << 32)(ucast nl);
-              quotient::u64 = dividend div divisor;
+              divisor::u64   = ucast d;
+              dividend::u64  = Bit_Operations.or ((ucast nh) << 32)(ucast nl);
+              quotient::u64  = dividend div divisor;
               remainder::u64 = dividend mod divisor
             in
               if quotient \<le> ucast u32_MAX then
@@ -100,9 +112,9 @@ definition divmod32s :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
       Vint nl \<Rightarrow> (case v3 of 
         Vint d \<Rightarrow> if d \<noteq> 0 then
            let
-              divisor::i64 =scast d;
-              dividend::i64 = Bit_Operations.or ((scast nh) << 32) (scast nl);
-              quotient::i64 = dividend div divisor;
+              divisor::i64   = scast d;
+              dividend::i64  = Bit_Operations.or ((scast nh) << 32) (scast nl);
+              quotient::i64  = dividend div divisor;
               remainder::i64 = dividend mod divisor
             in
               if quotient \<le>s (scast i32_MAX) \<and> (scast i32_MIN) \<le>s quotient then
@@ -144,48 +156,36 @@ definition and32 :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-definition shl32 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shl32 v n = (
-  case v of
-  Vint i  \<Rightarrow> Vint (i << (unsigned n)) |
-  _ \<Rightarrow> Vundef
-)"
-
-definition shlr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shlr32 v1 v2 = (
+definition shl32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shl32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL::u8`\<close>
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open> v2 = RCX - CL::u8 \<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition shr32 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shr32 v n = (
-  case v of
-  Vint i  \<Rightarrow> Vint (i >> (unsigned n)) |
-  _ \<Rightarrow> Vundef
-)"
-
-definition shrr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shrr32 v1 v2 = (
+definition shr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shr32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL::u8`\<close>
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open> v2 = RCX - CL::u8 \<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition sar32 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"sar32 v n = (
-  case v of
-  Vint i  \<Rightarrow> Vint (ucast (((scast i)::i32) >> (unsigned n))) |
-  _ \<Rightarrow> Vundef
-)"
-
-definition sarr32 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"sarr32 v1 v2 = (
+definition sar32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sar32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open>`v2 = RCX - CL::u8`\<close>
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open> v2 = RCX - CL::u8 \<close>
   _ \<Rightarrow> Vundef
 )"
 
+definition ror32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"ror32 v n = (
+  case v of                     
+  Vshort v1 \<Rightarrow> (case n of Vbyte n1 \<Rightarrow>
+    let  n1 = n1 mod 32 in
+     Vshort (Bit_Operations.or (v1 >> (unat n1)) (v1 << (unat (32 - n1))))
+  | _ \<Rightarrow> Vundef)  
+ |  _ \<Rightarrow> Vundef
+)"
 
 subsection \<open> 64-bit Arithmetic operations \<close>
 
@@ -240,9 +240,9 @@ definition divmod64u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
       Vlong nl \<Rightarrow> (case v3 of 
         Vlong d \<Rightarrow> if d \<noteq> 0 then
            let
-              divisor::u128 = ucast d;
-              dividend::u128 = Bit_Operations.or ((ucast nh) << 64) (ucast nl);
-              quotient::u128 = dividend div divisor;
+              divisor::u128   = ucast d;
+              dividend::u128  = Bit_Operations.or ((ucast nh) << 64) (ucast nl);
+              quotient::u128  = dividend div divisor;
               remainder::u128 = dividend mod divisor
             in
               if quotient \<le> ucast u64_MAX then
@@ -263,9 +263,9 @@ definition divmod64s :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
       Vlong nl \<Rightarrow> (case v3 of 
         Vlong d \<Rightarrow> if d \<noteq> 0 then
            let
-              divisor::i128 =scast d;
-              dividend::i128 = Bit_Operations.or ((scast nh) << 64) (scast nl);
-              quotient::i128 = dividend div divisor;
+              divisor::i128   = scast d;
+              dividend::i128  = Bit_Operations.or ((scast nh) << 64) (scast nl);
+              quotient::i128  = dividend div divisor;
               remainder::i128 = dividend mod divisor
             in
               if quotient \<le>s(scast i64_MAX) \<and> (scast i64_MIN) \<le>s quotient then
@@ -308,47 +308,37 @@ definition and64 :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
-definition shl64 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shl64 v n = (
-  case v of
-  Vlong i  \<Rightarrow> Vlong (i << (unsigned n)) |
-  _ \<Rightarrow> Vundef
-)"
-
-definition shllr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shllr64 v1 v2 = (
+definition shl64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shl64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (n1 << (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition shr64 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"shr64 v n = (
-  case v of
-  Vlong i  \<Rightarrow> Vlong (i >> (unsigned n)) |
-  _ \<Rightarrow> Vundef
-)"
-
-definition shrlr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"shrlr64 v1 v2 = (
+definition shr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"shr64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef
 )"
 
-definition sar64 :: "val \<Rightarrow> u8 \<Rightarrow> val" where
-"sar64 v n = (
-  case v of
-  Vlong i  \<Rightarrow> Vlong (ucast (((scast i)::i64) >> (unsigned n))) |
-  _ \<Rightarrow> Vundef
-)"
-
-definition sarlr64 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"sarlr64 v1 v2 = (
+definition sar64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"sar64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vlong (ucast (((scast n1)::i64) >> (unsigned n2))) | _ \<Rightarrow> Vundef) | \<comment>\<open>`v2 = RCX - CL`\<close>
   _ \<Rightarrow> Vundef
 )"
+
+definition ror64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"ror64 v n = (
+  case v of                     
+  Vshort v1 \<Rightarrow> (case n of Vbyte n1 \<Rightarrow>
+    let  n1 = n1 mod 64 in
+     Vshort (Bit_Operations.or (v1 >> (unat n1)) (v1 << (unat (32 - n1))))
+  | _ \<Rightarrow> Vundef)  
+ |  _ \<Rightarrow> Vundef
+)"
+
 
 subsection \<open> Comparisons \<close>
 

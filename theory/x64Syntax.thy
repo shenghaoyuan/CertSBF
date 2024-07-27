@@ -138,8 +138,8 @@ datatype testcond =
 
 datatype instruction =
   (** Moves *)
-    Pmovq_rr ireg ireg       (**r [mov] (integer) *)
-  | Pmovl_rr ireg ireg       (**r [mov] (integer) *)
+    Pmovl_rr ireg ireg       (**r [mov] (integer) *)
+  | Pmovq_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovl_ri ireg u32
   | Pmovq_ri ireg u64
   | Pmov_rm  ireg addrmode memory_chunk
@@ -193,6 +193,9 @@ datatype instruction =
   | Psarq_ri ireg u8
   | Psarl_r ireg
   | Psarq_r ireg
+  | Prolw_ri ireg u8
+  | Prorl_ri ireg u8
+  | Prorq_ri ireg u8
 
   | Prdtsc
   | Pnop
