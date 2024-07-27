@@ -127,12 +127,8 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pmovq_rr  rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
   Pmovl_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vint n))) m |
   Pmovq_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vlong n))) m |
-  Pmov_rm   rd a c  \<Rightarrow> exec_load   sz c m a rs (IR rd) | \<comment> \<open> 
-  Pmovq_rm   rd a   \<Rightarrow> exec_load   sz M64 m a rs (IR rd) |
-  Pmovl_rm   rd a   \<Rightarrow> exec_load   sz M32 m a rs (IR rd) |
-  Pmovw_rm   rd a   \<Rightarrow> exec_load   sz M16 m a rs (IR rd) |
-  Pmovb_rm   rd a   \<Rightarrow> exec_load   sz M8  m a rs (IR rd) | \<close>
-  Pmov_mr   a r1 c  \<Rightarrow> exec_store  sz c m a rs (IR r1) [] |
+  Pmov_rm   a r1 c  \<Rightarrow> exec_load   sz c m a rs (IR r1) |
+  Pmov_mr   rd a c  \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |
   \<comment> \<open> Moves with conversion \<close>
   Pmovsl_rr rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |  \<comment> \<open> todo \<close>
   \<comment> \<open> Integer arithmetic \<close>

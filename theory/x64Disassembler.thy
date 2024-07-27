@@ -14,7 +14,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
   if h = 0x90 then \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
     case x64_disassemble t of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pnop # l)
   else 
-    if h = 0x66 then 
+    if h = 0x66 then  \<comment> \<open> 16-bit mode \<close>
       case t of [] \<Rightarrow> None | h1#t1 \<Rightarrow>(
       if unsigned_bitfield_extract_u8 4 4 h1 \<noteq> 0b0100 then \<comment> \<open> h1 is not rex \<close>
         case t1 of [] \<Rightarrow> None | reg#t2 \<Rightarrow>(
@@ -24,22 +24,23 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           let src   = bitfield_insert_u8 3 1 reg1 0 in
           let dst   = bitfield_insert_u8 3 1 reg2 0 in
           if h1 = 0xc1 then 
+           \<comment> \<open> P2887 `ROL : register by immediate count` -> `0x66 1100 000w : 11 000 reg : imm8` \<close>
             case t2 of [] \<Rightarrow> None | imm#t3 \<Rightarrow> (
             if modrm = 0b11 \<and> src = 0b000 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Prolw_ri dst imm # l))
             else None )
-          else if h1 = 0x89 then 
+          else if h1 = 0x89 then
+          \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
                  if modrm = 0b01 then
-                   if ireg_of_u8 src = Some R11 \<and>
-                      ireg_of_u8 dst = Some R10 then
+                   if ireg_of_u8 src = Some R10 \<and>
+                      ireg_of_u8 dst = Some R11 then
                       case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow>
-                        \<comment> \<open> Some (Pmovw_rm R10 (Addrmode (Some R11) None 0) # l)  \<close>
-                        Some (Pmov_rm R11 (Addrmode (Some R10) None 0) M16 # l)
+                        Some (Pmov_rm (Addrmode (Some R11) None 0) R10 M16 # l)
                    else None
                  else None
                else None)
-      else 
+      else  \<comment> \<open> h1 is rex \<close>
         let w = unsigned_bitfield_extract_u8 3 1 h1 in
         let r = unsigned_bitfield_extract_u8 2 1 h1 in
         let x = unsigned_bitfield_extract_u8 1 1 h1 in
@@ -51,22 +52,26 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           let src   = bitfield_insert_u8 3 1 reg1 r in
           let dst   = bitfield_insert_u8 3 1 reg2 b in
           if h1 = 0xc1 then 
+           \<comment> \<open> P2887 `ROL : register by immediate count` -> `0x66 1100 000w : 11 000 reg : imm8` \<close>
             case t2 of [] \<Rightarrow> None | imm#t3 \<Rightarrow> (
             if modrm = 0b11 \<and> src = 0b000 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Prolw_ri dst imm # l))
              else None )
           else if op = 0x89 then 
-            if modrm = 0b11 then
-              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)))
-            else None
-          else None))
+          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
+            if modrm = 0b01 then
+              if ireg_of_u8 src = Some R10 \<and>
+                 ireg_of_u8 dst = Some R11 then
+                  case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow>
+                    Some (Pmov_rm (Addrmode (Some R11) None 0) R10 M16 # l)
+               else None
+             else None
+           else None))
   else
     if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then  \<comment> \<open> h is not rex  \<close>
-     \<comment> \<open> 32-bit instructions and default 64-bit instruction\<close>
-        if h = 0x0f then \<comment> \<open> with opcode escape sequence 0x0f \<close>
+     \<comment> \<open> 8/32-bit mode \<close>
+        if h = 0x0f then \<comment> \<open> 8/32-bit mode with opcode escape sequence 0x0f \<close>
         \<comment> \<open> P2885 `RDTSC – Read Time-Stamp Counter` -> `0000 1111 : 0011 0001` \<close>
           case t of [] \<Rightarrow> None | h1#t1 \<Rightarrow>(
             if h1 = 0x31 then 
@@ -76,25 +81,41 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
             else
               None)
         else 
-        \<comment> \<open> without rex and  opcode escape sequence \<close>
+        \<comment> \<open> 8/32bit mode without rex and opcode escape sequence \<close>
           case t of [] \<Rightarrow> None | reg#t1 \<Rightarrow> ( 
             let modrm = unsigned_bitfield_extract_u8 6 2 reg in
             let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
             let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
             let src   = bitfield_insert_u8 3 1 reg1 0 in
             let dst   = bitfield_insert_u8 3 1 reg2 0 in
-          if h = 0x89 then 
+          if h = 0x88 then
+          \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
+            if modrm = 0b01 then
+              if ireg_of_u8 src = Some R10 \<and>
+                 ireg_of_u8 dst = Some R11 then
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow>
+                    Some (Pmov_rm (Addrmode (Some R11) None 0) R10 M8 # l)
+               else None
+             else None
+          else if h = 0x89 then 
             if modrm = 0b11 then
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)))
+             else if modrm = 0b01 then
+          \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 0RXB : 1000 1001 : mod reg r/m` \<close>
+              if ireg_of_u8 src = Some R10 \<and>
+                 ireg_of_u8 dst = Some R11 then
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow>
+                    Some (Pmov_rm (Addrmode (Some R11) None 0) R10 M32 # l)
+               else None
              else None
           else if h = 0x01 then
             if modrm = 0b11 then
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Paddl_rr dst src # l))) 
-             else
+             else 
                None
           else 
             None)
@@ -115,6 +136,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           \<comment> \<open> P2882 `MOV register1 to register2` -> `0100 WR0B : 1000 100w : 11 reg1 reg2` \<close>
           if op = 0x89 then
             if modrm = 0b11 then (
+          \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 \<and> x = 0 then   \<comment> \<open> rex should be `W=1` and `X=0`\<close>
@@ -123,7 +145,13 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
                   case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)
                 else None))) 
             else
-              None
+              if modrm = 0b01 then
+                if ireg_of_u8 src = Some R10 \<and>
+                   ireg_of_u8 dst = Some R11 then
+                    case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow>
+                      Some (Pmov_rm (Addrmode (Some R11) None 0) R10 M64 # l)
+                 else None
+             else None
           else if op = 0x01 then
           \<comment> \<open> P2887 `ADD register1 to register2` -> `0100 WR0B : 0000 000w : 11 reg1 reg2` \<close>
             if modrm = 0b11 then (
