@@ -155,6 +155,17 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
                         Some (Pmov_mr src (Addrmode (Some R11) None 0)  M32 # l))
                     else None
              else None
+          else if op = 0x63 then
+          \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
+            if modrm = 0b11 then (
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                if w = 1 then
+                  case x64_disassemble t1 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovq_rr src dst # l)
+                else
+                  None)))
+            else
+              None
           else if op = 0x01 then
           \<comment> \<open> P2887 `ADD register1 to register2` -> `0100 WR0B : 0000 000w : 11 reg1 reg2` \<close>
             if modrm = 0b11 then (

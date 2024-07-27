@@ -146,18 +146,7 @@ datatype instruction =
   | Pmov_mr  ireg addrmode memory_chunk
   | Pmov_mi  addrmode u32  memory_chunk       (**imm to mem *)
   (** Moves with conversion *)
-  | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
-  | Pmovzb_rm ireg addrmode
-  | Pmovsb_rr ireg ireg     (**r [movsb] (8-bit sign-extension) *)
-  | Pmovsb_rm ireg addrmode
-  | Pmovzw_rr ireg ireg     (**r [movzw] (16-bit zero-extension) *)
-  | Pmovzw_rm ireg addrmode
-  | Pmovsw_rr ireg ireg     (**r [movsw] (16-bit sign-extension) *)
-  | Pmovsw_rm ireg addrmode
-  | Pmovzl_rr ireg ireg     (**r [movzl] (32-bit zero-extension) *)
-  | Pmovsl_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
-  | Pmovls_rr ireg          (** 64 to 32 bit conversion (pseudo) *)
-
+    | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
   (** Integer arithmetic *)
   | Pleal ireg addrmode
   | Pleaq ireg addrmode
@@ -201,6 +190,16 @@ datatype instruction =
   | Prdtsc
   | Pnop
 (*
+  | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
+  | Pmovzb_rm ireg addrmode
+  | Pmovsb_rr ireg ireg     (**r [movsb] (8-bit sign-extension) *)
+  | Pmovsb_rm ireg addrmode
+  | Pmovzw_rr ireg ireg     (**r [movzw] (16-bit zero-extension) *)
+  | Pmovzw_rm ireg addrmode
+  | Pmovsw_rr ireg ireg     (**r [movsw] (16-bit sign-extension) *)
+  | Pmovsw_rm ireg addrmode
+  | Pmovzl_rr ireg ireg     (**r [movzl] (32-bit zero-extension) *)
+  | Pmovls_rr ireg          (** 64 to 32 bit conversion (pseudo) *)
   | Paddl_ri ireg u32
   | Paddq_ri ireg u64
   | Psubl_ri ireg u32
