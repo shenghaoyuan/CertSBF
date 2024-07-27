@@ -140,10 +140,11 @@ datatype instruction =
   (** Moves *)
     Pmovl_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovq_rr ireg ireg       (**r [mov] (integer) *)
-  | Pmovl_ri ireg u32
-  | Pmovq_ri ireg u64
+  | Pmovl_ri ireg u32        (**imm   to reg *)
+  | Pmovq_ri ireg u64        (**imm32 to qwordreg *)
   | Pmov_rm  addrmode ireg memory_chunk
   | Pmov_mr  ireg addrmode memory_chunk
+  | Pmov_mi  addrmode u32  memory_chunk       (**imm to mem *)
   (** Moves with conversion *)
   | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
   | Pmovzb_rm ireg addrmode

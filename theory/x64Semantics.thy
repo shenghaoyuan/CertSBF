@@ -123,14 +123,15 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
   \<comment> \<open> Moves \<close>
-  Pmovl_rr  rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovq_rr  rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovl_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vint n))) m |
-  Pmovq_ri  rd n    \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Vlong n))) m |
-  Pmov_rm   a r1 c  \<Rightarrow> exec_load   sz c m a rs (IR r1) |
-  Pmov_mr   rd a c  \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |
+  Pmovl_rr  rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovq_rr  rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovl_ri  rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vint n))) m |    \<comment> \<open> load imm32 to reg \<close>
+  Pmovq_ri  rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vlong n))) m |   \<comment> \<open> load imm64 to reg \<close>
+  Pmov_rm   a r1 c \<Rightarrow> exec_load   sz c m a rs (IR r1) |                    \<comment> \<open> store reg to mem \<close>
+  Pmov_mr   rd a c \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |                 \<comment> \<open> load  mem to reg \<close>
+  \<comment> \<open> Pmov_mi   a n c  \<Rightarrow> exec_load   sz c m a rs (Vint n) | store immediate to memory \<close>
   \<comment> \<open> Moves with conversion \<close>
-  Pmovsl_rr rd r1   \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (rs (IR r1)))) m |  \<comment> \<open> todo \<close>
+  Pmovsl_rr rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Val.longofintu(rs (IR r1))))) m |
   \<comment> \<open> Integer arithmetic \<close>
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg64 (rs (IR rd))))) m |
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |

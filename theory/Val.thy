@@ -35,6 +35,21 @@ definition rol16 :: "val \<Rightarrow> val \<Rightarrow> val" where \<comment> \
 
 subsection \<open> 32-bit Arithmetic operations \<close>
 
+
+definition longofintu :: "val \<Rightarrow> val" where
+"longofintu v = (
+  case v of
+  Vint i \<Rightarrow> Vlong (ucast i) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition longofints :: "val \<Rightarrow> val" where
+"longofints v = (
+  case v of
+  Vint i \<Rightarrow> Vlong (scast i) |
+  _ \<Rightarrow> Vundef
+)"
+
 definition neg32 :: "val \<Rightarrow> val" where
 "neg32 v = (
   case v of
