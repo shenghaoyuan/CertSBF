@@ -22,11 +22,11 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
       ) in
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-    if rex = 0 then
-      Some [op,rop]
-    else
-      let rex = bitfield_insert_u8 4 4 rex 0x4 in 
-        Some [rex, op, rop] |
+      if rex = 0 then
+        Some [op,rop]
+      else
+        let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+          Some [rex, op, rop] |
   \<comment> \<open> P2882 `MOV qwordregister1 to qwordregister2` -> `0100 1R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -37,7 +37,11 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
       ) in
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-      Some [ rex, op, rop] |
+      if rex = 0 then
+        Some [op,rop]
+      else
+        let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+          Some [rex, op, rop] |
   \<comment> \<open> P2876 `ADD register1 to register2` -> `0100 1R0B : 0000 000w : 11 reg1 reg2` \<close>
   Paddl_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>

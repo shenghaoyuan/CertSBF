@@ -12,98 +12,124 @@ lemma [simp]: " bitfield_insert_u8 3 (Suc 0) 1 0 = 1 "
 
 lemma x64assemble_disassemble_consistency_pmovq_rr: "\<And>x11 x12.
        (\<And>l_bin. x64_assemble l_asm = Some l_bin \<Longrightarrow> x64_disassemble l_bin = Some l_asm) \<Longrightarrow>
-       (case x64_assemble l_asm of None \<Rightarrow> None
-        | Some l \<Rightarrow>
-            Some
-             ([construct_rex_to_u8 True (and (u8_of_ireg x12) 8 \<noteq> 0) False (and (u8_of_ireg x11) 8 \<noteq> 0), 137,
-               construct_modsib_to_u8 3 (u8_of_ireg x12) (u8_of_ireg x11)] @
-              l)) =
+       (case let rex = construct_rex_to_u8 True (and (u8_of_ireg x12) 8 \<noteq> 0) False (and (u8_of_ireg x11) 8 \<noteq> 0);
+                 rop = construct_modsib_to_u8 3 (u8_of_ireg x12) (u8_of_ireg x11)
+             in if rex = 0 then Some [137, rop] else let rex = bitfield_insert_u8 4 4 rex 4 in Some [rex, 137, rop] of
+        None \<Rightarrow> None | Some l1 \<Rightarrow> case x64_assemble l_asm of None \<Rightarrow> None | Some l \<Rightarrow> Some (l1 @ l)) =
        Some l_bin \<Longrightarrow>
        a = Pmovq_rr x11 x12 \<Longrightarrow> x64_disassemble l_bin = Some (Pmovq_rr x11 x12 # l_asm)"  
   subgoal for rd r1
-    apply (cases "x64_assemble l_asm", simp_all)
-    subgoal premises aaa for l1
-      apply (simp add: aaa(2)[symmetric])
-      apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def Let_def)
-      apply (cases "ireg_of_u8
-                       (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3 >> 3)) 0)", simp_all)
-      subgoal
-        apply (cases "ireg_of_u8
-              (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3 >> 3))
-                (and 1
-                  (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg rd) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg r1) 8 \<noteq> 0)))
-                    1 >>
-                   2)))", simp_all)
-        subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    apply (simp add: Let_def split: if_split_asm)
+    subgoal
+      apply (cases "x64_assemble l_asm", simp_all add: Let_def)
+      subgoal premises aaa for l1
+        apply (simp add: aaa(4)[symmetric])
+        apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd) >> 3)) 0)", simp_all)
+        subgoal by (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def ireg_of_u8_def)
         subgoal for src
-          apply (cases "ireg_of_u8
-                  (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3))
-                    (and 1
-                      (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg rd) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg r1) 8 \<noteq> 0)))
-                        1)))", simp_all)
-        subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-        subgoal for dst
-          apply (cases "x64_disassemble l1", simp_all)
-          subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-          subgoal for l1 by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-          done
-        done
-      done
-    subgoal for t1
-      apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3)) 0)", simp_all)
-      subgoal
-        apply (cases "ireg_of_u8
-                  (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3 >> 3))
-                    (and 1
-                      (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg rd) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg r1) 8 \<noteq> 0)))
-                        1 >>
-                       2)))", simp_all)
-        subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-        subgoal for src
-          apply (cases "ireg_of_u8
-                  (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3))
-                    (and 1
-                      (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg rd) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg r1) 8 \<noteq> 0)))
-                        1)))", simp_all)
-          subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+          apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd))) 0)", simp_all)
+          subgoal by (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def ireg_of_u8_def)
           subgoal for dst
             apply (cases "x64_disassemble l1", simp_all)
-              subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-              subgoal for l1 by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            subgoal
+              by (simp add: aaa(2))
+            subgoal for tx thm aaa
+              apply (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                  bitfield_insert_u8_def Let_def ireg_of_u8_def aaa(1) aaa(3))
+              done
+            done
+
+    subgoal
+
+    subgoal premises aaa for l1
+      apply (simp add: aaa(4)[symmetric])
+      apply (unfold Let_def)
+      apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd) >> 3)) 0)", simp_all)
+      subgoal
+        apply (cases "ireg_of_u8
+                  (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd) >> 3))
+                    (and 1 (construct_rex_to_u8 True (and (u8_of_ireg r1) 8 \<noteq> 0) False (and (u8_of_ireg rd) 8 \<noteq> 0) >> 2)))", simp_all)
+        subgoal by (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def ireg_of_u8_def)
+        subgoal for src
+          apply (cases "ireg_of_u8
+                  (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd)))
+                    (and 1 (construct_rex_to_u8 True (and (u8_of_ireg r1) 8 \<noteq> 0) False (and (u8_of_ireg rd) 8 \<noteq> 0))))", simp_all)
+          subgoal by (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                bitfield_insert_u8_def Let_def ireg_of_u8_def)
+          subgoal for dst
+            apply (cases "x64_disassemble l1", simp_all)
+            subgoal
+              by (simp add: aaa(1))
+            subgoal for tx
+              apply (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                bitfield_insert_u8_def Let_def ireg_of_u8_def)
               done
             done
           done
-        subgoal for op
+        done
+      subgoal for w
+        apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd))) 0)", simp_all)
+        subgoal
           apply (cases "ireg_of_u8
-                  (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3 >> 3))
-                    (and 1
-                      (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg rd) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg r1) 8 \<noteq> 0)))
-                        1 >>
-                       2)))", simp_all)
+                  (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd) >> 3))
+                    (and 1 (construct_rex_to_u8 True (and (u8_of_ireg r1) 8 \<noteq> 0) False (and (u8_of_ireg rd) 8 \<noteq> 0) >> 2)))", simp_all)
+          subgoal by (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                bitfield_insert_u8_def Let_def ireg_of_u8_def)
+          subgoal for src
+            apply (cases "ireg_of_u8
+                  (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd)))
+                    (and 1 (construct_rex_to_u8 True (and (u8_of_ireg r1) 8 \<noteq> 0) False (and (u8_of_ireg rd) 8 \<noteq> 0))))", simp_all)
+            subgoal by (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            subgoal for dst
+              apply (cases "x64_disassemble l1", simp_all)
+              subgoal
+                by (simp add: aaa(1))
+              subgoal for tx
+                apply (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                    bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                done
+              done
+            done
+          done
+        subgoal for x
+          apply (cases "ireg_of_u8
+                  (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd) >> 3))
+                    (and 1 (construct_rex_to_u8 True (and (u8_of_ireg r1) 8 \<noteq> 0) False (and (u8_of_ireg rd) 8 \<noteq> 0) >> 2)))", simp_all)
           subgoal
             apply (cases "x64_disassemble l1", simp_all)
-            subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-            subgoal for l1 by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+            subgoal
+              by (simp add: aaa(1))
+            subgoal for tx
+              apply (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                  bitfield_insert_u8_def Let_def ireg_of_u8_def)
+              done
             done
           subgoal for src
             apply (cases "ireg_of_u8
-                  (bitfield_insert_u8 3 (Suc 0) (and 7 (bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg rd)) (and 7 (u8_of_ireg r1))) 3))
-                    (and 1
-                      (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg rd) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg r1) 8 \<noteq> 0)))
-                        1)))", simp_all)
+                  (bitfield_insert_u8 3 (Suc 0) (and 7 (construct_modsib_to_u8 3 (u8_of_ireg r1) (u8_of_ireg rd)))
+                    (and 1 (construct_rex_to_u8 True (and (u8_of_ireg r1) 8 \<noteq> 0) False (and (u8_of_ireg rd) 8 \<noteq> 0))))", simp_all)
             subgoal
               apply (cases "x64_disassemble l1", simp_all)
-              subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-              subgoal for l1 by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+              subgoal
+                by (simp add: aaa(1))
+              subgoal for tx
+                apply (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                    bitfield_insert_u8_def Let_def ireg_of_u8_def)
+                done
               done
             subgoal for dst
               apply (cases "x64_disassemble l1", simp_all)
-              subgoal by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-              subgoal for l1 by (cases r1; cases rd,auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
+              subgoal
+                by (simp add: aaa(1))
+              subgoal for tx
+                apply (cases r1; cases rd,auto simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+                    bitfield_insert_u8_def Let_def ireg_of_u8_def aaa(1))
+                done
               done
-            done
-          done
-        done
       done
     done
   done
