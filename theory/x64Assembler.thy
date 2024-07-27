@@ -28,10 +28,83 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
     else
       let rex = bitfield_insert_u8 4 4 rex 0x4 in 
         Some [prefix, rex, op, rop, imm] |
-  Pmov_rm rd a c \<Rightarrow> 
-    if rd = R10 then 
-      case a of Addrmode (Some r11) None z \<Rightarrow> 
+\<comment> \<open>
+  Pmovl_rm rd a \<Rightarrow> (
+    if rd = R10 then (
+      case a of Addrmode (Some r11) None z \<Rightarrow> (
         if r11 =  R11  \<and> z = 0 then (
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 0R0B \<close>
+            True \<comment> \<open> W \<close>
+            True \<comment> \<open> R \<close>
+            True \<comment> \<open> X \<close>
+            True \<comment> \<open> B \<close>
+            ) in
+          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in
+            Some [rex, 0x89, rop] )
+        else
+        None) |
+      _ \<Rightarrow> None )
+    else
+      None) |
+
+  Pmovq_rm rd a \<Rightarrow> (
+    if rd = R10 then (
+      case a of Addrmode (Some r11) None z \<Rightarrow> (
+        if r11 =  R11  \<and> z = 0 then (
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 0R0B \<close>
+            True \<comment> \<open> W \<close>
+            True \<comment> \<open> R \<close>
+            True \<comment> \<open> X \<close>
+            True \<comment> \<open> B \<close>
+            ) in
+          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in
+            Some [rex, 0x89, rop] )
+        else
+        None) |
+      _ \<Rightarrow> None )
+    else
+      None) |
+
+  Pmovw_rm rd a \<Rightarrow> (
+    if rd = R10 then (
+      case a of Addrmode (Some r11) None z \<Rightarrow> (
+        if r11 =  R11  \<and> z = 0 then (
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 0R0B \<close>
+            False \<comment> \<open> W \<close>
+            True \<comment> \<open> R \<close>
+            True \<comment> \<open> X \<close>
+            True \<comment> \<open> B \<close>
+            ) in
+          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in
+            Some [0x66,rex, 0x89, rop] )
+        else
+        None) |
+      _ \<Rightarrow> None )
+    else
+      None) |
+
+  Pmovb_rm rd a \<Rightarrow> (
+    if rd = R10 then (
+      case a of Addrmode (Some r11) None z \<Rightarrow> (
+        if r11 =  R11  \<and> z = 0 then (
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 0R0B \<close>
+            True \<comment> \<open> W \<close>
+            True \<comment> \<open> R \<close>
+            True \<comment> \<open> X \<close>
+            True \<comment> \<open> B \<close>
+            ) in
+          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in
+            Some [rex, 0x88, rop] )
+        else
+        None) |
+      _ \<Rightarrow> None )
+    else
+      None) | \<close>
+
+  Pmov_rm rd a c \<Rightarrow> 
+    if rd = R11 then 
+      case a of Addrmode (Some r1) None z \<Rightarrow> 
+        if r1 =  R10  \<and> z = 0 then (
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 0R0B \<close>
             (c = M64) \<comment> \<open> W \<close>
             True \<comment> \<open> R \<close>

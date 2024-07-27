@@ -28,14 +28,17 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
             if modrm = 0b11 \<and> src = 0b000 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Prolw_ri dst imm # l))
-             else None )
+            else None )
           else if h1 = 0x89 then 
-             if modrm = 0b11 then
-               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                  case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow> Some (Pmovl_rr dst src # l)))
-               else None
-          else None)
+                 if modrm = 0b01 then
+                   if ireg_of_u8 src = Some R11 \<and>
+                      ireg_of_u8 dst = Some R10 then
+                      case x64_disassemble t2 of None \<Rightarrow> None | Some l \<Rightarrow>
+                        \<comment> \<open> Some (Pmovw_rm R10 (Addrmode (Some R11) None 0) # l)  \<close>
+                        Some (Pmov_rm R11 (Addrmode (Some R10) None 0) M16 # l)
+                   else None
+                 else None
+               else None)
       else 
         let w = unsigned_bitfield_extract_u8 3 1 h1 in
         let r = unsigned_bitfield_extract_u8 2 1 h1 in
