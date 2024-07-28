@@ -3,9 +3,10 @@ imports
   Main
   rBPFCommType rBPFSyntax
   x64Assembler x64Disassembler
-  x64ConsistencyProof2Aux0
+  x64ConsistencyProof2Aux0 (*
   x64ConsistencyProof2Pmov0
-  x64ConsistencyProof2Pmov1
+  x64ConsistencyProof2Pmov1 *)
+  x64Pmovl_rr0
 begin
 
 declare if_split_asm [split]
@@ -22,39 +23,63 @@ lemma x64disassemble_assemble_consistency:
     
 
 (**r l_asm = x1 + l_asm *)
-  subgoal for a l_bin l_asm
-    apply simp
-    apply (cases a)
-    subgoal for rd r1  \<comment> \<open> Pmov_rr \<close>
-      apply simp
-      apply (cases "l_asm", simp_all)
-      subgoal for b lb
-        subgoal by (cases "x64_disassemble lb", simp_all)
-        done
-      subgoal for rex lb
-        apply (cases "lb", simp_all)
-        subgoal for c lc
-          apply (cases "lc", simp_all)
-          subgoal for rop ld
-            apply (unfold Let_def)
-            apply (cases "c = 137", simp)
-            subgoal
-              apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) (and 1 (rex >> 2)))", simp_all)
-              subgoal for src
-                apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 rop) (and 1 rex))", simp_all)
-                subgoal for dst
-                  apply (cases "x64_disassemble ld", simp_all)
-                  apply (rule conjI)
-                  subgoal using mov_goal_0 by blast
-                  subgoal using mov_goal_1 by blast
-                  done
-                subgoal sorry
+  subgoal for a l_asm l_bin_b apply (cases a, simp_all add: Let_def)
+
+    \<comment> \<open> Pmovl_rr \<close>
+    subgoal for rd r1 apply (cases "l_bin_b", simp_all)
+      subgoal for b lb by (cases "x64_disassemble lb", simp_all)
+
+      subgoal for rex lb apply (cases "lb", simp_all)
+        subgoal for c lc apply (cases "lc", simp_all)
+          subgoal for rop ld apply (cases "ld", simp_all)
+            subgoal for e le apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 rop) 0)", simp)
+              subgoal for src apply (cases "x64_disassemble ld", simp_all)
                 done
               done
-            sorry
+            done
+          done
+        subgoal for c lc apply (cases "lc", simp_all)
+          subgoal for rop ld apply (cases "ld", simp_all add: Let_def)
+            subgoal for e le apply (cases "x64_disassemble le", simp_all)
+              done
+            done
           done
         done
-      done
+
+      subgoal for rex lb apply (cases "lb", simp_all)
+        subgoal for c lc apply (cases "x64_disassemble lc", simp_all)
+          done
+        done
+
+      subgoal for rex lb apply (cases "lb", simp_all add: Let_def)
+        subgoal for rop lc apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) 0)", simp_all)
+          subgoal for src apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 rop) 0)", simp_all)
+            subgoal for dst apply (cases "x64_disassemble lc", simp_all)
+              apply (rule conjI)
+              subgoal using pmovl_rr_lemma0 by blast
+              subgoal sorry
+(*
+              subgoal using mov_goal_0 by blast
+              subgoal using mov_goal_1 by blast *)
+              done
+            done
+          done
+        subgoal for rop lc apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (rop >> 3)) 0)", simp_all)
+          subgoal for src apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 rop) 0)", simp_all)
+            subgoal for dst apply (cases "x64_disassemble lc", simp_all)
+              done
+            done
+          done
+        done
+
+      subgoal for rex lb apply (cases "lb", simp_all add: Let_def)
+        subgoal for rop lc apply (cases "lc", simp)
+          subgoal for d ld apply simp
+          subgoal for src apply (cases "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 rop) 0)", simp_all)
+            subgoal for dst apply (cases "x64_disassemble lc", simp_all)
+      sorry
+
+    \<comment> \<open> Other ins \<close>
     sorry
   done
 
