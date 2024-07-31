@@ -16,7 +16,26 @@ syntax "_pregmap_set" :: "'a => 'b => 'c => 'a" ("_ # _ <- _" [1000, 1000, 1000]
 translations
   "_pregmap_set a b c" => "(a(b := c))"
 
-(*
+(*section \<open> Axiom Memory model \<close>
+
+theory Mem
+imports
+  Main
+  rBPFCommType Val
+begin
+
+type_synonym mem = "(u64, val) map"
+
+datatype memory_chunk = M8 | M16 | M32 | M64
+
+type_synonym addr_type = val
+
+axiomatization
+  loadv   :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val option" and
+  storev  :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val \<Rightarrow> mem option"
+
+
+end
 abbreviation bit_left_shift ::
   "regset \<Rightarrow> preg \<Rightarrow> val \<Rightarrow> regset" (infix " _ # _ <- _ " 50)
 where "a # b <- c \<equiv> (a(b := c))" *)
@@ -96,7 +115,7 @@ definition eval_testcond :: "testcond \<Rightarrow> regset \<Rightarrow> bool op
   Cond_p  \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 1) | _ \<Rightarrow> None) |
   Cond_np \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 0) | _ \<Rightarrow> None)
 )"
-
+                  
 datatype outcome = Next regset mem | Stuck
 
 definition nextinstr :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
