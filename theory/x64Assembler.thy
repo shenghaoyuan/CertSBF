@@ -42,7 +42,8 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
           \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
           case c of 
             M32 \<Rightarrow> Some [rex, 0x8b, rop] |
-            M64 \<Rightarrow> Some [rex, 0x8b, rop]
+            M64 \<Rightarrow> Some [rex, 0x8b, rop] |
+            _   \<Rightarrow> None
           )
         else None)
       | _ \<Rightarrow> None) 

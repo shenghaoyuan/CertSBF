@@ -53,7 +53,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
                 if modrm = 0b01 then
                   if ireg_of_u8 src = Some R10 \<and> ireg_of_u8 dst = Some R11 then
-                    Some (4, Pmov_rm R10 (Addrmode (Some R11) None 0) M16)
+                    Some (4, Pmov_mr (Addrmode (Some R11) None 0) R10  M16)
                   else None
                 else None
               else None
@@ -103,7 +103,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
           if modrm = 0b01 then
             if ireg_of_u8 src = Some R10 \<and> ireg_of_u8 dst = Some R11 then
-              Some (3, Pmov_rm R10 (Addrmode (Some R11) None 0) M8)
+              Some (3, Pmov_mr (Addrmode (Some R11)  None 0) R10  M8)
             else None
           else None
         else if op = 0x89 then
@@ -119,26 +119,25 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>
             \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
             if ireg_of_u8 src = Some R10 \<and> ireg_of_u8 dst = Some R11 then
-              if w = 1 then Some (3, Pmov_rm R10 (Addrmode (Some R11) None 0) M64)
-              else Some (3, Pmov_rm R10 (Addrmode (Some R11) None 0) M32)
+              if w = 1 then Some (3, Pmov_mr (Addrmode (Some R11) None 0) R10 M64)
+              else Some (3, Pmov_mr (Addrmode (Some R11) None 0) R10  M32)
               else None
             else None
-          else if op = 0x8b then
+          else if op = 0x8b then    
             if modrm = 0b01 then
             \<comment> \<open> P2882 ` MOV: memory to reg`             ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
             \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
               if ireg_of_u8 dst = Some R11 then 
-                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                  if w = 1 then Some (3, Pmov_mr (Addrmode (Some R11) None 0) src M64)
-                  else Some (3, Pmov_mr (Addrmode (Some R11) None 0) src M32))
-                  else None
-              else None
+                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (  
+                 Some (3, Pmov_rm src (Addrmode (Some R11) None 0)  (if w = 1 then M64 else M32)))
+              else None  
+            else None
           else if op = 0x63 then
             \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (3, Pmovq_rr src dst)
+                if w = 1 then Some (3, Pmovsq_rr src dst)
                 else None)))
             else None
           else if op = 0x01 then
