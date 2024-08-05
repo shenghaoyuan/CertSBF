@@ -486,6 +486,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
   _ \<Rightarrow> None
   )"
 
+(*
 fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
 "x64_assemble [] = Some []" |
 "x64_assemble (h#t) = (
@@ -496,6 +497,26 @@ fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
     None \<Rightarrow> None |
     Some l \<Rightarrow> Some (l1@l)
   )
+)" *)
+
+definition x64_encode :: "instruction \<Rightarrow> x64_bin \<Rightarrow> x64_bin option" where
+"x64_encode ins l_bin = (
+  case x64_assemble_one_instruction ins of
+  None    \<Rightarrow> None |
+  Some l  \<Rightarrow> Some (l_bin@l)
 )"
+
+(*
+fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
+"x64_assemble [] = Some []" |
+"x64_assemble (h#t) = (
+  case x64_assemble t of
+  None \<Rightarrow> None |
+  Some l1 \<Rightarrow> (
+    case x64_encode h l1 of
+    None \<Rightarrow> None |
+    Some l \<Rightarrow> Some (l@l1)
+  )
+)" *)
 
 end
