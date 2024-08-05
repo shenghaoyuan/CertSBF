@@ -42,7 +42,7 @@ fun x64_disassemble :: "x64_bin \<Rightarrow> x64_asm option" where
           let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
           let src   = bitfield_insert_u8 3 1 reg1 r in
           let dst   = bitfield_insert_u8 3 1 reg2 b in
-          if h1 = 0xc1 then 
+          if op = 0xc1 then 
            \<comment> \<open> P2887 `ROL : register by immediate count` -> `0x66 1100 000w : 11 000 reg : imm8` \<close>
             case t2 of [] \<Rightarrow> None | imm#t3 \<Rightarrow> (
             if modrm = 0b11 \<and> src = 0b000 then

@@ -115,7 +115,7 @@ definition eval_testcond :: "testcond \<Rightarrow> regset \<Rightarrow> bool op
   Cond_p  \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 1) | _ \<Rightarrow> None) |
   Cond_np \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 0) | _ \<Rightarrow> None)
 )"
-                  
+
 datatype outcome = Next regset mem | Stuck
 
 definition nextinstr :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
@@ -137,7 +137,7 @@ definition exec_store :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rig
   None \<Rightarrow> Stuck |
   Some m' \<Rightarrow> Next (nextinstr_nf sz (undef_regs destroyed rs)) m'
 )"
-
+                                                   
 definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
@@ -146,8 +146,8 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pmovq_rr  rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
   Pmovl_ri  rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vint n))) m |    \<comment> \<open> load imm32 to reg \<close>
   Pmovq_ri  rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vlong n))) m |   \<comment> \<open> load imm64 to reg \<close>
-  Pmov_rm   a r1 c \<Rightarrow> exec_load   sz c m a rs (IR r1) |                    \<comment> \<open> store reg to mem \<close>
-  Pmov_mr   rd a c \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |                 \<comment> \<open> load  mem to reg \<close>
+  Pmov_rm   rd a c \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |       \<comment> \<open> load  mem to reg \<close>
+  Pmov_mr   a r1 c \<Rightarrow> exec_load   sz c m a rs (IR r1) |                 \<comment> \<open> store reg to mem  \<close>
   \<comment> \<open> Pmov_mi   a n c  \<Rightarrow> exec_load   sz c m a rs (Vint n) | store immediate to memory \<close>
   \<comment> \<open> Moves with conversion \<close>
   Pmovsq_rr rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd)  <- (Val.longofintu(rs (IR r1))))) m |
@@ -195,8 +195,8 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Psarl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar32  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
   Psarq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
   Psarl_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar32  (rs (IR rd)) (rs(IR RCX))))) m |
-  Psarq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64  (rs (IR rd)) (rs(IR RCX))))) m | \<comment>\<open> bswap16 \<close>
-  Prolw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.rol16  (rs (IR rd)) (Vbyte n)))) m | 
+  Psarq_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sar64  (rs (IR rd)) (rs(IR RCX))))) m | 
+  Prolw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.rol16  (rs (IR rd)) (Vbyte n)))) m | \<comment>\<open> bswap16 \<close>
   Prorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror32  (rs (IR rd)) (Vbyte n)))) m |  
   Prorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror64  (rs (IR rd)) (Vbyte n)))) m |  
   Prdtsc          \<Rightarrow> Next (nextinstr sz rs) m |

@@ -43,7 +43,7 @@ fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
 "u8_of_ireg RBP = 5" |
 "u8_of_ireg RSI = 6" |
 "u8_of_ireg RDI = 7" |
-"u8_of_ireg R8  = 8" |
+"u8_of_ireg R8  = 8" |        
 "u8_of_ireg R9  = 9" |
 "u8_of_ireg R10 = 10" |
 "u8_of_ireg R11 = 11" |
@@ -142,9 +142,9 @@ datatype instruction =
   | Pmovq_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovl_ri ireg u32        (**imm   to reg *)
   | Pmovq_ri ireg u64        (**imm32 to qwordreg *)
-  | Pmov_rm  addrmode ireg memory_chunk
-  | Pmov_mr  ireg addrmode memory_chunk
-  | Pmov_mi  addrmode u32  memory_chunk       (**imm to mem *)
+  | Pmov_rm ireg addrmode  memory_chunk
+  | Pmov_mr addrmode ireg memory_chunk
+  | Pmov_mi addrmode u32  memory_chunk       (**imm to mem *)
   (** Moves with conversion *)
     | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
   (** Integer arithmetic *)
