@@ -33,17 +33,18 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
         if r11 =  R11 \<and> z = 0 then (
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
             (c = M64) \<comment> \<open> W \<close>
-            True \<comment> \<open> R \<close>
+            (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
             True \<comment> \<open> X \<close>
             True \<comment> \<open> B \<close>
             ) in
           let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg R11) in
           \<comment> \<open> P2882 ` MOV: memory to reg`             ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
           \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
-          case c of 
-            M32 \<Rightarrow> Some [rex, 0x8b, rop] |
-            M64 \<Rightarrow> Some [rex, 0x8b, rop] |
-            _   \<Rightarrow> None
+          let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+            case c of 
+              M32 \<Rightarrow> Some [rex, 0x8b, rop] |
+              M64 \<Rightarrow> Some [rex, 0x8b, rop] |
+              _   \<Rightarrow> None
           )
         else None)
       | _ \<Rightarrow> None) 
@@ -97,6 +98,7 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
       ) in
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
+    let rex = bitfield_insert_u8 4 4 rex 0x4 in
       Some [ rex, op, rop ] |
   \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
   Pmovsq_rr rd r1 \<Rightarrow>

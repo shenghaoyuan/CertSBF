@@ -68,6 +68,6 @@ definition construct_modsib_to_u8 :: "u8 \<Rightarrow> u8 \<Rightarrow> u8 \<Rig
 "construct_modsib_to_u8 op1 op2 op3 =
   bitfield_insert_u8 6 2
     (bitfield_insert_u8 3 3 (and 0b111 op3) (and 0b111 op2))
-    0b11"
+    op1"
 
 end
