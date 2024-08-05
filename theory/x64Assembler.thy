@@ -7,8 +7,8 @@ imports
   x86CommType x64Syntax
 begin
 
-fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" where
-"x64_assemble_one_instruction ins = (
+fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
+"x64_encode ins = (
   case ins of
   \<comment> \<open> P518 `Operand-size override prefix is encoded using 66H` \<close> 
   \<comment> \<open> P2887 `ROL : register by immediate count` -> `0x66 1100 000w : 11 000 reg : imm8` \<close>
@@ -489,19 +489,19 @@ fun x64_assemble_one_instruction :: "instruction \<Rightarrow> x64_bin option" w
   _ \<Rightarrow> None
   )"
 
-(*
 fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
 "x64_assemble [] = Some []" |
 "x64_assemble (h#t) = (
-  case x64_assemble_one_instruction h of
+  case x64_encode h of
   None \<Rightarrow> None |
   Some l1 \<Rightarrow> (
     case x64_assemble t of
     None \<Rightarrow> None |
     Some l \<Rightarrow> Some (l1@l)
   )
-)" *)
+)"
 
+(*
 definition x64_encode :: "instruction \<Rightarrow> x64_bin \<Rightarrow> x64_bin option" where
 "x64_encode ins l_bin = (
   case x64_assemble_one_instruction ins of
@@ -520,6 +520,10 @@ fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
     None \<Rightarrow> None |
     Some l \<Rightarrow> Some (l@l1)
   )
-)"
+)" *)
+
+fun list_in_list :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> bool" where
+"list_in_list [] _ _ = True" |
+"list_in_list (h#t) n l = (h = l!n \<and> list_in_list t (Suc n) l)"
 
 end

@@ -69,21 +69,21 @@ lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> length l_bin - leng
 
 
 lemma x64_encode_decode_consistency:
-  "x64_encode ins l = Some l_bin \<Longrightarrow> x64_decode (length l) l_bin = Some (length l_bin - length l, ins)"
-  apply (unfold x64_encode_def)
+  "(Some l_bin = x64_encode ins \<and> list_in_list l_bin pc l) \<Longrightarrow> x64_decode pc l = Some (length l_bin, ins)"
+  apply (erule conjE)
   apply (cases ins; simp_all)
 
   subgoal for src dst
   \<comment> \<open> Pmovl_rr \<close> 
     apply (unfold Let_def)
-    apply (cases "construct_rex_to_u8 False (and (u8_of_ireg dst) 8 \<noteq> 0) False (and (u8_of_ireg src) 8 \<noteq> 0) = 0", simp_all add: construct_rex_to_u8_def construct_modsib_to_u8_def)
+    apply (cases "construct_rex_to_u8 False (and (u8_of_ireg dst) 8 \<noteq> 0) False (and (u8_of_ireg src) 8 \<noteq> 0) = 0"; simp_all add: construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
   subgoal for dst src
   \<comment> \<open> Pmovq_rr \<close> 
-    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
