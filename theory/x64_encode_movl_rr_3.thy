@@ -2,20 +2,8 @@ theory x64_encode_movl_rr_3
 imports
   Main
   rBPFCommType rBPFSyntax
-  x64Syntax
+  x64Syntax BitsOpMore
 begin
-
-lemma and_1_eq_1: "\<And> v. (and 1 v \<noteq> 0) = (and 1 v = 1)"
-  by (simp add: one_and_eq)
-
-
-lemma [simp]: "and 1 (v >> 2) = 1 \<Longrightarrow> and (or (and 8 (((v::u8) >> 2) << 3)) (and (and 7 (k >> 3)) (- 9))) 8 \<noteq> 0"
-  apply (simp add: bit_eq_iff)
-  apply (auto simp add: bit_simps)
-  apply (rule_tac x="3" in exI)
-  apply (drule_tac x="0" in spec)
-  apply simp
-  done
 
 
 lemma encode_movl_rr_3: "ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (k >> 3)) (and 1 (v >> 2))) = Some src \<Longrightarrow>
