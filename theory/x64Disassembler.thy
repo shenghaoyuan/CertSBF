@@ -113,7 +113,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
             case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
               if w = 1 \<and> x = 0 then   \<comment> \<open> rex should be `W=1` and `X=0`\<close> Some (3, Pmovq_rr dst src) 
-              else if w = 0 \<and> x = 0 then Some (3, Pmovl_rr dst src)
+              else if w = 0 \<and> x = 0 then
+                if r = 0 \<and> b = 0 then None
+                else Some (3, Pmovl_rr dst src)
               else None))) 
           else if modrm = 0b01 then
             \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>

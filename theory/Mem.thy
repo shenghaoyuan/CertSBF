@@ -6,7 +6,7 @@ imports
   rBPFCommType Val
 begin
 
-type_synonym mem = "(u64, val) map"
+type_synonym mem = "(u64, u8 option) map"
 
 datatype memory_chunk = M8 | M16 | M32 | M64
 
