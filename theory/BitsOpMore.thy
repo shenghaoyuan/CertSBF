@@ -92,6 +92,25 @@ lemma [simp]: "and 15 ((v::u8) >> 4) = 4 \<Longrightarrow> bit v (Suc (Suc (Suc 
   apply simp
   by (simp add: numeral_eq_Suc)
 
+lemma [simp]: "(and 1 ((v::u8) >> n) = 1) = (bit v n = True)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal
+    apply (drule_tac x="0" in spec)
+    by (simp add: numeral_2_eq_2)
+  done
+
+lemma [simp]: "(and 1 ((v::u8) >> n) = 0) = (bit v n = False)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal
+    apply (drule_tac x="0" in spec)
+    by (simp add: numeral_2_eq_2)
+  done
+
+lemma [simp]: "bit v 2 \<Longrightarrow> bit v (Suc (Suc 0))"
+ using numeral_2_eq_2 by argo
+
 lemma not_7_lt_3 [simp]: "\<not> bit (7::int) n \<Longrightarrow> \<not> 3 \<le> n \<Longrightarrow> False"
   apply (cases n, simp_all)
   subgoal for n1 apply (cases n1, simp_all)
@@ -276,6 +295,23 @@ lemma encode_movl_rr_1_subgoal_11 [simp]: "and 3 (v >> 6) = 3 \<Longrightarrow>
   done
 
 lemma encode_movl_rr_1_subgoal_12 [simp]: "and 3 ((k::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow> bit 192 n \<Longrightarrow> bit k n"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all add: bit_numeral_Bit0_iff) 
+    subgoal for n2 apply (cases n2, simp_all)
+      subgoal for n3 apply (cases n3, simp_all)
+        subgoal for n4 apply (cases n4, simp_all)
+          subgoal for n5 apply (cases n5, simp_all)
+            subgoal for n6 apply (cases n6, simp_all)
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma encode_movl_rr_1_subgoal_13 [simp]: "and 3 ((k::u8) >> 6) = 3 \<Longrightarrow> n < 8 \<Longrightarrow>
+  \<not> bit 192 n \<Longrightarrow> bit 56 n \<Longrightarrow> bit 64 n \<Longrightarrow> bit k n"
   apply (cases n, simp_all)
   subgoal for n1 apply (cases n1, simp_all add: bit_numeral_Bit0_iff) 
     subgoal for n2 apply (cases n2, simp_all)

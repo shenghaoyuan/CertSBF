@@ -3,7 +3,8 @@ imports
   Main
   rBPFCommType rBPFSyntax
   x64Assembler x64Disassembler
-  x64_encode_movl_rr_1 x64_encode_movl_rr_2 x64_encode_movl_rr_3 x64_encode_movl_rr_4
+  x64_encode_movl_rr_1 x64_encode_movl_rr_2 x64_encode_movl_rr_3
+  x64_encode_movl_rr_4 x64_encode_movl_rr_5 x64_encode_movl_rr_6
 begin
 
 declare if_split_asm [split]
@@ -54,20 +55,23 @@ lemma x64_decode_encode_consistency:
       done
 
     subgoal
-      done
+      using encode_movl_rr_5 by blast
 
     subgoal
+      apply (cases l_bin, simp_all)
+      subgoal for l_bin1
+        apply (cases l_bin1, simp_all)
+        subgoal for l_bin2
+          apply (cases l_bin2, simp_all)
+          subgoal for t l_bin3
+            using encode_movl_rr_6 by blast
+          done
+        done
       done
 
     done
 
-    subgoal
-
-      done
-
-    done
-
-  done
+  sorry
 
 declare if_split_asm [split del]
 
