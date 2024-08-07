@@ -34,7 +34,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
             (c = M64) \<comment> \<open> W \<close>
             (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-            True \<comment> \<open> X \<close>
+            False \<comment> \<open> X \<close>
             True \<comment> \<open> B \<close>
             ) in
           let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg R11) in
@@ -56,7 +56,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
             (c = M64) \<comment> \<open> W \<close>
             True \<comment> \<open> R \<close>
-            True \<comment> \<open> X \<close>
+            False \<comment> \<open> X \<close>
             True \<comment> \<open> B \<close>
             ) in
           let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in

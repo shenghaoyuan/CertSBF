@@ -174,7 +174,7 @@ definition and32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 definition shl32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "shl32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 >> (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open> v2 = RCX - CL::u8 \<close>
+  Vint n1 \<Rightarrow> (case v2 of Vbyte n2 \<Rightarrow> Vint (n1 << (unsigned n2)) | _ \<Rightarrow> Vundef) | \<comment> \<open> v2 = RCX - CL::u8 \<close>
   _ \<Rightarrow> Vundef
 )"
 
