@@ -145,6 +145,7 @@ datatype instruction =
   | Pmov_rm ireg addrmode  memory_chunk
   | Pmov_mr addrmode ireg memory_chunk
   | Pmov_mi addrmode u32  memory_chunk       (**imm to mem *)
+  | Pcmov testcond ireg ireg
   (** Moves with conversion *)
     | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
   (** Integer arithmetic *)
@@ -187,7 +188,8 @@ datatype instruction =
   | Prorl_ri ireg u8
   | Prorq_ri ireg u8
 
-  | Pcmov testcond ireg ireg
+  | Pjcc testcond u32
+  | Pjmp u32
   | Prdtsc
   | Pnop
 (*
