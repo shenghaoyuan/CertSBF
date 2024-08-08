@@ -28,7 +28,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               let imm = l_bin!(pc+3) in
                 if modrm = 0b11 \<and> src = 0b000 then
                   case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                    Some (3, Prolw_ri dst imm))
+                    Some (4, Prolw_ri dst imm))
                 else None
             else  None
         else  \<comment> \<open> h1 is rex \<close>
@@ -47,7 +47,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 let imm = l_bin!(pc+4) in
                   if modrm = 0b11 \<and> src = 0b000 then
                     case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                      Some (4, Prolw_ri dst imm))
+                      Some (5, Prolw_ri dst imm))
                   else None
               else if op = 0x89 then 
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
@@ -84,6 +84,17 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Paddl_rr dst src))) 
+            else None
+          else if h = 0x81 then
+         \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
+            if modrm = 0b11 \<and> reg1 = 0b000 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                let i1 = l_bin!(pc+2)  in
+                let i2 = l_bin!(pc+3)  in
+                let i3 = l_bin!(pc+4)  in
+                let i4 = l_bin!(pc+5)  in
+                let imm::u32 = u32_of_u8_list [i1,i2,i3,i4] in
+                  Some (5, Paddl_ri dst imm))
             else None
           else None
     else  \<comment> \<open> h is rex  \<close>

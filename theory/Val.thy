@@ -50,6 +50,21 @@ definition longofints :: "val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition intoflongl:: "val \<Rightarrow> val" where
+"intoflongl v = (
+  case v of
+  Vlong i \<Rightarrow> Vint (ucast i) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition intoflongh :: "val \<Rightarrow> val" where
+"intoflongh v = (
+  case v of
+  Vlong i \<Rightarrow> Vint (ucast(i>>32)) |
+  _ \<Rightarrow> Vundef
+)"
+
+
 definition neg32 :: "val \<Rightarrow> val" where
 "neg32 v = (
   case v of

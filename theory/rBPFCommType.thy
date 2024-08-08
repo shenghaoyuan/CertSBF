@@ -119,8 +119,24 @@ definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
     (ucast (i >> 56))
   ]"
 
+fun ua_of_u8_list_aux :: "u8 list \<Rightarrow> 'a :: len word" where
+"ua_of_u8_list_aux [] = 0" |
+"ua_of_u8_list_aux (h#t) = or (ucast h) ((ua_of_u8_list_aux t) << 8)"
+
+definition u64_of_u8_list :: "u8 list \<Rightarrow> u64" where
+"u64_of_u8_list l = ua_of_u8_list_aux (rev l)"
+
+definition u32_of_u8_list :: "u8 list \<Rightarrow> u32" where
+"u32_of_u8_list l = ua_of_u8_list_aux (rev l)"
+
+definition u16_of_u8_list :: "u8 list \<Rightarrow> u16" where
+"u16_of_u8_list l = ua_of_u8_list_aux (rev l)"
+
+
 lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
 
 lemma [simp]: "u8_of_bool True = 1" by (unfold u8_of_bool_def, simp)
+
+lemma [simp]: "u8_list_of_u64 (u64_of_u8_list (l::u8 list)) = l "  sorry
 
 end

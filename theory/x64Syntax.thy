@@ -39,7 +39,7 @@ fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
 "u8_of_ireg RCX = 1" |
 "u8_of_ireg RDX = 2" |
 "u8_of_ireg RBX = 3" |
-"u8_of_ireg RSP = 4" |
+"u8_of_ireg RSP = 4" | 
 "u8_of_ireg RBP = 5" |
 "u8_of_ireg RSI = 6" |
 "u8_of_ireg RDI = 7" |
@@ -94,7 +94,7 @@ text \<open> skip float registers, as Solana rBPF doesn't deal with float \<clos
 
 datatype crbit = ZF | CF | PF | SF | OF
 
-datatype preg = PC | IR ireg | CR crbit | RA
+datatype preg = PC | IR ireg | CR crbit | RA | TSC
           
 abbreviation "RIP \<equiv> PC"  \<comment> \<open> the RIP register in x86-64 (x64) architecture is the equivalent of the program counter (PC) in many other architectures.  \<close>
   
@@ -115,7 +115,8 @@ datatype testcond =
   registers, memory references and immediate constants as arguments.
   Here, we list only the combinations that we actually use.
 
-  Naming conventions for types:
+  Naming conventions for types: Pmov_rm   rd a c  \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |                 \<comment> \<open> load  mem to reg \<close>
+  Pmov_mr   a r1 c  \<Rightarrow> exec_load   sz c m a rs (IR r1) |            
 - [b]: 8 bits
 - [w]: 16 bits ("word")
 - [l]: 32 bits ("longword")
@@ -155,8 +156,10 @@ datatype instruction =
   | Pnegq ireg
   | Paddq_rr ireg ireg
   | Paddl_rr ireg ireg
+  | Paddl_ri ireg u32
   | Psubl_rr ireg ireg
   | Psubq_rr ireg ireg
+  | Psubl_ri ireg u32
   | Pmull_r ireg
   | Pmulq_r ireg
   | Pimull_r ireg
@@ -167,11 +170,14 @@ datatype instruction =
   | Pidivq_r ireg
 
   | Pandl_rr ireg ireg
+  | Pandl_ri ireg u32
   | Pandq_rr ireg ireg
   | Porl_rr ireg ireg
+  | Porl_ri ireg u32
   | Porq_rr ireg ireg
   | Pxorl_rr ireg ireg
   | Pxorq_rr ireg ireg
+  | Pxorl_ri ireg u32
   | Pshll_ri ireg u8
   | Pshlq_ri ireg u8
   | Pshll_r ireg
@@ -187,6 +193,10 @@ datatype instruction =
   | Prolw_ri ireg u8
   | Prorl_ri ireg u8
   | Prorq_ri ireg u8
+
+  | Ppushl ireg
+  | Ppushq ireg
+  | Ppushi u64
 
   | Pjcc testcond u32
   | Pjmp u32

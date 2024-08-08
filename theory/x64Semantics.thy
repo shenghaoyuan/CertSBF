@@ -121,6 +121,9 @@ datatype outcome = Next regset mem | Stuck
 definition nextinstr :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
 "nextinstr sz rs = (rs#PC <- (Val.add32 (rs PC) (Vint (of_nat sz))))"
 
+definition call :: "preg \<Rightarrow> regset \<Rightarrow> regset" where
+"call dst rs = (rs#PC <- (rs dst))"
+
 definition nextinstr_nf :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
 "nextinstr_nf sz rs = nextinstr sz (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] rs)"
 
@@ -160,12 +163,16 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add64 (rs (IR rd)) (rs (IR r1))))) m |
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (rs (IR r1))))) m |
+  Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (Vint n)))) m |
   Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub64 (rs (IR rd)) (rs (IR r1))))) m |
   Psubl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub32 (rs (IR rd)) (rs (IR r1))))) m |
+  Psubl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub32 (rs (IR rd)) (Vint n)))) m |
   Pandq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.and64 (rs (IR rd)) (rs (IR r1))))) m |
   Pandl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.and32 (rs (IR rd)) (rs (IR r1))))) m |
+  Pandl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.and32 (rs (IR rd)) (Vint n)))) m |
   Porq_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or64  (rs (IR rd)) (rs (IR r1))))) m |
   Porl_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32  (rs (IR rd)) (rs (IR r1))))) m |
+  Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32   (rs (IR rd)) (Vint n)))) m |
   Pxorq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or64  (rs (IR rd)) (rs (IR r1))))) m |
   Pxorl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32  (rs (IR rd)) (rs (IR r1))))) m |
   Pmull_r   r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mul32  (rs(IR RAX)) (rs (IR r1)))) in
@@ -203,12 +210,16 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Prolw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.rol16  (rs (IR rd)) (Vbyte n)))) m | \<comment>\<open> bswap16 \<close>
   Prorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror32  (rs (IR rd)) (Vbyte n)))) m |  
   Prorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror64  (rs (IR rd)) (Vbyte n)))) m |  
+  
+
+
   Pjcc      t d   \<Rightarrow> (case eval_testcond t rs of
                                Some b  \<Rightarrow>if b then Next (nextinstr (unat d) rs) m
                                          else      Next (nextinstr sz rs) m|
                                None    \<Rightarrow> Stuck)|
   Pjmp      d     \<Rightarrow> Next (nextinstr (unat d) rs) m |
-  Prdtsc          \<Rightarrow> Next (nextinstr sz rs) m |
+  Prdtsc          \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.intoflongl ((rs TSC)))) in
+                     Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.intoflongh  (rs TSC)))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
 )"
