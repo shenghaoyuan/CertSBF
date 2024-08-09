@@ -140,6 +140,23 @@ definition exec_store :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rig
   None \<Rightarrow> Stuck |
   Some m' \<Rightarrow> Next (nextinstr_nf sz (undef_regs destroyed rs)) m'
 )"
+
+definition exec_pop :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
+"exec_pop sz chunk m rs rd = (
+  let nsp = Val.add64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
+    case Mem.loadv chunk m (rs (IR SP)) of
+    None \<Rightarrow> Stuck |
+    Some v => let rs1 = rs#rd <- v in
+      Next (nextinstr_nf sz (rs1#(IR SP) <- nsp)) m
+)"
+
+definition exec_push :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> outcome" where
+"exec_push sz chunk m rs v = (
+  let nsp = Val.add64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
+    case Mem.storev chunk m nsp v of
+    None \<Rightarrow> Stuck |
+    Some m' => Next (nextinstr_nf sz (rs#(IR SP) <- nsp)) m'
+)"
                                                    
 definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
@@ -218,6 +235,12 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
                                          else      Next (nextinstr sz rs) m|
                                None    \<Rightarrow> Stuck)|
   Pjmp      d     \<Rightarrow> Next (nextinstr (unat d) rs) m |
+
+  Ppushl    r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
+  Ppushq    r1    \<Rightarrow> exec_push sz M64 m rs (rs (IR r1)) |
+  Ppushi    i     \<Rightarrow> exec_push sz M64 m rs (Vlong (ucast i)) |
+  Ppopq     rd    \<Rightarrow> exec_pop sz M64 m rs (IR rd) |
+
   Prdtsc          \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.intoflongl ((rs TSC)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.intoflongh  (rs TSC)))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |

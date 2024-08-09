@@ -197,6 +197,7 @@ datatype instruction =
   | Ppushl ireg
   | Ppushq ireg
   | Ppushi u64
+  | Ppopq  ireg
 
   | Pjcc testcond u32
   | Pjmp u32
