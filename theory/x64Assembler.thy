@@ -132,7 +132,11 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0x01 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-      Some [ rex, op, rop ] |
+      if rex = 0 then
+        Some [ op, rop ] 
+      else 
+      let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+        Some [ rex, op, rop ] |
  \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
   Paddl_ri rd n \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>

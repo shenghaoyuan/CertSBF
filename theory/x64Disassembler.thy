@@ -161,6 +161,17 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 if w = 1 then Some (3, Paddq_rr dst src)
                 else Some (3, Paddl_rr dst src) )))
             else None
+          else if h = 0x81 then
+         \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
+            if modrm = 0b11 \<and> reg1 = 0b000 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                let i1 = l_bin!(pc+3)  in
+                let i2 = l_bin!(pc+4)  in
+                let i3 = l_bin!(pc+5)  in
+                let i4 = l_bin!(pc+6)  in
+                let imm::u32 = u32_of_u8_list [i1,i2,i3,i4] in
+                  Some (6, Paddl_ri dst imm))
+            else None
           else if op = 0x29 then
             \<comment> \<open> P2891 `SUB register1 from register2` -> `0100 WR0B : 0010 100w : 11 reg1 reg2` \<close> 
             if modrm = 0b11 then (
