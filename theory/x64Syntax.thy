@@ -194,16 +194,18 @@ datatype instruction =
   | Prorl_ri ireg u8
   | Prorq_ri ireg u8
 
-  | Ppushl ireg
-  | Ppushq ireg
-  | Ppushi u64
-  | Ppopq  ireg
+  | Ppushl_r ireg
+  | Ppushl_i u32
+  | Ppopl  ireg
 
-  | Pjcc testcond u32
-  | Pjmp u32
+  | Pjcc testcond i32
+  | Pjmp i32
+  | Pcall_r ireg
+  | Pcall_i i32
   | Prdtsc
   | Pnop
 (*
+  | Ppushq_m addrmode  memory_chunk
   | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
   | Pmovzb_rm ireg addrmode
   | Pmovsb_rr ireg ireg     (**r [movsb] (8-bit sign-extension) *)

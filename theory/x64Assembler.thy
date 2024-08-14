@@ -500,10 +500,69 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
       Some [ rex, op, rop ] |
-  Prdtsc \<Rightarrow> 
+  \<comment> \<open> P2886 `RDTSC – Read Time-Stamp Counter`   -> ` 0000 1111 0011 0001 ` \<close>
+  Prdtsc \<Rightarrow>
     let (opes::u8) = 0x0f in
-    let (op::u8)   = 0x31 in
+    let (op  ::u8) = 0x31 in
       Some [opes,op] |
+  \<comment> \<open> P2885 `PUSH: qwordregister (alternate encoding)`   -> ` 0100 W00BS : 0101 0 reg64` \<close>
+  Ppushl_r  r1 \<Rightarrow>
+    let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op::u8) = or 0x50 (and (u8_of_ireg r1) 0b111) in
+      if rex = 0 then
+        Some [op]
+      else 
+        let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+          Some [rex, op] |
+  \<comment> \<open> P2885 `PUSH: memory64`   -> ` 0100 W00BS : 1111 1111 : 11 110 reg64 ` \<close>
+  \<comment> \<open> P2885 `PUSH: imm32`   -> ` 0110 1000 : imm64 ` \<close>
+  Ppushl_i n \<Rightarrow>
+    let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `100B` \<close>
+      True  \<comment> \<open> W ; Solana may made mistake here,but it won't affect execution \<close> 
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      False \<comment> \<open> B \<close>
+      ) in
+    let (op::u8) = 0x68 in
+      Some [rex,op,(ucast (and n 0xff)),(ucast (n >> 8)),(ucast (n >> 16)),(ucast (n >> 24))] |
+  \<comment> \<open> P2885 `POP: qwordregister (alternate encoding)`   -> ` 0100 W00B : 0101 1 reg64 ` \<close>
+  Ppopl rd \<Rightarrow>
+    let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op::u8) = or 0x58 (and (u8_of_ireg rd) 0b111) in
+      if rex = 0 then
+        Some [op]
+      else 
+        let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+          Some [rex, op] |
+  \<comment> \<open> P2878 `CALL: register indirect`   -> `0100 W00Bw 1111 1111 : 11 010 reg ` \<close>
+  Pcall_r r1 \<Rightarrow>
+    let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+      let (op:: u8) = 0xff in
+      let (rop::u8) = construct_modsib_to_u8 0b11 0b010 (u8_of_ireg r1) in
+      if rex = 0 then
+        Some [op, rop]
+      else 
+        let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+          Some [rex, op, rop] |
+  \<comment> \<open> P2878 `CALL: direct`   -> `1110 1000 : displacement32` \<close>
+  Pcall_i d  \<Rightarrow>
+    let (op::u8) = 0xe8 in
+      Some [op,(ucast (and d 0xff)),(ucast (d >> 8)),(ucast (d >> 16)),(ucast (d >> 24))]|
   \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close>
   Pnop \<Rightarrow> Some [0x90] |
   _ \<Rightarrow> None
@@ -540,7 +599,21 @@ fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
     None \<Rightarrow> None |
     Some l \<Rightarrow> Some (l@l1)
   )
-)" *)
+)" 
+  Ppushq r1 \<Rightarrow>
+    let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op::u8) = 0xff in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b110 (u8_of_ireg r1) in
+      Some [rex,op,op] |
+
+
+
+*)
 
 fun list_in_list :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> bool" where
 "list_in_list [] _ _ = True" |

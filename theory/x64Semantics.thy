@@ -118,30 +118,30 @@ definition eval_testcond :: "testcond \<Rightarrow> regset \<Rightarrow> bool op
 
 datatype outcome = Next regset mem | Stuck
 
-definition nextinstr :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
-"nextinstr sz rs = (rs#PC <- (Val.add32 (rs PC) (Vint (of_nat sz))))"
+definition nextinstr :: "u64 \<Rightarrow> regset \<Rightarrow> regset" where
+"nextinstr sz rs = (rs#PC <- (Val.add64 (rs PC) (Vlong sz)))"
 
 definition call :: "preg \<Rightarrow> regset \<Rightarrow> regset" where
 "call dst rs = (rs#PC <- (rs dst))"
 
-definition nextinstr_nf :: "nat \<Rightarrow> regset \<Rightarrow> regset" where
+definition nextinstr_nf :: "u64 \<Rightarrow> regset \<Rightarrow> regset" where
 "nextinstr_nf sz rs = nextinstr sz (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] rs)"
 
-definition exec_load :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
+definition exec_load :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
 "exec_load sz chunk m a rs rd = (
   case Mem.loadv chunk m (eval_addrmode64 a rs) of
   None \<Rightarrow> Stuck |
   Some v \<Rightarrow> Next (nextinstr_nf sz (rs#rd <- v)) m
 )"
 
-definition exec_store :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> preg list \<Rightarrow> outcome" where
+definition exec_store :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> preg list \<Rightarrow> outcome" where
 "exec_store sz chunk m a rs r1 destroyed = (
   case Mem.storev chunk m (eval_addrmode64 a rs) (rs r1) of
   None \<Rightarrow> Stuck |
   Some m' \<Rightarrow> Next (nextinstr_nf sz (undef_regs destroyed rs)) m'
 )"
 
-definition exec_pop :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
+definition exec_pop :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
 "exec_pop sz chunk m rs rd = (
   let nsp = Val.add64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
     case Mem.loadv chunk m (rs (IR SP)) of
@@ -150,15 +150,25 @@ definition exec_pop :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Right
       Next (nextinstr_nf sz (rs1#(IR SP) <- nsp)) m
 )"
 
-definition exec_push :: "nat \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> outcome" where
+definition exec_push :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> outcome" where
 "exec_push sz chunk m rs v = (
-  let nsp = Val.add64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
+  let nsp = Val.sub64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
     case Mem.storev chunk m nsp v of
     None \<Rightarrow> Stuck |
     Some m' => Next (nextinstr_nf sz (rs#(IR SP) <- nsp)) m'
 )"
+
+definition exec_call :: "u64  \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> outcome" where
+"exec_call sz chunk m rs v = (
+  let nsp = Val.sub64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
+    case Mem.storev M64 m nsp v of
+    None \<Rightarrow> Stuck |
+    Some m' \<Rightarrow> let rs1 = rs#(IR SP) <- nsp in
+              Next ((rs1#PC <- v)) m'
+)"
+    
                                                    
-definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
+definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
   \<comment> \<open> Moves \<close>
@@ -228,18 +238,17 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Prorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror32  (rs (IR rd)) (Vbyte n)))) m |  
   Prorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror64  (rs (IR rd)) (Vbyte n)))) m |  
   
-
+  Ppushl_r  r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
+  Ppushl_i  n     \<Rightarrow> exec_push sz M32 m rs (Vint (ucast n)) |
+  Ppopl     rd    \<Rightarrow> exec_pop  sz M32 m rs (IR rd) |
 
   Pjcc      t d   \<Rightarrow> (case eval_testcond t rs of
-                               Some b  \<Rightarrow>if b then Next (nextinstr (unat d) rs) m
+                               Some b  \<Rightarrow>if b then Next (nextinstr (scast d) rs) m
                                          else      Next (nextinstr sz rs) m|
                                None    \<Rightarrow> Stuck)|
-  Pjmp      d     \<Rightarrow> Next (nextinstr (unat d) rs) m |
-
-  Ppushl    r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
-  Ppushq    r1    \<Rightarrow> exec_push sz M64 m rs (rs (IR r1)) |
-  Ppushi    i     \<Rightarrow> exec_push sz M64 m rs (Vlong (ucast i)) |
-  Ppopq     rd    \<Rightarrow> exec_pop sz M64 m rs (IR rd) |
+  Pjmp      d     \<Rightarrow> Next (nextinstr (scast d) rs) m |
+  Pcall_r   r1    \<Rightarrow> exec_call sz M64 m rs (rs (IR r1))|
+  Pcall_i   d     \<Rightarrow> exec_call sz M64 m rs (Vint(ucast d))|
 
   Prdtsc          \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.intoflongl ((rs TSC)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.intoflongh  (rs TSC)))) m |
@@ -258,7 +267,7 @@ definition exec_instr :: "instruction \<Rightarrow> nat \<Rightarrow> regset \<R
   Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
   Pxorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.orl  (rs (IR rd)) (Vlong n)))) m |
   Pxorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or   (rs (IR rd)) (Vint n)))) m |
-
+  Ppushq_m  a c   \<Rightarrow> exec_push sz M64 m rs (rs (IR r1)) |
 *)
 
 (**r

@@ -16,7 +16,6 @@ lemma encode_movl_rr_1: "
   apply simp
   apply (rule bit_eqI)
   subgoal for n
-    apply (simp add: bit_or_iff)
     apply (auto simp add: bit_simps)
     subgoal using encode_movl_rr_1_subgoal_6 by blast
     done
