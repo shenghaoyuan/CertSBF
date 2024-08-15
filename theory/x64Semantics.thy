@@ -181,10 +181,10 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pcmov     t rd r1 \<Rightarrow> let v = (case eval_testcond t rs of
                                Some b \<Rightarrow> if b then (rs (IR r1)) else (rs (IR rd)) |
                                None   \<Rightarrow> Vundef ) in
-      Next (nextinstr sz (rs#(IR rd)<-v)) m |
+                         Next (nextinstr sz (rs#(IR rd)<-v)) m |
   Pxchgq_rr  rd r1 \<Rightarrow> let tmp = rs (IR rd) in
-                     let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
-                     Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
+                      let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
+                        Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
   \<comment> \<open> Pmov_mi   a n c  \<Rightarrow> exec_load   sz c m a rs (Vint n) | store immediate to memory \<close>
   \<comment> \<open> Moves with conversion \<close>
   Pmovsq_rr rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd)  <- (Val.longofintu(rs (IR r1))))) m |

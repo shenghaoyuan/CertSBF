@@ -18,6 +18,12 @@ type_synonym u128 = "128 word"
 
 type_synonym usize = "64 word" \<comment> \<open> Assume the hardware is 64-bit \<close>
 
+definition i8_MIN :: "i8" where
+"i8_MIN = 0x80"
+
+definition i8_MAX :: "i8" where
+"i8_MAX = 0x7F"
+
 definition i32_MIN :: "i32" where
 "i32_MIN = 0x80000000"
 
@@ -137,6 +143,11 @@ definition u32_of_u8_list :: "u8 list \<Rightarrow> u32 option" where
 definition u16_of_u8_list :: "u8 list \<Rightarrow> u16 option" where
 "u16_of_u8_list l = (if length l = 2 then ua_of_u8_list_aux (rev l) else None)"
 
+definition int_of_u8 :: "u8 \<Rightarrow> int" where
+"int_of_u8 n = uint n"
+
+definition u8_of_int :: "int \<Rightarrow> u8" where
+"u8_of_int n = of_int n"
 
 lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
 

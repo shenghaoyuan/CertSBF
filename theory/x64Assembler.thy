@@ -28,48 +28,61 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     else
       let rex = bitfield_insert_u8 4 4 rex 0x4 in 
         Some [prefix, rex, op, rop, imm] |
+  \<comment> \<open> P2882 ` MOV: memory to reg`             ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
+  \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
   Pmov_rm rd a c \<Rightarrow>( 
-      case a of Addrmode (Some r11) None z \<Rightarrow> (
-        if r11 =  R11 \<and> z = 0 then (
-          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
-            (c = M64) \<comment> \<open> W \<close>
-            (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-            False \<comment> \<open> X \<close>
-            True \<comment> \<open> B \<close>
-            ) in
-          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg R11) in
-          \<comment> \<open> P2882 ` MOV: memory to reg`             ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
-          \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
-          let rex = bitfield_insert_u8 4 4 rex 0x4 in 
-            case c of 
-              M32 \<Rightarrow> Some [rex, 0x8b, rop] |
-              M64 \<Rightarrow> Some [rex, 0x8b, rop] |
-              _   \<Rightarrow> None
-          )
-        else None)
+      case a of Addrmode (Some rb) None z \<Rightarrow> (
+        let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
+          (c = M64) \<comment> \<open> W \<close>
+          (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+          False \<comment> \<open> X \<close>
+          (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+          ) in
+        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg rb) in
+          if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 \<close>
+            let (dis::u8) = of_int z in
+            if rex = 0 then              
+              case c of 
+                M32 \<Rightarrow> Some [0x8b, rop, dis] |
+                M64 \<Rightarrow> Some [0x8b, rop, dis] |
+                _   \<Rightarrow> None
+            else 
+              let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+                case c of 
+                  M32 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
+                  M64 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
+                  _   \<Rightarrow> None
+          else None)
       | _ \<Rightarrow> None) 
     |
+  \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
+  \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
+  \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1001 : mod reg r/m` \<close>
+  \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
   Pmov_mr  a r1 c \<Rightarrow> 
     if r1 = R10 then 
-      case a of Addrmode (Some r11) None z \<Rightarrow> 
-        if r11 =  R11 \<and> z = 0 then (
-          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
-            (c = M64) \<comment> \<open> W \<close>
-            True \<comment> \<open> R \<close>
-            False \<comment> \<open> X \<close>
-            True \<comment> \<open> B \<close>
-            ) in
-          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg R10) (u8_of_ireg R11) in
-          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
-          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
-          \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1001 : mod reg r/m` \<close>
-          \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
-          case c of 
-            M8  \<Rightarrow> Some [rex, 0x88, rop] |
-            M16 \<Rightarrow> Some [0x66,rex, 0x89, rop] |
-            M32 \<Rightarrow> Some [rex, 0x89, rop] |
-            M64 \<Rightarrow> Some [rex, 0x89, rop]
-          )
+      case a of Addrmode (Some rd) None z \<Rightarrow> 
+        let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
+          (c = M64) \<comment> \<open> W \<close>
+          (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+          False \<comment> \<open> X \<close>
+          (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+          ) in
+        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
+        if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 \<close>
+          let (dis::u8) = of_int z in
+          if rex = 0 then
+            case c of 
+              M8  \<Rightarrow> Some [0x88, rop, dis] |
+              M16 \<Rightarrow> Some [0x66, 0x89, rop, dis] |
+              M32 \<Rightarrow> Some [0x89, rop, dis] |
+              M64 \<Rightarrow> Some [0x89, rop, dis]
+          else 
+            case c of 
+              M8  \<Rightarrow> Some [rex, 0x88, rop, dis] |
+              M16 \<Rightarrow> Some [0x66,rex, 0x89, rop, dis] |
+              M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
+              M64 \<Rightarrow> Some [rex, 0x89, rop, dis]
         else None
       | _ \<Rightarrow> None 
     else None |
@@ -535,7 +548,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   \<comment> \<open> P2885 `PUSH: imm32`   -> ` 0110 1000 : imm64 ` \<close>
   Ppushl_i n \<Rightarrow>
     let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `100B` \<close>
-      True  \<comment> \<open> W ; Solana may made mistake here,but it won't affect execution \<close> 
+      True  \<comment> \<open> W ; Solana may made mistake here, but it won't bring mistakes \<close> 
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
       False \<comment> \<open> B \<close>
