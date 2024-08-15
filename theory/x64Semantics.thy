@@ -182,6 +182,9 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
                                Some b \<Rightarrow> if b then (rs (IR r1)) else (rs (IR rd)) |
                                None   \<Rightarrow> Vundef ) in
       Next (nextinstr sz (rs#(IR rd)<-v)) m |
+  Pxchgq_rr  rd r1 \<Rightarrow> let tmp = rs (IR rd) in
+                     let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
+                     Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
   \<comment> \<open> Pmov_mi   a n c  \<Rightarrow> exec_load   sz c m a rs (Vint n) | store immediate to memory \<close>
   \<comment> \<open> Moves with conversion \<close>
   Pmovsq_rr rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd)  <- (Val.longofintu(rs (IR r1))))) m |
@@ -237,9 +240,7 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Prolw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.rol16  (rs (IR rd)) (Vbyte n)))) m | \<comment>\<open> bswap16 \<close>
   Prorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror32  (rs (IR rd)) (Vbyte n)))) m |  
   Prorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror64  (rs (IR rd)) (Vbyte n)))) m |  
-  Pxchg_rr  rd r1 \<Rightarrow> let tmp = rs (IR rd) in
-                     let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
-                     Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
+
   Ppushl_r  r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
   Ppushl_i  n     \<Rightarrow> exec_push sz M32 m rs (Vint (ucast n)) |
   Ppopl     rd    \<Rightarrow> exec_pop  sz M32 m rs (IR rd) |

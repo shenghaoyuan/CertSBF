@@ -213,9 +213,17 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (  
                  Some (3, Pmov_rm src (Addrmode (Some R11) None 0)  (if w = 1 then M64 else M32)))
               else None  
+            else None       
+          else if op = 0x87 then
+          \<comment> \<open> P2893 `XCHG: register1 with register2 `   -> ` 0100 1R0B 1000 011w : 11 reg1 reg2 ` \<close>
+            if modrm = 0b11 then (
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                if w = 1 then Some (3, Pxchgq_rr src dst)
+                else None)))
             else None
           else if op = 0x63 then
-            \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
+          \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
