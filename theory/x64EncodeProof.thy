@@ -5,6 +5,8 @@ imports
   x64Assembler x64Disassembler
   x64_encode_movl_rr_1 x64_encode_movl_rr_2 x64_encode_movl_rr_3
   x64_encode_movl_rr_4 x64_encode_movl_rr_5 x64_encode_movl_rr_6
+
+  x64_encode_movq_rr_1
 begin
 
 declare if_split_asm [split]
@@ -69,6 +71,23 @@ lemma x64_decode_encode_consistency:
         done
       done
 
+    done
+
+  subgoal for dst src
+  \<comment> \<open> Pmovq_rr \<close> 
+    apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)
+    apply (unfold x64_decode_def Let_def, auto simp add: split: option.splits)
+    apply (cases l_bin, simp_all)
+    subgoal for l_bin1
+      apply (cases l_bin1, simp_all)
+      subgoal for l_bin2
+        apply (cases l_bin2, simp_all)
+        subgoal for t l_bin3
+          subgoal
+            using encode_movq_rr_1 by blast
+          done
+        done
+      done
     done
 
   sorry
