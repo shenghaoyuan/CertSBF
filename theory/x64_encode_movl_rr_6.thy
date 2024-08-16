@@ -127,17 +127,9 @@ lemma encode_movl_rr_6_subgoal_k : "and 15 (v >> 4) = 4 \<Longrightarrow> and 3 
         apply (simp add: bit_or_iff)
         apply (auto simp add: bit_simps)
         subgoal
-          using not_7_lt_3 by blast
-        subgoal
           using encode_movl_rr_1_subgoal_1 by blast
         subgoal
           using encode_movl_rr_1_subgoal_1 by blast
-        subgoal
-          using not_7_lt_3 by blast
-        subgoal
-          using encode_movl_rr_1_subgoal_6 by blast
-        subgoal
-          using encode_movl_rr_1_subgoal_6 by blast
         subgoal
           using encode_movl_rr_1_subgoal_4 by blast
         done
@@ -147,18 +139,10 @@ lemma encode_movl_rr_6_subgoal_k : "and 15 (v >> 4) = 4 \<Longrightarrow> and 3 
       subgoal for n
         apply (simp add: bit_or_iff)
         apply (auto simp add: bit_simps)
-        subgoal using not_7_lt_3 by fastforce
-        subgoal using not_7_lt_3 by fastforce
-        subgoal using not_7_lt_3 by fastforce
-        subgoal using not_7_lt_3 by fastforce
-        subgoal using not_7_lt_3 by fastforce
-        subgoal using not_7_lt_3 by fastforce
-        subgoal 
-          using encode_movl_rr_1_subgoal_6 by blast 
-        subgoal 
-          using encode_movl_rr_1_subgoal_6 by blast 
-        subgoal 
-          using encode_movl_rr_1_subgoal_6 by blast 
+        subgoal
+          using encode_movl_rr_1_subgoal_1 by blast 
+        subgoal
+          using encode_movl_rr_1_subgoal_1 by blast 
         subgoal
           using BitsOpMore.encode_movl_rr_1_subgoal_4 by blast
         done

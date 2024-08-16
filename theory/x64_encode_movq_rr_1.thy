@@ -212,28 +212,6 @@ lemma encode_movq_rr_1_subgoal_9 [simp]: "and 3 ((k::u8) >> 6) = 3 \<Longrightar
   subgoal for n
     apply (auto simp add: bit_simps)
     subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using not_7_lt_3 by blast
-    subgoal
-      using encode_movl_rr_1_subgoal_6 by blast
-    subgoal
-      using encode_movl_rr_1_subgoal_6 by blast
-    subgoal
-      using encode_movl_rr_1_subgoal_6 by blast
-    subgoal
       using encode_movl_rr_1_subgoal_4 by blast
     done
   done

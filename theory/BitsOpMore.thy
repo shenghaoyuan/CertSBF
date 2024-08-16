@@ -95,29 +95,51 @@ lemma [simp]: "and 15 ((v::u8) >> 4) = 4 \<Longrightarrow> bit v (Suc (Suc (Suc 
 lemma [simp]: "(and 1 ((v::u8) >> n) = 1) = (bit v n = True)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
-  subgoal
-    apply (drule_tac x="0" in spec)
+  apply (drule_tac x="0" in spec)
     by (simp add: numeral_2_eq_2)
-  done
 
 lemma [simp]: "(and 1 ((v::u8) >> n) = 0) = (bit v n = False)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
-  subgoal
-    apply (drule_tac x="0" in spec)
+  apply (drule_tac x="0" in spec)
     by (simp add: numeral_2_eq_2)
-  done
 
 lemma [simp]: "bit v 2 \<Longrightarrow> bit v (Suc (Suc 0))"
  using numeral_2_eq_2 by argo
 
-lemma not_7_lt_3 [simp]: "\<not> bit (7::int) n \<Longrightarrow> \<not> 3 \<le> n \<Longrightarrow> False"
+lemma [simp]: "\<not> bit (7::int) n \<Longrightarrow> 3 \<le> n"
   apply (cases n, simp_all)
   subgoal for n1 apply (cases n1, simp_all)
     subgoal for n2 apply (cases n2, simp_all)
       done
     done
   done
+
+lemma [simp]: "bit (56::int) n \<Longrightarrow> 3 \<le> n"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done
+
+lemma and_3_shr_6_1_False [simp]: "and 3 ((v::u8) >> 6) = 1 \<Longrightarrow>
+    bit v (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))) \<Longrightarrow> False"
+  apply (simp only: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  apply (drule_tac x="1" in spec)
+    by (smt (verit, best) One_nat_def Suc3_eq_add_3 Suc_eq_plus1 bit_1_0
+      linordered_euclidean_semiring_bit_operations_class.bit_numeral_Bit1_Suc_iff
+      numeral_Bit0 numeral_Bit1 numeral_eq_one_iff one_less_numeral_iff)
+
+(*
+lemma not_7_lt_3 [simp]: "\<not> bit (7::int) n \<Longrightarrow> \<not> 3 \<le> n \<Longrightarrow> False"
+  apply (cases n, simp_all)
+  subgoal for n1 apply (cases n1, simp_all)
+    subgoal for n2 apply (cases n2, simp_all)
+      done
+    done
+  done *)
 
 lemma and_8_shl_3_neq_0 [simp]: "(and 8 ((v::u8) << 3) \<noteq> 0) = (bit v 0 = True)"
   apply (simp add: bit_eq_iff)
