@@ -143,6 +143,18 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 Some (2, Pcall_r dst)) 
             else None
           \<comment> \<open> R3 [opcode + modrm + imm] \<close>
+          \<comment> \<open> P2882 `MOV immediate to register` -> `0100 000B : 1100 011w : 11 000 reg : imm` \<close>
+          else if h = 0xc7 then
+            let i1 = l_bin!(pc+2)  in
+            let i2 = l_bin!(pc+3)  in
+            let i3 = l_bin!(pc+4)  in
+            let i4 = l_bin!(pc+5)  in
+            case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+            case u32_of_u8_list [i1, i2, i3, i4] of None \<Rightarrow> None |
+                Some imm \<Rightarrow> 
+                  if modrm = 0b11 \<and> reg1 = 0b000 then
+                    Some (6, Pmovl_ri dst imm)
+              else None)
           \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
           else if h = 0x81 then
             if modrm = 0b11 \<and> reg1 = 0b000 then
@@ -211,7 +223,25 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           if w = 0 \<and> r = 0 \<and> x = 0 then
             Some (2, Ppopl dst)
           else None)
-      \<comment> \<open> R6.2 [rex + opcode + imm] \<close>
+      \<comment> \<open> R6.2 [rex + opcode + imm] \<close> 
+      \<comment> \<open> P2882 `MOV immediate64 to qwordregister (alternate encoding)` -> `0100 100B 1011 1reg : imm64` \<close>
+      else if unsigned_bitfield_extract_u8 5 5 op = 0b10111 then
+        let reg2 = unsigned_bitfield_extract_u8 0 3 op in
+        let dst  = bitfield_insert_u8 3 1 reg2 b in
+        let i1 = l_bin!(pc+2)  in
+        let i2 = l_bin!(pc+3)  in
+        let i3 = l_bin!(pc+4)  in
+        let i4 = l_bin!(pc+5)  in
+        let i5 = l_bin!(pc+6)  in
+        let i6 = l_bin!(pc+7)  in
+        let i7 = l_bin!(pc+8)  in
+        let i8 = l_bin!(pc+9)  in
+        case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+        case u64_of_u8_list [i1, i2, i3, i4, i5, i6, i7, i8] of None \<Rightarrow> None |
+            Some imm \<Rightarrow> 
+              if w = 1 \<and> r = 0 \<and> x = 0 then
+                Some (10, Pmovq_ri dst imm)
+          else None)
       else if op = 0x68 then 
         let i1 = l_bin!(pc+2)  in
         let i2 = l_bin!(pc+3)  in
@@ -368,15 +398,27 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 if w = 1 then Some (3, Psarq_r dst) 
                 else Some (3, Psarl_r dst)) 
           else None
-        else if h = 0xff then
+        else if op = 0xff then
         \<comment> \<open> P2878 `CALL: register indirect`   -> `0100 W00Bw 1111 1111 : 11 010 reg ` \<close>
           if modrm = 0b11 \<and> reg1 = 0b010 then
             case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
               Some (2, Pcall_r dst)) 
           else None
         \<comment> \<open> R6.4 [rex + opcode + modrm + imm] \<close>
-        else if h = 0x81 then
+        \<comment> \<open> P2882 `MOV immediate to register` -> `0100 000B : 1100 011w : 11 000 reg : imm` \<close>
+        else if op = 0xc7 then
+          let i1 = l_bin!(pc+3)  in
+          let i2 = l_bin!(pc+4)  in
+          let i3 = l_bin!(pc+5)  in
+          let i4 = l_bin!(pc+6)  in
+          case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+          case u32_of_u8_list [i1, i2, i3, i4] of None \<Rightarrow> None |
+              Some imm \<Rightarrow> 
+                if  modrm = 0b11 \<and> reg1 = 0b000 \<and> w = 0 \<and> r = 0 \<and> x = 0 then
+                  Some (7, Pmovl_ri dst imm)
+            else None)
         \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
+        else if op = 0x81 then
           if modrm = 0b11 \<and> reg1 = 0b000 then
             case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
               let i1 = l_bin!(pc+3)  in
