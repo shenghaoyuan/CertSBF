@@ -105,30 +105,72 @@ definition u4_of_bool :: "bool \<Rightarrow> u4" where
 
 definition u8_list_of_u16 :: "u16 \<Rightarrow> u8 list" where
 "u8_list_of_u16 i =
-  [ (ucast (and i 0xff)),
-    (ucast (i >> 8))
+  [ (ucast (and  i       0xff)),
+    (ucast (and (i >> 8) 0xff))
   ]"
 
 definition u8_list_of_u32 :: "u32 \<Rightarrow> u8 list" where
 "u8_list_of_u32 i =
-  [ (ucast (i >> 24)),
-    (ucast (i >> 16)),
-    (ucast (i >> 8)),
-    (ucast (and i 0xff))
+  [ (ucast (and (i >> 24) 0xff)),
+    (ucast (and (i >> 16) 0xff)),
+    (ucast (and (i >> 8 ) 0xff)),
+    (ucast (and  i        0xff))
   ]"
 
 definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
 "u8_list_of_u64 i =
-  [ (ucast (i >> 56)),
-    (ucast (i >> 48)), 
-    (ucast (i >> 40)),
-    (ucast (i >> 32)),
-    (ucast (i >> 24)),
-    (ucast (i >> 16)),
-    (ucast (i >> 8)), 
-     (ucast (and i 0xff))
+  [ (ucast (and (i >> 56) 0xff)),
+    (ucast (and (i >> 48) 0xff)), 
+    (ucast (and (i >> 40) 0xff)),
+    (ucast (and (i >> 32) 0xff)),
+    (ucast (and (i >> 24) 0xff)),
+    (ucast (and (i >> 16) 0xff)),
+    (ucast (and (i >> 8 ) 0xff)), 
+    (ucast (and  i        0xff))
   ]"
 
+definition u64_of_u8_list :: "u8 list \<Rightarrow> u64 option" where
+"u64_of_u8_list l = (
+  if length l \<noteq> 8 then
+    None
+  else
+    Some (
+      or ((ucast (l!(0))) << 56) (
+      or ((ucast (l!(1))) << 48) (
+      or ((ucast (l!(2))) << 40) (
+      or ((ucast (l!(3))) << 32) (
+      or ((ucast (l!(4))) << 24) (
+      or ((ucast (l!(5))) << 16) (
+      or ((ucast (l!(6))) << 8 ) (
+          (ucast (l!(7))))
+      )))))))
+  )"
+
+definition u32_of_u8_list :: "u8 list \<Rightarrow> u32 option" where
+"u32_of_u8_list l = (
+  if length l \<noteq> 4 then
+    None
+  else
+    Some (
+      or ((ucast (l!(0))) << 24) (
+      or ((ucast (l!(1))) << 16) (
+      or ((ucast (l!(2))) << 8 ) (
+          (ucast (l!(3))))
+      )))
+  )"
+
+definition u16_of_u8_list :: "u8 list \<Rightarrow> u16 option" where
+"u16_of_u8_list l = (
+  if length l \<noteq> 2 then
+    None
+  else
+    Some (
+      or ((ucast (l!(0))) << 8 ) (
+          (ucast (l!(1))
+      )))
+  )"
+
+(*
 fun ua_of_u8_list_aux :: "u8 list \<Rightarrow> ('a :: len word) option" where
 "ua_of_u8_list_aux [] = None" |
 "ua_of_u8_list_aux [h] = Some(ucast h)"|
@@ -166,7 +208,7 @@ definition int_of_u8 :: "u8 \<Rightarrow> int" where
 "int_of_u8 n = uint n"
 
 definition u8_of_int :: "int \<Rightarrow> u8" where        
-"u8_of_int n = of_int n"
+"u8_of_int n = of_int n" *)
 
 
 
@@ -181,7 +223,105 @@ lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
 
 lemma [simp]: "u8_of_bool True = 1" by (unfold u8_of_bool_def, simp)
 
-lemma [simp]: "(u64_of_u8_list l = Some v) = (u8_list_of_u64 v = l)"  by sorry
+lemma ucast64_ucast8_and_255_eq [simp]: "ucast (((ucast (and v 255))::u8)) = and (v:: u64) 255"
+  apply (simp only: ucast_eq)
+(**r 
+word_of_int (uint (word_of_int (uint (and v 255)))) is
+
+(word_of_int (uint (and v 255)))::u8
+
+word_of_int (uint v_u8)  :: u64
+
+*)
+  apply (simp only: uint_word_of_int_eq word_and_def word_of_int_eq_iff)
+  apply (simp)
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n
+    apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal for n6 apply (cases n6, simp_all)
+                subgoal for n6 apply (cases n6, simp_all)
+                  done
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma [simp]: "n \<ge> 8 \<Longrightarrow> \<not>bit (v::u8) n"
+  apply (rule impossible_bit)
+  apply simp
+  done
+
+lemma [simp]: "n \<le> 56 \<Longrightarrow> ((ucast (v::u8) ::u64) << n) >> n = (ucast (v::u8) ::u64)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for k
+    apply (cases k, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal for n6 apply (cases n6, simp_all)
+                subgoal for n6 apply (cases n6, simp_all)
+                  done
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma [simp]: "n+8 \<le> m \<Longrightarrow> ((ucast (v::u8) ::u64) << n) >> m = (0 ::u64)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  done
+
+lemma [simp]: "(n::nat) \<le> 56 \<Longrightarrow> m \<le> n \<Longrightarrow> k < 64 \<Longrightarrow> n - m \<le> k \<Longrightarrow> k + m - n < 8 \<Longrightarrow> m + k < 64"
+  by simp
+
+lemma [simp]: "n \<le> 56 \<Longrightarrow> m \<le> n \<Longrightarrow> ((ucast (v::u8) ::u64) << n) >> m = ((ucast (v::u8) ::u64) << (n-m))"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for k
+    by (simp add: add.commute)
+  subgoal for k
+
+    sorry
+  subgoal for k
+    by (simp add: add.commute)
+  done
+
+lemma [simp]: "8 \<le> m \<Longrightarrow> (ucast (v::u8) ::u64) >> m = (0 ::u64)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  done
+
+lemma [simp]: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)"
+  apply (unfold u64_of_u8_list_def u8_list_of_u64_def)
+  apply (cases "length l \<noteq> 8", simp_all)
+  subgoal by fastforce
+  subgoal
+    apply (rule iffI)
+    subgoal
+      apply simp
+      done
+
+    subgoal
+      done
+    done
+  sorry
 
 
 (*lemma [simp]: "u8_list_of_u32 v = l \<Longrightarrow> u32_of_u8_list2 l = Some v " 
