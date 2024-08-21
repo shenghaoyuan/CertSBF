@@ -1,8 +1,13 @@
 theory BitsOpMore2
 imports
   Main
-  rBPFCommType
+  rBPFCommType 
 begin
+
+
+lemma [simp]: "bit (18374686479671623680::int) n \<Longrightarrow> 56 \<le> n"
+  (**r proof could be find from BitsBadProof.thy *)
+  sorry
 
 lemma ucast64_ucast8_and_255_eq [simp]: "ucast (((ucast (and v 255))::u8)) = and (v:: u64) 255"
   apply (simp only: ucast_eq)
@@ -201,12 +206,26 @@ lemma bit_power_k_minus_1_le: "bit (2^k -1::int) n \<longleftrightarrow> n < k"
 lemma bit_power_k_minus_1_le_56 [simp]: "bit (0xffffffffffffff::int) n \<longleftrightarrow> n < 56"
   using bit_power_k_minus_1_le [of 56 n] by simp
 
-lemma [simp]: "m \<le> n \<Longrightarrow> bit (2^(m+k) - 2^m::int) n"
-  apply (simp only: bit_iff_odd)
+(*
+lemma [simp]: "bit (2^(k+m)-2^k::int) n \<Longrightarrow> k \<le> n"
+  apply (simp only: bit_iff_odd) *)
 
 lemma [simp]: "and (((v::u64) >> 56) << 56) 18374686479671623680 = and v 18374686479671623680"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
+  done
+
+lemma [simp]: "and (((v::u64) >> 48) << 48) 71776119061217280 = and v 71776119061217280" sorry
+
+lemma [simp]: "and (((v::u64) >> 40) << 40) 280375465082880 = and v 280375465082880" sorry
+
+lemma [simp]: "and (((v::u64) >> 32) << 32) 1095216660480 = and v 1095216660480" sorry
+
+lemma [simp]: "and (((v::u64) >> 24) << 24) 4278190080 = and v 4278190080" sorry
+
+lemma [simp]: "and (((v::u64) >> 16) << 16) 16711680 = and v 16711680" sorry
+
+lemma [simp]: "and (((v::u64) >> 8) << 8) 65280 = and v 65280" sorry
 
 lemma [simp]: "(v::u64) =
     or (and ((v >> 56) << 56) 18374686479671623680)
@@ -216,12 +235,11 @@ lemma [simp]: "(v::u64) =
             (or (and ((v >> 16) << 16) 16711680) (or (and ((v >> 8) << 8) 65280) (and v 255)))))))"
   apply (simp add: bit_eq_iff)
   apply (simp add: bit_or_iff)
-  subgoal
-
-  apply (rule allI)
+  (**r 
+  apply (rule allI) *)
+  apply (auto simp add: bit_simps)
   subgoal for n
-    apply (cases "n \<ge> 56", simp_all)
-    subgoal
+
 
 
 lemma [simp]: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)"
