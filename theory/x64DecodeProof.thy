@@ -67,6 +67,10 @@ lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> length l_bin - length l =
 lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> length l_bin - length l = 4" by fastforce
 lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> length l_bin - length l = 5" by fastforce
 
+lemma [simp]: "list_in_list (u8_list_of_u64 v) n l \<Longrightarrow> (u8_list_of_u64 v) =
+  [l!n, l!(n+1), l!(n+2), l!(n+3), l!(n+4), l!(n+5), l!(n+6), l!(n+7)]"
+  apply (unfold u8_list_of_u64_def, simp)
+  by (simp add: eval_nat_numeral(3) numeral_Bit0)
 
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow> x64_decode pc l = Some (length l_bin, ins)"
