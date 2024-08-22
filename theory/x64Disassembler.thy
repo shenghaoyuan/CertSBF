@@ -296,7 +296,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 \<and> x = 0 then Some (3, Pxchgq_rr src dst)
+                if w = 1 \<and> x = 0 then Some (3, Pxchgq_rr dst src)
                 else None)))
             else None
           else if op = 0x63 then
@@ -304,7 +304,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (3, Pmovsq_rr src dst)
+                if w = 1 \<and> x = 0 then
+                  Some (3, Pmovsq_rr src dst)
                 else None)))
             else None
           else if op = 0x01 then

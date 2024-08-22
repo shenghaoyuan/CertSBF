@@ -145,7 +145,7 @@ datatype instruction =
   | Pmovq_ri ireg u64        (**imm32 to qwordreg *)
   | Pmov_rm ireg addrmode  memory_chunk
   | Pmov_mr addrmode ireg memory_chunk
-  | Pmov_mi addrmode u32  memory_chunk       (**imm to mem *)
+  | Pmov_mi addrmode u32  memory_chunk   (**imm to mem *)
   | Pcmov testcond ireg ireg
   | Pxchgq_rr ireg ireg
   (** Moves with conversion *)

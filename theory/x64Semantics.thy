@@ -189,7 +189,7 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
                         None \<Rightarrow> Stuck| 
                         Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m') |  \<comment> \<open>store imm32 to mem32/64 \<close>
   \<comment> \<open> Moves with conversion \<close>
-  Pmovsq_rr rd r1 \<Rightarrow> Next (nextinstr  sz (rs#(IR rd)  <- (Val.longofintu(rs (IR r1))))) m |
+  Pmovsq_rr rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.longofintu(rs (IR r1))))) m |
   \<comment> \<open> Integer arithmetic \<close>
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg64 (rs (IR rd))))) m |
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |
