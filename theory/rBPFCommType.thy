@@ -223,4 +223,12 @@ lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
 
 lemma [simp]: "u8_of_bool True = 1" by (unfold u8_of_bool_def, simp)
 
+
+lemma u8_ge_8_bit_false : "n \<ge> 8 \<Longrightarrow> \<not>bit (v::u8) n"
+  apply (rule impossible_bit)
+  apply simp
+  done
+
+lemma u8_bit_true_ge_8 : "bit (v::u8) n \<Longrightarrow> n < 8"
+  by (metis le_neq_implies_less nat_le_linear u8_ge_8_bit_false)
 end
