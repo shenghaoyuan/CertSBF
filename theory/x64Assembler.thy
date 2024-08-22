@@ -222,7 +222,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0x29 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-      Some [ rex, op, rop ] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2891 `SUB qwordregister1 from qwordregister2` -> `0100 1R0B : 0010 1001 : 11 reg1 reg2` \<close>
   Psubq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -244,7 +247,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b011 (u8_of_ireg rd) in
-      Some [rex, op, rop ] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2884 `NEG register2` -> `0100 100B : 1111 0111 : 11011reg` \<close>
   Pnegq rd \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -266,7 +272,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0x09 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-      Some [ rex, op, rop ] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2884 `OR qwordregister1 to qwordregister2` -> ` 0100 1R0B : 0000 1001 : 11 reg1 reg2` \<close>
   Porq_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -288,7 +297,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0x21 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2876 `AND qwordregister1 to qwordregister2` -> ` 0100 1R0B : 0010 0001 : 11 reg1 reg2` \<close>
   Pandq_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -310,7 +322,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0x31 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2893 `XOR qwordregister1 to qwordregister2` -> ` 0100 1R0B : 0011 0001 : 11 reg1 reg2` \<close>
   Pxorq_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -332,7 +347,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg r1) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2884 `MUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 0111 : 11 100 qowrdreg` \<close>
   Pmulq_r r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -354,7 +372,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg r1) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 0111 : 11 101 qwordreg` \<close>
   Pimulq_r r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -376,7 +397,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b110 (u8_of_ireg r1) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2879 `DIV EAX by qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 0111 : 11 110 qwordreg` \<close>
   Pdivq_r r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -398,7 +422,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2879 `IDIV RAX by qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 0111 : 11 111 qwordreg` \<close>
   Pidivq_r r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -421,7 +448,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
     let (imm::u8) = ucast n in
-      Some [ rex, op, rop, imm] |
+      if rex = 0x40 then
+        Some [ op, rop, imm ] 
+      else 
+        Some [ rex, op, rop, imm ] |
   \<comment> \<open> P2889 `SHL qwordregister by immediate count` -> ` 0100 100B 1100 0001 : 11 100 reg : imm8 ` \<close>
   Pshlq_ri rd n \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -433,7 +463,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
     let (imm::u8) = ucast n in
-      Some [ rex, op, rop, imm] |
+      Some [ rex, op, rop, imm ] |
   \<comment> \<open> P2889 `SHL register by CL`                   -> ` 0100 000B 1101 001w : 11 100 reg ` \<close>
   Pshll_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
@@ -444,7 +474,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
-      Some [ rex, op, rop] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2889 `SHL qwordregister by CL`              -> ` 0100 100B 1101 001w : 11 100 reg ` \<close>
   Pshlq_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -467,7 +500,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
     let (imm::u8) = ucast n in
-      Some [ rex, op, rop, imm] |
+      if rex = 0x40 then
+        Some [ op, rop, imm ] 
+      else 
+        Some [ rex, op, rop, imm ] |
   \<comment> \<open> P2890 `SHR qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 101 reg : imm8 ` \<close>
   Pshrq_ri rd n \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -490,7 +526,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
-      Some [ rex, op, rop ] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2890 `SHR qwrodregister by CL`   -> ` 0100 100B 1101 001w : 11 101 reg ` \<close>
   Pshrq_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -513,7 +552,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
     let (imm::u8) = ucast n in
-      Some [ rex, op, rop, imm] |
+      if rex = 0x40 then
+        Some [ op, rop, imm ] 
+      else 
+        Some [ rex, op, rop, imm ] |
   \<comment> \<open> P2888 `SAR qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 111 reg : imm8 ` \<close>
   Psarq_ri rd n \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
@@ -536,7 +578,10 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
-      Some [ rex, op, rop ] |
+      if rex = 0x40 then
+        Some [ op, rop ] 
+      else 
+        Some [ rex, op, rop ] |
   \<comment> \<open> P2888 `SAR qwordregister by CL`     -> ` 0100 100B 1101 001w : 11 111 reg ` \<close>
   Psarq_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>

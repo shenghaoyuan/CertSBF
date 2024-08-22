@@ -159,8 +159,8 @@ lemma x64_encode_decode_consistency:
     done
 
   subgoal for dst
-    \<comment> \<open> Pnegl_rr \<close> 
-    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+    \<comment> \<open> Pnegl \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 

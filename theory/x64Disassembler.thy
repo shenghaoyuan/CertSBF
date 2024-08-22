@@ -136,6 +136,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Paddl_rr dst src))) 
             else None
+          else if modrm = 0b11 \<and> reg1 = 0b011 then 
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                Some (2, Pnegl dst))
           else if h = 0xff then
           \<comment> \<open> P2878 `CALL: register indirect`   -> `0100 W00Bw 1111 1111 : 11 010 reg ` \<close>
             if modrm = 0b11 \<and> reg1 = 0b010 then
