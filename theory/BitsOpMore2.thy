@@ -4,10 +4,10 @@ imports
   rBPFCommType 
 begin
 
-
+(*
 lemma [simp]: "bit (18374686479671623680::int) n \<Longrightarrow> 56 \<le> n"
   (**r proof could be find from BitsBadProof.thy *)
-  sorry
+  sorry *)
 
 lemma ucast64_ucast8_and_255_eq [simp]: "ucast (((ucast (and v 255))::u8)) = and (v:: u64) 255"
   apply (simp only: ucast_eq)
@@ -206,26 +206,139 @@ lemma bit_power_k_minus_1_le: "bit (2^k -1::int) n \<longleftrightarrow> n < k"
 lemma bit_power_k_minus_1_le_56 [simp]: "bit (0xffffffffffffff::int) n \<longleftrightarrow> n < 56"
   using bit_power_k_minus_1_le [of 56 n] by simp
 
-(*
-lemma [simp]: "bit (2^(k+m)-2^k::int) n \<Longrightarrow> k \<le> n"
-  apply (simp only: bit_iff_odd) *)
+lemma bit_power_k_add_m_ge [simp]: "bit (2^(k+m)-2^k::int) n \<Longrightarrow> k \<le> n \<and> n < k+m"
+  apply (induction k arbitrary: m n)
+  subgoal for m n
+    apply simp
+    using bit_power_k_minus_1_le by blast
+
+  subgoal for k m n
+    apply simp
+    apply (cases n)
+    subgoal
+      apply simp
+      by (simp add: bit_0)
+    subgoal for n1
+      apply simp
+      using bit_double_iff diff_Suc_1' by fastforce
+    done
+  done
 
 lemma [simp]: "and (((v::u64) >> 56) << 56) 18374686479671623680 = and v 18374686479671623680"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 56 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 56 8 n] by simp
   done
 
-lemma [simp]: "and (((v::u64) >> 48) << 48) 71776119061217280 = and v 71776119061217280" sorry
+lemma [simp]: "and (((v::u64) >> 48) << 48) 71776119061217280 = and v 71776119061217280"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 48 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 48 8 n] by simp
+  done
 
-lemma [simp]: "and (((v::u64) >> 40) << 40) 280375465082880 = and v 280375465082880" sorry
+lemma [simp]: "and (((v::u64) >> 40) << 40) 280375465082880 = and v 280375465082880"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 40 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 40 8 n] by simp
+  done
 
-lemma [simp]: "and (((v::u64) >> 32) << 32) 1095216660480 = and v 1095216660480" sorry
+lemma [simp]: "and (((v::u64) >> 32) << 32) 1095216660480 = and v 1095216660480"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 32 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 32 8 n] by simp
+  done
 
-lemma [simp]: "and (((v::u64) >> 24) << 24) 4278190080 = and v 4278190080" sorry
+lemma [simp]: "and (((v::u64) >> 24) << 24) 4278190080 = and v 4278190080"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 24 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 24 8 n] by simp
+  done
 
-lemma [simp]: "and (((v::u64) >> 16) << 16) 16711680 = and v 16711680" sorry
+lemma [simp]: "and (((v::u64) >> 16) << 16) 16711680 = and v 16711680"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 16 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 16 8 n] by simp
+  done
 
-lemma [simp]: "and (((v::u64) >> 8) << 8) 65280 = and v 65280" sorry
+lemma [simp]: "and (((v::u64) >> 8) << 8) 65280 = and v 65280"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n using bit_power_k_add_m_ge [of 8 8 n] by simp
+  subgoal for n using bit_power_k_add_m_ge [of 8 8 n] by simp
+  done
+
+lemma bit_power_k_add_m_lt [simp]: "n < k+m \<Longrightarrow> \<not> bit (2^(k+m)-2^k::int) n \<Longrightarrow> n < k"
+  apply (induction k arbitrary: m n)
+  subgoal for m n
+    apply simp
+    by (simp add: bit_power_k_minus_1_le)
+
+  subgoal for k m n
+    apply simp
+    apply (cases n)
+    subgoal by simp
+    subgoal for n1
+      apply simp
+      by (smt (verit, best) bit_double_Suc_iff possible_bit_def power_eq_0_iff)
+    done
+  done
+
+lemma bit_64_not : "n < 64 \<Longrightarrow>
+  \<not> bit (18374686479671623680::int) n \<Longrightarrow> n < 56"
+  using bit_power_k_add_m_lt [of n 56 8] by simp
+
+lemma bit_56_not : "n < 56 \<Longrightarrow>
+  \<not> bit (71776119061217280::int) n \<Longrightarrow> n < 48"
+  using bit_power_k_add_m_lt [of n 48 8] by simp
+
+lemma bit_48_not : "n < 48 \<Longrightarrow>
+  \<not> bit (280375465082880::int) n \<Longrightarrow> n < 40"
+  using bit_power_k_add_m_lt [of n 40 8] by simp
+
+lemma bit_40_not : "n < 40 \<Longrightarrow>
+  \<not> bit (1095216660480::int) n \<Longrightarrow> n < 32"
+  using bit_power_k_add_m_lt [of n 32 8] by simp
+
+lemma bit_32_not : "n < 32 \<Longrightarrow>
+  \<not> bit (4278190080::int) n \<Longrightarrow> n < 24"
+  using bit_power_k_add_m_lt [of n 24 8] by simp
+
+lemma bit_24_not : "n < 24 \<Longrightarrow> \<not> bit (16711680::int) n \<Longrightarrow> n < 16"
+  using bit_power_k_add_m_lt [of n 16 8] by simp
+
+lemma bit_16_not : "n < 16 \<Longrightarrow> \<not> bit (65280::int) n \<Longrightarrow> n < 8"
+  using bit_power_k_add_m_lt [of n 8 8] by simp
+
+lemma bit_8_not : "n < 8 \<Longrightarrow> bit (255::int) n"
+  apply (cases n, simp_all)
+  subgoal for n apply (cases n, simp_all)
+  subgoal for n apply (cases n, simp_all)
+  subgoal for n apply (cases n, simp_all)
+  subgoal for n apply (cases n, simp_all)
+  subgoal for n apply (cases n, simp_all)
+  subgoal for n apply (cases n, simp_all)
+    done done done done done done done
+
+lemma bit_255_not : "n < 64 \<Longrightarrow>
+  \<not> bit (18374686479671623680::int) n \<Longrightarrow> \<not> bit (71776119061217280::int) n \<Longrightarrow>
+  \<not> bit (280375465082880::int) n \<Longrightarrow> \<not> bit (1095216660480::int) n \<Longrightarrow>
+  \<not> bit (4278190080::int) n \<Longrightarrow> \<not> bit (16711680::int) n \<Longrightarrow>
+  \<not> bit (65280::int) n \<Longrightarrow> bit (255::int) n"
+  apply (drule bit_64_not, assumption)
+  apply (drule bit_56_not, assumption)
+  apply (drule bit_48_not, assumption)
+  apply (drule bit_40_not, assumption)
+  apply (drule bit_32_not, assumption)
+  apply (drule bit_24_not, assumption)
+  apply (drule bit_16_not, assumption)
+  apply (drule bit_8_not, assumption)
+  done
 
 lemma [simp]: "(v::u64) =
     or (and ((v >> 56) << 56) 18374686479671623680)
@@ -239,8 +352,8 @@ lemma [simp]: "(v::u64) =
   apply (rule allI) *)
   apply (auto simp add: bit_simps)
   subgoal for n
-
-
+    using bit_255_not by blast
+  done
 
 lemma [simp]: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)"
   apply (unfold u64_of_u8_list_def u8_list_of_u64_def)
@@ -253,11 +366,12 @@ lemma [simp]: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)"
     subgoal
       apply (simp add: bit_eq_iff)
       apply (simp add: bit_or_iff)
-
-
+      apply (auto simp add: bit_simps)
+      subgoal for n
+        using bit_255_not by blast
       done
     done
-  sorry *)
+  done
 
 (*lemma [simp]: "u8_list_of_u32 v = l \<Longrightarrow> u32_of_u8_list2 l = Some v " 
   apply (unfold u8_list_of_u32_def u32_of_u8_list2_def,simp)
