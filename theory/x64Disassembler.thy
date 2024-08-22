@@ -225,7 +225,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else None)
       \<comment> \<open> R6.2 [rex + opcode + imm] \<close> 
       \<comment> \<open> P2882 `MOV immediate64 to qwordregister (alternate encoding)` -> `0100 100B 1011 1reg : imm64` \<close>
-      else if unsigned_bitfield_extract_u8 5 5 op = 0b10111 then
+      else if unsigned_bitfield_extract_u8 3 5 op = 0b10111 then
         let reg2 = unsigned_bitfield_extract_u8 0 3 op in
         let dst  = bitfield_insert_u8 3 1 reg2 b in
         let i1 = l_bin!(pc+2)  in

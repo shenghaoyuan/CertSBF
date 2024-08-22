@@ -172,16 +172,16 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
   \<comment> \<open> Moves \<close>
-  Pmovl_rr  rd r1 \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovq_rr  rd r1 \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
-  Pmovl_ri  rd n  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vint n))) m |    \<comment> \<open> load imm32 to reg \<close>
+  Pmovl_rr rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovq_rr rd r1  \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (rs (IR r1)))) m |
+  Pmovl_ri rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vint n))) m |    \<comment> \<open> load imm32 to reg \<close>
   Pmovq_ri rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vlong n))) m |   \<comment> \<open> load imm64 to reg \<close>
   Pmov_rm  rd a c \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |                 \<comment> \<open> load  mem to reg \<close>
   Pmov_mr  a r1 c \<Rightarrow> exec_load   sz c m a rs (IR r1) |                    \<comment> \<open> store reg to mem \<close>
   Pcmov    t rd r1\<Rightarrow> let v = (case eval_testcond t rs of
                                Some b \<Rightarrow> if b then (rs (IR r1)) else (rs (IR rd)) |
                                None   \<Rightarrow> Vundef ) in
-                         Next (nextinstr sz (rs#(IR rd)<-v)) m |
+                         Next (nextinstr sz (rs#(IR rd)<- v)) m |
   Pxchgq_rr rd r1 \<Rightarrow> let tmp = rs (IR rd) in
                        let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
                          Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |

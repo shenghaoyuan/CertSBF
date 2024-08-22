@@ -56,13 +56,17 @@ x86_sib_base  :: u8
 
 definition construct_rex_to_u8 :: "bool\<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow>u8" where
 "construct_rex_to_u8 w r x b =
-  bitfield_insert_u8 3 1
-    (bitfield_insert_u8 2 1
-      (bitfield_insert_u8 1 1 (u8_of_bool b)
-                              (u8_of_bool x))
-      (u8_of_bool r))
-    (u8_of_bool w)
+   bitfield_insert_u8 4 4 
+    (bitfield_insert_u8 3 1
+      (bitfield_insert_u8 2 1
+        (bitfield_insert_u8 1 1 (u8_of_bool b)
+                                (u8_of_bool x))
+        (u8_of_bool r))
+      (u8_of_bool w))
+     0x4
 "
+
+\<comment> \<open>value "construct_rex_to_u8 False False False True" \<close>
 
 definition construct_modsib_to_u8 :: "u8 \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8" where
 "construct_modsib_to_u8 op1 op2 op3 =
