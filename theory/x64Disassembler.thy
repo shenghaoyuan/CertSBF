@@ -407,16 +407,37 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         \<comment> \<open> R6.4 [rex + opcode + modrm + imm] \<close>
         \<comment> \<open> P2882 `MOV immediate to register` -> `0100 000B : 1100 011w : 11 000 reg : imm` \<close>
         else if op = 0xc7 then
-          let i1 = l_bin!(pc+3)  in
-          let i2 = l_bin!(pc+4)  in
-          let i3 = l_bin!(pc+5)  in
-          let i4 = l_bin!(pc+6)  in
-          case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-          case u32_of_u8_list [i1, i2, i3, i4] of None \<Rightarrow> None |
+          let n = if modrm = 0b01 then 1 else if modrm = 0b10 then 4 else 0 in
+          let i1 = l_bin!(pc+3+n)  in
+          let i2 = l_bin!(pc+4+n)  in
+          let i3 = l_bin!(pc+5+n)  in
+          let i4 = l_bin!(pc+6+n)  in
+            case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+            case u32_of_u8_list [i1, i2, i3, i4] of None \<Rightarrow> None |
               Some imm \<Rightarrow> 
-                if  modrm = 0b11 \<and> reg1 = 0b000 \<and> w = 0 \<and> r = 0 \<and> x = 0 then
-                  Some (7, Pmovl_ri dst imm)
-            else None)
+              if reg1 = 0b000 \<and> r = 0 \<and> x = 0 then
+                if modrm = 0b11 then
+                  if w = 0 then
+                    Some (7, Pmovl_ri dst imm)
+                  else None
+                \<comment> \<open> R6.5 [rex + opcode + modrm + displacement + imm] \<close>
+                \<comment> \<open> P2882 `MOV immediate32 to memory64 (zero extend)` -> ` 0100 10XB 1100 0111 : mod 000 r/m : imm32` \<close>
+                else if modrm = 0b01 then
+                  if w = 1 then
+                    Some (8, Pmov_mi (Addrmode (Some dst) None (signed (l_bin!(pc+3)))) imm M64)
+                  else None
+                else if modrm = 0b10  then
+                  if w = 1 then
+                    let d1 = l_bin!(pc+3)  in
+                    let d2 = l_bin!(pc+4)  in
+                    let d3 = l_bin!(pc+5)  in
+                    let d4 = l_bin!(pc+6)  in
+                      case u32_of_u8_list [d1, d2, d3, d4] of None \<Rightarrow> None |
+                        Some dis \<Rightarrow> 
+                      Some (11, Pmov_mi (Addrmode (Some dst) None (signed dis)) imm M64)
+                  else None
+                else None
+              else None)
         \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
         else if op = 0x81 then
           if modrm = 0b11 \<and> reg1 = 0b000 then
@@ -471,6 +492,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   Some (4, Pmov_rm src (Addrmode (Some dst) None imm)  (if w = 1 then M64 else M32))))  
               else None
           else None
+    \<comment> \<open> R6.5 [rex + opcode + modrm + displacement + imm] \<close>
         else None 
 )"
 

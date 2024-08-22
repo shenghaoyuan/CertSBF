@@ -31,61 +31,60 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   \<comment> \<open> P2882 ` MOV: memory to reg`             ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
   \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
   Pmov_rm rd a c \<Rightarrow>( 
-      case a of Addrmode (Some rb) None z \<Rightarrow> (
-        let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
-          (c = M64) \<comment> \<open> W \<close>
-          (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-          False \<comment> \<open> X \<close>
-          (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
-          ) in
+    case a of Addrmode (Some rb) None z \<Rightarrow> (
+      let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
+        (c = M64) \<comment> \<open> W \<close>
+        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+        False \<comment> \<open> X \<close>
+        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        ) in
+      if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 : mod 01\<close>
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg rb) in
-          if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 \<close>
-            let (dis::u8) = of_int z in
-            if rex = 0 then              
-              case c of 
-                M32 \<Rightarrow> Some [0x8b, rop, dis] |
-                M64 \<Rightarrow> Some [0x8b, rop, dis] |
-                _   \<Rightarrow> None
-            else 
-              let rex = bitfield_insert_u8 4 4 rex 0x4 in 
-                case c of 
-                  M32 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
-                  M64 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
-                  _   \<Rightarrow> None
-          else None)
-      | _ \<Rightarrow> None) 
-    |
+        let (dis::u8) = of_int z in
+        if rex = 0 then              
+          case c of 
+            M32 \<Rightarrow> Some [0x8b, rop, dis] |
+            M64 \<Rightarrow> Some [0x8b, rop, dis] |
+            _   \<Rightarrow> None
+        else 
+          let rex = bitfield_insert_u8 4 4 rex 0x4 in 
+            case c of 
+              M32 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
+              M64 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
+              _   \<Rightarrow> None
+      else None)
+    | _ \<Rightarrow> None) 
+  |
   \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
   \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
   \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1001 : mod reg r/m` \<close>
   \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
-  Pmov_mr  a r1 c \<Rightarrow> 
-    if r1 = R10 then 
-      case a of Addrmode (Some rd) None z \<Rightarrow> 
-        let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
-          (c = M64) \<comment> \<open> W \<close>
-          (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-          False \<comment> \<open> X \<close>
-          (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
-          ) in
+  Pmov_mr  a r1 c \<Rightarrow> (
+    case a of Addrmode (Some rd) None z \<Rightarrow> 
+      let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
+        (c = M64) \<comment> \<open> W \<close>
+        (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+        False \<comment> \<open> X \<close>
+        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        ) in
+      if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 : mod 01 \<close>
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
-        if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 \<close>
-          let (dis::u8) = of_int z in
-          if rex = 0 then
-            case c of 
-              M8  \<Rightarrow> Some [0x88, rop, dis] |
-              M16 \<Rightarrow> Some [0x66, 0x89, rop, dis] |
-              M32 \<Rightarrow> Some [0x89, rop, dis] |
-              M64 \<Rightarrow> Some [0x89, rop, dis]
-          else 
-            case c of 
-              M8  \<Rightarrow> Some [rex, 0x88, rop, dis] |
-              M16 \<Rightarrow> Some [0x66,rex, 0x89, rop, dis] |
-              M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
-              M64 \<Rightarrow> Some [rex, 0x89, rop, dis]
-        else None
-      | _ \<Rightarrow> None 
-    else None |
+        let (dis::u8) = of_int z in
+        if rex = 0 then
+          case c of 
+            M8  \<Rightarrow> Some [0x88, rop, dis] |
+            M16 \<Rightarrow> Some [0x66, 0x89, rop, dis] |
+            M32 \<Rightarrow> Some [0x89, rop, dis] |
+            M64 \<Rightarrow> Some [0x89, rop, dis]
+        else 
+          case c of 
+            M8  \<Rightarrow> Some [rex, 0x88, rop, dis] |
+            M16 \<Rightarrow> Some [0x66,rex, 0x89, rop, dis] |
+            M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
+            M64 \<Rightarrow> Some [rex, 0x89, rop, dis]
+      else None
+    | _ \<Rightarrow> None)
+  |
   \<comment> \<open> P2887 `MOV register1 to register2` -> `0100 0R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovl_rr rd r1 \<Rightarrow>
     let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
@@ -138,6 +137,18 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op:: u8) = or 0xb8 (and (u8_of_ireg rd) 0b111 ) in
       Some ([rex, op] @ u8_list_of_u64 n)|
+  \<comment> \<open> P2882 `MOV immediate32 to memory64 (zero extend)` -> ` 0100 10XB 1100 0111 : mod 000 r/m : imm32` \<close>
+  Pmov_mi a n c \<Rightarrow>(
+    case a of Addrmode (Some rd) None z \<Rightarrow> 
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xc7 in
+    let (rop::u8) = construct_modsib_to_u8 0b01 0b000 (u8_of_ireg rd) in
+      Some [ rex, op, rop ]) |   
   \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
   Pmovsq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -160,17 +171,6 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op::u8) = 0x87 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
       Some [rex, op, rop] |
-  \<comment> \<open> P2882 `MOV immediate32 to memory64 (zero extend)` -> ` 0100 10XB 1100 0111 : mod 000 r/m : imm32` 
-  Pmovq_ri rd n \<Rightarrow>
-    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
-      True \<comment> \<open> W \<close>
-      False \<comment> \<open> R \<close>
-      True \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
-      ) in
-    let (op:: u8) = 0xc7 in
-    let (rop::u8) = construct_modsib_to_u8 0b01 0b000 (u8_of_ireg rd) in
-      Some [ rex, op, rop ] |   \<close>
   \<comment> \<open> P2876 `ADD register1 to register2` -> `0100 0R0B : 0000 000w : 11 reg1 reg2` \<close>
   Paddl_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
