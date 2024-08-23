@@ -65,7 +65,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         False \<comment> \<open> X \<close>
         (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
         ) in
-      if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 : mod 01 \<close>
+      if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 : mod 01 TOOD: mod 10 \<close>
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
         let (dis::u8) = of_int z in
         if rex = 0x40 then
@@ -644,6 +644,24 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (ex:: u8) = 0x0f in
     let (op:: u8) = bitfield_insert_u8 0 3 0xc8 (u8_of_ireg rd) in
       Some [rex, ex, op] |
+  \<comment> \<open> P2881 `LEA: Load Effective Address: in qwordregister `  -> `0100 1RXB : 1000 1101 : mod qwordreg r/m` \<close>
+  Pleaq rd a \<Rightarrow>(
+    case a of Addrmode (Some rb) None z \<Rightarrow>
+      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+        True \<comment> \<open> W \<close>
+        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+        False \<comment> \<open> X \<close>
+        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        ) in
+      let (op:: u8) = 0x8d in
+        if (z \<le> 127) \<and> (z \<ge> -128) then   \<comment> \<open> displacement8 : mod 01 \<close>
+          let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg rb) in
+            let (dis::u8) = of_int z in
+              Some ([ rex, op, rop, dis ])
+        else  \<comment> \<open> displacement32 : mod 10 \<close>
+          let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg rd) (u8_of_ireg rb) in
+            let (dis::u32) = of_int z in
+              Some ([ rex, op, rop ] @ (u8_list_of_u32 dis)))|
   \<comment> \<open> P2886 `RDTSC – Read Time-Stamp Counter`   -> ` 0000 1111 0011 0001 ` \<close>
   Prdtsc \<Rightarrow>
     let (opes::u8) = 0x0f in
@@ -786,7 +804,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
       Some ([rex, op, rop] @ (u8_list_of_u32 n))|
-  \<comment> \<open> P2880 `JMP: direct` -> `1110 1001 : displacement32` \<close>
+  \<comment> \<open> P2881 `JMP: direct` -> `1110 1001 : displacement32` \<close>
   Pjmp d \<Rightarrow>
     let (op:: u8) = 0xe9 in
       Some ([op] @ (u8_list_of_u32 (ucast d)))|

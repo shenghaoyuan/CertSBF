@@ -196,7 +196,6 @@ datatype instruction =
   (** Moves with conversion *)
     | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
   (** Integer arithmetic *)
-  | Pleal ireg addrmode
   | Pleaq ireg addrmode
   | Pnegl ireg
   | Pnegq ireg
