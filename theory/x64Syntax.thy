@@ -250,6 +250,10 @@ datatype instruction =
   | Ptestq_rr ireg ireg
   | Ptestl_ri ireg u32
   | Ptestq_ri ireg u32
+  | Pcmpl_rr ireg ireg
+  | Pcmpq_rr ireg ireg
+  | Pcmpl_ri ireg u32
+  | Pcmpq_ri ireg u32
 
   | Pjcc testcond i32
   | Pjmp i32

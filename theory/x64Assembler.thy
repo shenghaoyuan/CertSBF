@@ -736,6 +736,65 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
       Some ([rex, op, rop] @ (u8_list_of_u32 n))|
+  \<comment> \<open> P2878 `CMP: register1 with register2`   -> ` 0100 0R0B 0011 100w : 11 reg1 reg2 ` \<close>
+  Pcmpl_rr r1 r2 \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+      False \<comment> \<open> W \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r2) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x39 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg r2) in
+      if rex = 0x40 then
+        Some [op, rop]
+      else 
+        Some [rex, op, rop] |
+  \<comment> \<open> P2878 `CMP: qwordregister1 with qwordregister2`   -> `0100 1R0B 0011 1001 : 11 qwordreg1 qwordreg2` \<close>
+  Pcmpq_rr r1 r2 \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
+      True  \<comment> \<open> W \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r2) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x39 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg r2) in
+      Some [rex, op, rop]|
+  \<comment> \<open> P2878 `CMP: immediate with register`   -> `0100 000B 1000 00sw : 11 111 reg : imm` \<close>
+  Pcmpl_ri r1 n \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x81 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
+      if rex = 0x40 then
+        Some ([op, rop] @ (u8_list_of_u32 n))
+      else 
+        Some ([rex, op, rop] @ (u8_list_of_u32 n))|
+  \<comment> \<open> P2878 `CMP: immediate32 with qwordregister`   -> `0100 100B 1000 0001 : 11 111 qwordreg : imm32` \<close>
+  Pcmpq_ri r1 n \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x81 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
+      Some ([rex, op, rop] @ (u8_list_of_u32 n))|
+  \<comment> \<open> P2880 `JMP: direct` -> `1110 1001 : displacement32` \<close>
+  Pjmp d \<Rightarrow>
+    let (op:: u8) = 0xe9 in
+      Some ([op] @ (u8_list_of_u32 (ucast d)))|
+  \<comment> \<open> P2880 `JCC: full displacement` -> `0000 1111 : 1000 tttn : full displacement` \<close>
+  Pjcc t d \<Rightarrow>
+    let (ex:: u8) = 0x0f in
+    let (op:: u8) = bitfield_insert_u8 0 4 0x80 (u8_of_cond t) in
+    Some ([ex, op] @ (u8_list_of_u32 (ucast d))) |
   \<comment> \<open> P2878 `CALL: register indirect`   -> `0100 W00Bw 1111 1111 : 11 010 reg ` \<close>
   Pcall_r r1 \<Rightarrow>
     let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `000B` \<close>
