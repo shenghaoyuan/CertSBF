@@ -111,6 +111,50 @@ datatype testcond =
   | Cond_l | Cond_le | Cond_ge | Cond_g
   | Cond_p | Cond_np
 
+fun u8_of_cond :: "testcond \<Rightarrow> u8" where
+"u8_of_cond Cond_b  = 2" |  (* B, NAE: Below, Not above or equal *)
+"u8_of_cond Cond_ae = 3" |  (* NB, AE: Not below, Above or equal *)
+"u8_of_cond Cond_e  = 4" |  (* E, Z: Equal, Zero *)
+"u8_of_cond Cond_ne = 5" |  (* NE, NZ: Not equal, Not zero *)
+"u8_of_cond Cond_be = 6" |  (* BE, NA: Below or equal, Not above *)
+"u8_of_cond Cond_a  = 7" |  (* NBE, A: Not below or equal, Above *)
+"u8_of_cond Cond_p  = 10" | (* P, PE: Parity, Parity Even *)
+"u8_of_cond Cond_np = 11" | (* NP, PO: Not parity, Parity Odd *)
+"u8_of_cond Cond_l  = 12" | (* L, NGE: Less than, Not greater than or equal *)
+"u8_of_cond Cond_ge = 13" | (* NL, GE: Not less than, Greater than or equal to *)
+"u8_of_cond Cond_le = 14" | (* LE, NG: Less than or equal to, Not greater than *)
+"u8_of_cond Cond_g  = 15"   (* NLE, G: Not less than or equal to, Greater*)
+
+fun cond_of_u8 :: "u8 \<Rightarrow> testcond option" where
+"cond_of_u8 i = (
+  if i = 2 then
+    Some Cond_b
+  else  if i = 3 then
+    Some Cond_ae
+  else  if i = 4 then
+    Some Cond_e
+  else  if i = 5 then
+    Some Cond_ne
+  else  if i = 6 then
+    Some Cond_be
+  else  if i = 7 then
+    Some Cond_a
+  else  if i = 10 then
+    Some Cond_p
+  else  if i = 11 then
+    Some Cond_np
+  else  if i = 12 then
+    Some Cond_l
+  else  if i = 13 then
+    Some Cond_ge
+  else  if i = 14 then
+    Some Cond_le
+  else  if i = 15 then
+    Some Cond_g
+  else
+    None
+)"
+
 (** Instructions.  IA32 instructions accept many combinations of
   registers, memory references and immediate constants as arguments.
   Here, we list only the combinations that we actually use.
@@ -146,7 +190,8 @@ datatype instruction =
   | Pmov_rm ireg addrmode  memory_chunk
   | Pmov_mr addrmode ireg memory_chunk
   | Pmov_mi addrmode u32  memory_chunk   (**imm to mem *)
-  | Pcmov testcond ireg ireg
+  | Pcmovl testcond ireg ireg
+  | Pcmovq testcond ireg ireg
   | Pxchgq_rr ireg ireg
   (** Moves with conversion *)
     | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)

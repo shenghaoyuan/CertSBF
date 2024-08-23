@@ -79,7 +79,7 @@ value "drop_bit 3 0b10101010::u8"
 value "0b10101::u8"
 
 value "and ((2 ^ 4) - 1) 0b10101::u8"
-
+value "bitfield_insert_u8 0 3 0x50 12"
 value "unsigned_bitfield_extract_u8 3 4 0b10101010"
 
 This one is wrong

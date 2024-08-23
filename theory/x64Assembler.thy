@@ -130,7 +130,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> X \<close>
       (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
       ) in
-    let (op:: u8) = or 0xb8 (and (u8_of_ireg rd) 0b111 ) in
+    let (op:: u8) = bitfield_insert_u8 0 3 0xb8 (u8_of_ireg rd) in
       Some ([rex, op] @ u8_list_of_u64 n)|
   \<comment> \<open> P2882 `MOV immediate32 to memory64 (zero extend)` -> ` 0100 10XB 1100 0111 : mod 000 r/m : imm32` \<close>
   Pmov_mi a n c \<Rightarrow>(
@@ -149,19 +149,45 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         else  \<comment> \<open> displacement32 : mod 10 \<close>
           let (rop::u8) = construct_modsib_to_u8 0b10 0b000 (u8_of_ireg rd) in
             let (dis::u32) = of_int z in
-            Some ([ rex, op, rop ] @ (u8_list_of_u32 dis) @ (u8_list_of_u32 n)) )
-  |
+            Some ([ rex, op, rop ] @ (u8_list_of_u32 dis) @ (u8_list_of_u32 n)) )|
   \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
   Pmovsq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x63 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg rd) (u8_of_ireg r1) in
       Some [ rex, op, rop ] |
+  \<comment> \<open> P2919 `MOVcc : resgister2  to resgister1 ` -> `0100 0R0B 0000 1111: 0100 tttn : 11 reg1 reg2` \<close>
+  Pcmovl t rd r1 \<Rightarrow>
+    let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
+      False \<comment> \<open> W \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (ex:: u8) = 0x0f in
+    let (op:: u8) = bitfield_insert_u8 0 4 0x40 (u8_of_cond t) in   \<comment> \<open> 45 : NZ/NE （ZF=0 \<close>   
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg rd) (u8_of_ireg r1) in
+    if rex = 0x40 then
+      Some [ex, op, rop]
+    else
+      Some [rex, ex, op, rop] |
+  \<comment> \<open> P2919 `MOVcc : qwordregister2 to qwordregister1` -> ` 0100 1R0B 0000 1111: 0100 tttn : 11 qwordreg1 qwordreg2` \<close>
+  Pcmovq t rd r1 \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
+      True \<comment> \<open> W \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (ex:: u8) = 0x0f in
+    let (op:: u8) = bitfield_insert_u8 0 4 0x40 (u8_of_cond t) in  \<comment> \<open> 45 : NZ/NE （ZF=0 \<close> 
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg rd) (u8_of_ireg r1) in
+      Some [rex, ex, op, rop] |
   \<comment> \<open> P2893 `XCHG: register1 with register2 `   -> ` 0100 1R0B 1000 011w : 11 reg1 reg2 ` \<close>
   Pxchgq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
@@ -607,7 +633,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> X \<close>
       (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
       ) in
-    let (op::u8) = or 0x50 (and (u8_of_ireg r1) 0b111) in
+    let (op::u8) = bitfield_insert_u8 0 3 0x50 (u8_of_ireg r1) in
       if rex = 0x40 then
         Some [op]
       else 
@@ -631,7 +657,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> X \<close>
       (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
       ) in
-    let (op::u8) = or 0x58 (and (u8_of_ireg rd) 0b111) in
+    let (op::u8) = bitfield_insert_u8 0 3 0x58 (u8_of_ireg rd) in
       if rex = 0x40 then
         Some [op]
       else 

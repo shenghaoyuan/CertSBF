@@ -167,7 +167,32 @@ definition exec_call :: "u64  \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rig
               Next ((rs1#PC <- v)) m'
 )"
     
-                                                   
+definition testVal32 :: "testcond \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val" where
+"testVal32 t rs v1 v2 = (
+  case v1 of
+    Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow>
+      let v = (case eval_testcond t rs of
+        Some b \<Rightarrow> if b then (Vint n2) else (Vint n1) |
+        None   \<Rightarrow> Vundef ) in
+      let v1 =  (case v of Vint v1 \<Rightarrow> (Vint v1)| _ \<Rightarrow> Vundef) in
+      v1
+    | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
+)" 
+
+definition testVal64 :: "testcond \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val" where
+"testVal64 t rs v1 v2 = (
+  case v1 of
+    Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow>
+      let v = (case eval_testcond t rs of
+        Some b \<Rightarrow> if b then (Vlong n2) else (Vlong n1) |
+        None   \<Rightarrow> Vundef ) in
+      let v1 =  (case v of Vint v1 \<Rightarrow> (Vint v1)| _ \<Rightarrow> Vundef) in
+      v1
+    | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
+)" 
+
 definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<Rightarrow> mem \<Rightarrow> outcome" where
 "exec_instr i sz rs m = (\<comment> \<open> sz is the binary size (n-byte) of current instruction  \<close>
   case i of
@@ -178,10 +203,8 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pmovq_ri rd n   \<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (Vlong n))) m |   \<comment> \<open> load imm64 to reg \<close>
   Pmov_rm  rd a c \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |                 \<comment> \<open> load  mem to reg \<close>
   Pmov_mr  a r1 c \<Rightarrow> exec_load   sz c m a rs (IR r1) |                    \<comment> \<open> store reg to mem \<close>
-  Pcmov    t rd r1\<Rightarrow> let v = (case eval_testcond t rs of
-                               Some b \<Rightarrow> if b then (rs (IR r1)) else (rs (IR rd)) |
-                               None   \<Rightarrow> Vundef ) in
-                         Next (nextinstr sz (rs#(IR rd)<- v)) m |
+  Pcmovl   t rd r1\<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (testVal32 t rs (rs (IR rd)) (rs (IR r1))))) m |
+  Pcmovq   t rd r1\<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (testVal64 t rs (rs (IR rd)) (rs (IR r1))))) m |
   Pxchgq_rr rd r1 \<Rightarrow> let tmp = rs (IR rd) in
                        let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
                          Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
@@ -204,7 +227,7 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pandl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.and32 (rs (IR rd)) (Vint n)))) m |
   Porq_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or64  (rs (IR rd)) (rs (IR r1))))) m |
   Porl_rr   rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32  (rs (IR rd)) (rs (IR r1))))) m |
-  Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32   (rs (IR rd)) (Vint n)))) m |
+  Porl_ri   rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32  (rs (IR rd)) (Vint n)))) m |
   Pxorq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or64  (rs (IR rd)) (rs (IR r1))))) m |
   Pxorl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.or32  (rs (IR rd)) (rs (IR r1))))) m |
   Pmull_r   r1    \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.mul32  (rs(IR RAX)) (rs (IR r1)))) in
