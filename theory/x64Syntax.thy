@@ -239,10 +239,17 @@ datatype instruction =
   | Prolw_ri ireg u8
   | Prorl_ri ireg u8
   | Prorq_ri ireg u8
+  | Pbswapl ireg
+  | Pbswapq ireg
 
   | Ppushl_r ireg
   | Ppushl_i u32
   | Ppopl  ireg
+
+  | Ptestl_rr ireg ireg
+  | Ptestq_rr ireg ireg
+  | Ptestl_ri ireg u32
+  | Ptestq_ri ireg u32
 
   | Pjcc testcond i32
   | Pjmp i32

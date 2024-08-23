@@ -619,7 +619,31 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
       Some [ rex, op, rop ] |
-
+  \<comment> \<open> P2877 `BSWAP: register `   -> `0000 1111 : 1100 1 reg` \<close>
+  Pbswapl rd  \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (ex:: u8) = 0x0f in
+    let (op:: u8) = bitfield_insert_u8 0 3 0xc8 (u8_of_ireg rd) in
+      if rex = 0x40 then
+        Some [ex, op]
+      else 
+        Some [rex, ex, op] |
+  \<comment> \<open> P2877 `BSWAP: qwordregister `   -> `0100 100B 0000 1111 : 1100 1 qwordreg` \<close>
+  Pbswapq rd  \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (ex:: u8) = 0x0f in
+    let (op:: u8) = bitfield_insert_u8 0 3 0xc8 (u8_of_ireg rd) in
+      Some [rex, ex, op] |
   \<comment> \<open> P2886 `RDTSC – Read Time-Stamp Counter`   -> ` 0000 1111 0011 0001 ` \<close>
   Prdtsc \<Rightarrow>
     let (opes::u8) = 0x0f in
@@ -662,6 +686,56 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         Some [op]
       else 
         Some [rex, op] |
+  \<comment> \<open> P2892 `TEST: register1 and register2`   -> ` 0100 0R0B 1000 010w : 11 reg1 reg2` \<close>
+  Ptestl_rr rd r1 \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+      False \<comment> \<open> W \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x85 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
+      if rex = 0x40 then
+        Some [op, rop]
+      else 
+        Some [rex, op, rop]|
+ \<comment> \<open> P2892 `TEST:  qwordregister1 and qwordregister2`   -> ` 0100 1R0B 1000 0101 : 11 qwordreg1 qwordreg2` \<close>
+  Ptestq_rr rd r1 \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
+      True \<comment> \<open> W \<close>
+      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x85 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
+      Some [rex, op, rop]|
+  \<comment> \<open> P2892 `TEST: immediate and register`   -> ` 0100 000B 1111 011w : 11 000 reg : imm ` \<close>
+  Ptestl_ri rd n \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xf7 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
+      if rex = 0x40 then
+        Some ([op, rop] @ (u8_list_of_u32 n))
+      else 
+        Some ([rex, op, rop] @ (u8_list_of_u32 n))|
+  \<comment> \<open> P2892 `TEST: immediate32 and qwordregister `   -> ` 0100 100B 1111 0111 : 11 000 qwordreg : imm32 ` \<close>
+  Ptestq_ri rd n \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+      True \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0xf7 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
+      Some ([rex, op, rop] @ (u8_list_of_u32 n))|
   \<comment> \<open> P2878 `CALL: register indirect`   -> `0100 W00Bw 1111 1111 : 11 010 reg ` \<close>
   Pcall_r r1 \<Rightarrow>
     let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `000B` \<close>

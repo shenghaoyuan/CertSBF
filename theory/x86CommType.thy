@@ -66,7 +66,7 @@ definition construct_rex_to_u8 :: "bool\<Rightarrow> bool \<Rightarrow> bool \<R
      0x4
 "
 
-\<comment> \<open>value "construct_rex_to_u8 False False False True" \<close>
+\<comment> \<open>\\\value "construct_rex_to_u8 False False False True" \<close>
 
 definition construct_modsib_to_u8 :: "u8 \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8" where
 "construct_modsib_to_u8 op1 op2 op3 =

@@ -135,6 +135,19 @@ definition divmod32u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
   | _ \<Rightarrow> None
 )"
 
+definition bswap32 :: "val \<Rightarrow> val" where
+"bswap32 v =(
+  case v of 
+    Vint n \<Rightarrow>( 
+      let byte0 = (and n 0xFF) << 24 in
+      let byte1 = (and n 0xFF00) << 8 in
+      let byte2 = (and n 0xFF0000) >> 8 in
+      let byte3 = (and n 0xFF000000) >> 24 in
+      Vint (or (or (or byte0 byte1) byte2) byte3)
+  )
+  | _ \<Rightarrow> Vundef
+)"
+
 definition divmod32s :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
 "divmod32s v1 v2 v3 = (
   case v1 of 
@@ -369,7 +382,22 @@ definition ror64 :: "val \<Rightarrow> val \<Rightarrow> val" where
  |  _ \<Rightarrow> Vundef
 )"
 
-
+definition bswap64 :: "val \<Rightarrow> val" where
+"bswap64 v = (
+  case v of 
+    Vint n \<Rightarrow> (
+      let byte0 = (and n 0xFF) << 56 in
+      let byte1 = (and n 0xFF00) << 40 in
+      let byte2 = (and n 0xFF0000) << 24 in
+      let byte3 = (and n 0xFF000000) << 8 in
+      let byte4 = (and n 0xFF00000000) >> 8 in
+      let byte5 = (and n 0xFF0000000000) >> 24 in
+      let byte6 = (and n 0xFF000000000000) >> 40 in
+      let byte7 = (and n 0xFF00000000000000) >> 56 in
+      Vint (or (or (or (or (or (or (or byte0 byte1) byte2) byte3) byte4) byte5) byte6) byte7)
+    )
+  | _ \<Rightarrow> Vundef
+)"
 subsection \<open> Comparisons \<close>
 
 datatype comparison =

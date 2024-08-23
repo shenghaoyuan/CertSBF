@@ -265,10 +265,17 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Prolw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.rol16  (rs (IR rd)) (Vbyte n)))) m | \<comment>\<open> bswap16 \<close>
   Prorl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror32  (rs (IR rd)) (Vbyte n)))) m |  
   Prorq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.ror64  (rs (IR rd)) (Vbyte n)))) m |  
+  Pbswapl   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.bswap32(rs (IR rd))))) m | 
+  Pbswapq   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.bswap64(rs (IR rd))))) m |  
 
   Ppushl_r  r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
   Ppushl_i  n     \<Rightarrow> exec_push sz M32 m rs (Vint (ucast n)) |
   Ppopl     rd    \<Rightarrow> exec_pop  sz M32 m rs (IR rd) |
+
+  Ptestl_rr rd r1 \<Rightarrow> Next (nextinstr sz (compare_ints  (Val.and32 (rs (IR rd)) (rs (IR r1))) (Vint 0) rs)) m |
+  Ptestq_rr rd r1 \<Rightarrow> Next (nextinstr sz (compare_longs (Val.and64 (rs (IR rd)) (rs (IR r1))) (Vlong 0) rs)) m |
+  Ptestl_ri rd n  \<Rightarrow> Next (nextinstr sz (compare_ints  (Val.and32 (rs (IR rd)) (Vint  n))    (Vint 0) rs)) m |
+  Ptestq_ri rd n  \<Rightarrow> Next (nextinstr sz (compare_longs (Val.and64 (rs (IR rd)) (Vlong (ucast n)))    (Vlong 0) rs)) m |
 
   Pjcc      t d   \<Rightarrow> (case eval_testcond t rs of
                                Some b  \<Rightarrow>if b then Next (nextinstr (scast d) rs) m
