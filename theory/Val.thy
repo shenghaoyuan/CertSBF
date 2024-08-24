@@ -39,37 +39,47 @@ subsection \<open> 32-bit Arithmetic operations \<close>
 definition longofintu :: "val \<Rightarrow> val" where
 "longofintu v = (
   case v of
-  Vint i \<Rightarrow> Vlong (ucast i) |
-  _ \<Rightarrow> Vundef
+    Vint i \<Rightarrow> Vlong (ucast i) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition longofints :: "val \<Rightarrow> val" where
 "longofints v = (
   case v of
-  Vint i \<Rightarrow> Vlong (scast i) |
-  _ \<Rightarrow> Vundef
+    Vint i \<Rightarrow> Vlong (scast i) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition intoflongl:: "val \<Rightarrow> val" where
 "intoflongl v = (
   case v of
-  Vlong i \<Rightarrow> Vint (ucast i) |
-  _ \<Rightarrow> Vundef
+    Vlong i \<Rightarrow> Vint (ucast i) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition intoflongh :: "val \<Rightarrow> val" where
 "intoflongh v = (
   case v of
-  Vlong i \<Rightarrow> Vint (ucast(i>>32)) |
-  _ \<Rightarrow> Vundef
+    Vlong i \<Rightarrow> Vint (ucast(i>>32)) |
+    _ \<Rightarrow> Vundef
 )"
 
+definition signex32 :: "val \<Rightarrow> val" where
+"signex32 v = (
+  case v of
+    Vint n \<Rightarrow> 
+      let i::u64 = scast n in
+      let d::u32 = ucast (i >> 32) in
+        (Vint d)|
+      _ \<Rightarrow> Vundef
+)"
+ \<comment> \<open> value "signex32 (Vint 0xFFFF8000)" \<close>
 
 definition neg32 :: "val \<Rightarrow> val" where
 "neg32 v = (
   case v of
-  Vint n \<Rightarrow> Vint (- n) |
-  _ => Vundef
+    Vint n \<Rightarrow> Vint (- n) |
+    _ => Vundef
 )"
 
 definition maketotal :: "val option \<Rightarrow> val" where
@@ -78,37 +88,37 @@ definition maketotal :: "val option \<Rightarrow> val" where
 definition add32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "add32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 + n2) | _ \<Rightarrow> Vundef) |
-  _ \<Rightarrow> Vundef
+    Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 + n2) | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition sub32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "sub32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 - n2) | _ \<Rightarrow> Vundef) |
-  _ \<Rightarrow> Vundef
+    Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 - n2) | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition mul32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "mul32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 * n2) | _ \<Rightarrow> Vundef) |
-  _ \<Rightarrow> Vundef
+    Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (n1 * n2) | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition mulhu32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "mulhu32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint ((n1 * n2) div (2 ^ 32) ) | _ \<Rightarrow> Vundef) |
-  _ \<Rightarrow> Vundef
+    Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint ((n1 * n2) div (2 ^ 32) ) | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
 )"
 
 definition mulhs32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "mulhs32 v1 v2 = (
   case v1 of
-  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> 
-              Vint ( ((scast n1) * (scast n2)) div (2 ^ 32) )  | _ \<Rightarrow> Vundef) |
-  _ \<Rightarrow> Vundef
+    Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> 
+                Vint ( ((scast n1) * (scast n2)) div (2 ^ 32) )  | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
 )"
 
 \<comment>\<open> ` x86 style extended division and modulusv` \<close>
@@ -199,6 +209,13 @@ definition and32 :: "val \<Rightarrow> val \<Rightarrow> val" where
   _ \<Rightarrow> Vundef
 )"
 
+definition xor32 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"xor32 v1 v2 = (
+  case v1 of
+  Vint n1 \<Rightarrow> (case v2 of Vint n2 \<Rightarrow> Vint (Bit_Operations.xor n1 n2) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
 definition shl32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "shl32 v1 v2 = (
   case v1 of
@@ -231,6 +248,16 @@ definition ror32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 )"
 
 subsection \<open> 64-bit Arithmetic operations \<close>
+
+definition signex64 :: "val \<Rightarrow> val" where
+"signex64 v = (
+  case v of
+    Vlong n \<Rightarrow> 
+      let i::u128 = scast n in
+      let d::u64  = ucast (i >> 64) in
+        (Vlong d)|
+      _ \<Rightarrow> Vundef
+)"
 
 definition neg64 :: "val \<Rightarrow> val" where
 "neg64 v = (
@@ -341,6 +368,13 @@ definition or64 :: "val \<Rightarrow> val \<Rightarrow> val" where
 "or64 v1 v2 = (
   case v1 of
   Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (Bit_Operations.or n1 n2) | _ \<Rightarrow> Vundef) |
+  _ \<Rightarrow> Vundef
+)"
+
+definition xor64 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"xor64 v1 v2 = (
+  case v1 of
+  Vlong n1 \<Rightarrow> (case v2 of Vlong n2 \<Rightarrow> Vlong (Bit_Operations.xor n1 n2) | _ \<Rightarrow> Vundef) |
   _ \<Rightarrow> Vundef
 )"
 

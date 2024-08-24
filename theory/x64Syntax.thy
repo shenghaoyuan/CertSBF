@@ -95,7 +95,7 @@ text \<open> skip float registers, as Solana rBPF doesn't deal with float \<clos
 datatype crbit = ZF | CF | PF | SF | OF
 
 datatype preg = PC | IR ireg | CR crbit | RA | TSC
-          
+
 abbreviation "RIP \<equiv> PC"  \<comment> \<open> the RIP register in x86-64 (x64) architecture is the equivalent of the program counter (PC) in many other architectures.  \<close>
   
 abbreviation "SP \<equiv> RSP" 
@@ -194,7 +194,9 @@ datatype instruction =
   | Pcmovq testcond ireg ireg
   | Pxchgq_rr ireg ireg
   (** Moves with conversion *)
-    | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
+  | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
+  | Pcdq 
+  | Pcqo
   (** Integer arithmetic *)
   | Pleaq ireg addrmode
   | Pnegl ireg
@@ -258,8 +260,10 @@ datatype instruction =
   | Pjmp i32
   | Pcall_r ireg
   | Pcall_i i32
+  | Pret
   | Prdtsc
   | Pnop
+  | P
 (*
   | Ppushq_m addrmode  memory_chunk
   | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)

@@ -89,6 +89,16 @@ lemma [simp]: "length l1 = 8 \<Longrightarrow> list_in_list l1 pc l \<Longrighta
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow> x64_decode pc l = Some (length l_bin, ins)"
   apply (cases ins; simp_all)
+                      prefer 40
+  subgoal for dst imm
+    \<comment> \<open> Pshll_ri \<close>
+    sorry
+
+                      prefer 40
+  subgoal for imm
+
+(*proof done
+
 
   subgoal for dst src
   \<comment> \<open> Pmovl_rr \<close> 
@@ -146,33 +156,55 @@ lemma x64_encode_decode_consistency:
     \<comment> \<open> Pmov_mi \<close> 
     sorry
 
-  subgoal for dst src 
-    \<comment> \<open> Pxchgq_rr \<close> 
-    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+  subgoal for dst src chunk
+    \<comment> \<open> Pcmovl \<close> 
+    sorry
+
+  subgoal for dst chunk
+    \<comment> \<open> Pcmovq  \<close> 
+    sorry
+
+  subgoal for dst src
+    \<comment> \<open> Pxchgq_rr \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
   subgoal for dst src
-    \<comment> \<open> Pmovsq_rr \<close> 
-    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+    \<comment> \<open> Pmovsq_rr \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
+  subgoal 
+    \<comment> \<open> Pcdq \<close>
+    apply(unfold Let_def x64_decode_def; simp)
+    done
+
+  subgoal 
+    \<comment> \<open> Pcqo \<close>
+    apply(unfold Let_def x64_decode_def; simp)
+    done
+
+  subgoal for dst addr
+    \<comment> \<open> Pleaq \<close> 
+    sorry
+
   subgoal for dst
-    \<comment> \<open> Pnegl \<close>
+    \<comment> \<open> Pnegl \<close> 
     apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
   subgoal for dst
-    \<comment> \<open> Pnegq \<close>
+    \<comment> \<open> Pnegq \<close> 
     apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
   subgoal for dst src 
     \<comment> \<open> Paddq_rr \<close> 
-    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
@@ -197,6 +229,10 @@ lemma x64_encode_decode_consistency:
     apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
+
+  subgoal for dst imm 
+    \<comment> \<open> Psubl_ri \<close> 
+    sorry
 
   subgoal for dst 
     \<comment> \<open> Pmull_r \<close> 
@@ -252,20 +288,49 @@ lemma x64_encode_decode_consistency:
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
+  subgoal for dst imm 
+    \<comment> \<open> Pandl_ri \<close> 
+    sorry
 
- \<comment> \<open> 
-    apply (cases src)
-    subgoal
-      apply (cases dst)
-      subgoal
-        apply (auto simp add: bitfield_insert_u8_def Let_def u8_of_bool_def)
-        apply (unfold x64_decode_def Let_def)
-        apply simp
-        value "unsigned_bitfield_extract_u8 4 4 (8)"
-
-        apply (auto simp add: bitfield_insert_u8_def Let_def ireg_of_u8_def)
-
+  subgoal for dst src
+    \<comment> \<open> Pandq_rr \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
- \<close> 
-  done
+    done
+
+  subgoal for dst src 
+    \<comment> \<open> Porl_rr \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst imm 
+    \<comment> \<open> Porl_ri \<close> 
+    sorry
+
+  subgoal for dst src
+    \<comment> \<open> Porq_rr \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst src 
+    \<comment> \<open> Pxorl_rr \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst src
+    \<comment> \<open> Pxorq_rr \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst imm 
+    \<comment> \<open> Pxorl_ri \<close> 
+    sorry
+  
+
+
+*)
 end

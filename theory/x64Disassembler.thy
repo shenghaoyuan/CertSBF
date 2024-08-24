@@ -17,6 +17,13 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
     if h = 0x90 then 
       \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close> 
       Some (1, Pnop)
+    else if h = 0x99 then
+      Some (1, Pcdq)
+    else if h = 0xc3 then
+      \<comment> \<open> P2887 ` RET near` -> ` 1100 0011` \<close>
+      Some (1, Pret)
+    else if h = 0x99 then
+      Some (1, Pcdq)
     \<comment> \<open> R7 legacy \<close>
     else if h = 0x66 then  \<comment> \<open> 16-bit mode \<close>
       let h1 = l_bin!(pc+1) in
@@ -174,25 +181,25 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Paddl_rr dst src))) 
             else None
-          \<comment> \<open> P2884 `NEG  register2`                     -> `0100 100B : 1111 0111 : 11011reg` \<close>
-          \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2` -> ` 0100 000B : 1111 011w : 11 100 reg` \<close>
-          \<comment> \<open> P2880 `IMUL AL, AX, or EAX with register2` -> ` 0100 000B : 1111 011w : 11 101 reg` \<close>
-          \<comment> \<open> P2879 `DIV  AL, AX, or EAX by register2`   -> ` 0100 000B : 1111 011w : 11 110 reg` \<close>
-          \<comment> \<open> P2879 `IDIV AL, AX, or EAX by register2`   -> ` 0100 000B : 1111 011w : 11 111 reg` \<close>
+          \<comment> \<open> P2884 `NEG  register2`   -> `0100 100B : 1111 0111 : 11011reg` \<close>
           else if h = 0xf7 then
             if modrm = 0b11 \<and> reg1 = 0b011 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Pnegl dst))
+          \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2` -> ` 0100 000B : 1111 011w : 11 100 reg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b100 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Pmull_r dst))
+          \<comment> \<open> P2880 `IMUL AL, AX, or EAX with register2` -> ` 0100 000B : 1111 011w : 11 101 reg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b101 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                  Some (2, Pimull_r dst))
             else if modrm = 0b11 \<and> reg1 = 0b110 then
+          \<comment> \<open> P2879 `DIV  AL, AX, or EAX by register2`   -> ` 0100 000B : 1111 011w : 11 110 reg` \<close>
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                  Some (2, Pdivl_r dst))
             else if modrm = 0b11 \<and> reg1 = 0b111 then
+          \<comment> \<open> P2879 `IDIV AL, AX, or EAX by register2`   -> ` 0100 000B : 1111 011w : 11 111 reg` \<close>
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                  Some (2, Pidivl_r dst))
             else None
@@ -203,12 +210,26 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Psubl_rr dst src) )))
             else None
+          \<comment> \<open> P2876 `AND register1 to register2` -> ` 0010 000w : 11 reg1 reg2 ` \<close>
           else if h = 0x21 then
-          \<comment> \<open> P2876 `AND register1 to register2` -> ` 0100 WR0B : 0000 100w : 11 reg1 reg2` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                  Some (2, Pandl_rr dst src))) ) 
+            else None
+          \<comment> \<open> P2884 `OR register1 to register2` -> ` 0000 100w : 11 reg1 reg2` \<close>
+          else if h = 0x09 then
+            if modrm = 0b11 then (
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                Some (2, Porl_rr dst src) )))
+            else None
+          \<comment> \<open> P2893 `XOR register1 to register2` -> ` 0011 000w : 11 reg1 reg2` \<close>
+          else if h = 0x31 then
+            if modrm = 0b11 then (
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                Some (2, Pxorl_rr dst src))) ) 
             else None
           \<comment> \<open> P2892 `TEST: register1 and register2`   -> ` 0100 0R0B 1000 010w : 11 reg1 reg2` \<close>
           else if h = 0x85 then
@@ -252,15 +273,27 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 let i4 = l_bin!(pc+5)  in
                   case u32_of_u8_list [i1,i2,i3,i4] of None \<Rightarrow> None |
                     Some imm \<Rightarrow> 
-                      \<comment> \<open> P2876 `ADD immediate to register` -> `0100 000B : 1000 00sw : 11 000 reg : immediate data` \<close>
+                      \<comment> \<open> P2876 `ADD immediate to register` -> ` 1000 00sw : 11 000 reg : immediate data` \<close>
                       if reg1 = 0b000 then
                         Some (6, Paddl_ri dst imm)
+                      \<comment> \<open> P2891 `OR: immediate to register` -> `0100 000B  1000 00sw : 11 001 reg : imm` \<close>
+                      else if reg1 = 0b001 then
+                        Some (6, Porl_ri dst imm)
+                      \<comment> \<open> P2891 `AND: immediate to register` -> `0100 000B : 1000 00sw : 11 100 reg : immediate` \<close>
+                      else if reg1 = 0b100 then
+                        Some (6, Pandl_ri dst imm)
+                      \<comment> \<open> P2891 `SUB: immediate from register` -> `0100 000B 1000 00sw : 11 101 reg : imm` \<close>
+                      else if reg1 = 0b101 then
+                        Some (6, Psubl_ri dst imm)
+                      \<comment> \<open> P2893 `XOR: immediate to register` -> ` 0100 000B 1000 00sw : 11 110 reg : imm` \<close>
+                      else if reg1 = 0b110 then
+                        Some (6, Pxorl_ri dst imm)
                       \<comment> \<open> P2878 `CMP: immediate32 with qwordregister`   -> `0100 100B 1000 0001 : 11 111 qwordreg : imm32` \<close>
                       else if reg1 = 0b111 then
                         Some (6, Pcmpl_ri dst imm)
                       else None)
             else None
-          \<comment> \<open> P2892 `TEST: immediate and register`   -> ` 0100 000B 1111 011w : 11 000 reg : imm ` \<close>
+          \<comment> \<open> P2892 `TEST: immediate and register`   -> `  1111 011w : 11 000 reg : imm ` \<close>
           else if h = 0xf7 then
             if modrm = 0b11 \<and> reg1 = 0b000 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
@@ -313,8 +346,10 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
       let b = unsigned_bitfield_extract_u8 0 1 h in
       let op = l_bin!(pc+1) in 
       \<comment> \<open> R6.1 [rex + opcode] \<close>
+      if op = 0x99 then
+        Some (2, Pcqo)
       \<comment> \<open> P2885 `PUSH: qwordregister (alternate encoding)`   -> ` 0100 W00BS : 0101 0 reg64` \<close>
-      if unsigned_bitfield_extract_u8 3 5 op = 0b01010 then
+      else if unsigned_bitfield_extract_u8 3 5 op = 0b01010 then
         let reg2 = unsigned_bitfield_extract_u8 0 3 op in
         let dst  = bitfield_insert_u8 3 1 reg2 b in
         case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
@@ -415,7 +450,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   else 
                     Some (3, Pmovl_rr dst src)
                 else None))) 
-            \<comment> \<open> R6.5 [rex + opcode + modrm + displacement] \<close>
+              \<comment> \<open> R6.5 [rex + opcode + modrm + displacement] \<close>
             else if modrm = 0b01 then
               \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>
               \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
@@ -467,18 +502,12 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             else None
           else if op = 0xf7 then
             \<comment> \<open> P2884 `NEG  register2`                           -> ` 0100 W00B : 1111 011w : 11 011 reg` \<close>
-            \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 100 reg` \<close>
-            \<comment> \<open> P2884 `MUL  RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 100 qowrdreg` \<close>
-            \<comment> \<open> P2880 `IMUL AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 101 reg` \<close>
-            \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 101 qwordreg` \<close>
-            \<comment> \<open> P2879 `DIV AL, AX, or EAX by register2`          -> ` 0100 000B : 1111 011w : 11 110 reg` \<close>
-            \<comment> \<open> P2879 `DIV EAX by qwordregister (to RDX:RAX)`    -> ` 0100 100B : 1111 011w : 11 110 qwordreg` \<close>
-            \<comment> \<open> P2879 `IDIV AL, AX, or EAX by register2`         -> ` 0100 000B : 1111 011w : 11 111 reg` \<close>
-            \<comment> \<open> P2879 `IDIV RAX by qwordregister (to RDX:RAX)`   -> ` 0100 100B : 1111 011w : 11 111 qwordreg` \<close>
             if modrm = 0b11 \<and> reg1 = 0b011 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then Some (3, Pnegq dst) 
                 else Some (3, Pnegl dst))
+            \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 100 reg` \<close>
+            \<comment> \<open> P2884 `MUL  RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 100 qowrdreg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b100 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
               if w = 1 \<and> r = 0 \<and> x = 0 then 
@@ -486,6 +515,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               else if w = 0 \<and> r = 0 \<and> x = 0 then 
                 Some (3, Pmull_r dst)
               else None)
+            \<comment> \<open> P2880 `IMUL AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 101 reg` \<close>
+            \<comment> \<open> P2880 `IMUL RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 101 qwordreg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b101 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 \<and> r = 0 \<and> x = 0 then 
@@ -493,6 +524,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else if w = 0 \<and> r = 0 \<and> x = 0 then 
                   Some (3, Pimull_r dst)
                 else None)
+            \<comment> \<open> P2879 `DIV AL, AX, or EAX by register2`          -> ` 0100 000B : 1111 011w : 11 110 reg` \<close>
+            \<comment> \<open> P2879 `DIV EAX by qwordregister (to RDX:RAX)`    -> ` 0100 100B : 1111 011w : 11 110 qwordreg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b110 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 \<and> r = 0 \<and> x = 0 then 
@@ -500,6 +533,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else if w = 0 \<and> r = 0 \<and> x = 0 then 
                   Some (3, Pdivl_r dst)
                 else None)
+            \<comment> \<open> P2879 `IDIV AL, AX, or EAX by register2`         -> ` 0100 000B : 1111 011w : 11 111 reg` \<close>
+            \<comment> \<open> P2879 `IDIV RAX by qwordregister (to RDX:RAX)`   -> ` 0100 100B : 1111 011w : 11 111 qwordreg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b111 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1  \<and> r = 0 \<and> x = 0 then 
@@ -510,49 +545,59 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             else None
           else if op = 0x09 then
           \<comment> \<open> P2884 `OR register1 to register2` -> ` 0100 WR0B : 0000 100w : 11 reg1 reg2` \<close>
+          \<comment> \<open> P2884 `OR qwordregister1 to qwordregister2` -> ` 0100 1R0B : 0000 1001 : 11 reg1 reg2` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (3, Porq_rr dst src) 
-                else Some (3, Porl_rr dst src) )))
+                if w = 1 \<and> x = 0 then 
+                  Some (3, Porq_rr dst src) 
+                else if w = 0 \<and> x = 0 then
+                  Some (3, Porl_rr dst src) 
+                else None)))
             else None
           else if op = 0x21 then
-          \<comment> \<open> P2876 `AND register1 to register2` -> ` 0100 WR0B : 0000 100w : 11 reg1 reg2` \<close>
+          \<comment> \<open> P2876 `AND register1 to register2` -> ` 0100 WR0B : 0010 000w : 11 reg1 reg2` \<close>
+          \<comment> \<open> P2876 `AND qwordregister1 to qwordregister2` -> ` 0100 1R0B : 0010 0001 : 11 reg1 reg2` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (3, Pandq_rr dst src)
-                else Some (3, Pandl_rr dst src))) ) 
+                if w = 1 \<and> x = 0 then 
+                  Some (3, Pandq_rr dst src)
+                else if w = 0 \<and> x = 0 then 
+                  Some (3, Pandl_rr dst src)
+                else None)) ) 
             else None
           else if op = 0x31 then
           \<comment> \<open> P2893 `XOR register1 to register2` -> ` 0100 WRXB : 0011 000w : 11 reg1 reg2` \<close>
+          \<comment> \<open> P2893 `XOR qwordregister1 to qwordregister2` -> ` 0100 1R0B : 0011 0001 : 11 reg1 reg2` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then 
+                if w = 1 \<and> x = 0 then 
                   Some (3, Pxorq_rr dst src)
-                else 
-                  Some (3, Pxorl_rr dst src))) ) 
+                else if w = 0 \<and> x = 0 then 
+                  Some (3, Pxorl_rr dst src)
+                else None)) ) 
             else None
           else if op = 0xd3 then
           \<comment> \<open> P2889 `SHL register by CL`              -> ` 0100 000B 1100 000w : 11 100 reg ` \<close>
           \<comment> \<open> P2889 `SHL qwordregister by CL`         -> ` 0100 100B 1100 000w : 11 100 reg ` \<close>
-          \<comment> \<open> P2890 `SHR register by CL`              -> ` 0100 000B 1100 000w : 11 101 reg ` \<close>
-          \<comment> \<open> P2890 `SHR qwrodregister by CL`         -> ` 0100 100B 1100 000w : 11 101 reg ` \<close>
-          \<comment> \<open> P2888 `SAR register by CL`              -> ` 0100 000B 1100 000w : 11 111 reg ` \<close>
-          \<comment> \<open> P2888 `SAR qwordregister by CL`         -> ` 0100 100B 1100 000w : 11 111 reg ` \<close>
             if modrm = 0b11 \<and> reg1 = 0b100 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then 
                   Some (3, Pshlq_r dst) 
                 else 
                   Some (3, Pshll_r dst)) 
+          \<comment> \<open> P2890 `SHR register by CL`              -> ` 0100 000B 1100 000w : 11 101 reg ` \<close>
+          \<comment> \<open> P2890 `SHR qwrodregister by CL`         -> ` 0100 100B 1100 000w : 11 101 reg ` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b101 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then 
                   Some (3, Pshrq_r dst) 
                 else 
                   Some (3, Pshrl_r dst)) 
+          \<comment> \<open> P2888 `SAR register by CL`              -> ` 0100 000B 1100 000w : 11 111 reg ` \<close>
+          \<comment> \<open> P2888 `SAR qwordregister by CL`         -> ` 0100 100B 1100 000w : 11 111 reg ` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b111 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 if w = 1 then 
@@ -639,6 +684,26 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                     if reg1 = 0b000 then
                       if w = 0 \<and> r = 0 \<and> x = 0 then
                         Some (7, Paddl_ri dst imm)
+                      else None
+                    \<comment> \<open> P2891 `OR: immediate to register` -> `0100 000B  1000 00sw : 11 001 reg : imm` \<close>
+                    else if reg1 = 0b001 then
+                      if w = 0 \<and> r = 0 \<and> x = 0 then
+                        Some (7, Porl_ri dst imm)
+                      else None
+                    \<comment> \<open> P2891 `AND: immediate to register` -> `0100 000B : 1000 00sw : 11 100 reg : immediate` \<close>
+                    else if reg1 = 0b100 then
+                      if w = 0 \<and> r = 0 \<and> x = 0 then
+                        Some (7, Pandl_ri dst imm)
+                      else None
+                    \<comment> \<open> P2891 `SUB: immediate from register` -> `0100 000B 1000 00sw : 11 101 reg : imm` \<close>
+                    else if reg1 = 0b101 then
+                      if w = 0 \<and> r = 0 \<and> x = 0 then
+                        Some (7, Psubl_ri dst imm)
+                      else None
+                    \<comment> \<open> P2893 `XOR: immediate to register` -> ` 0100 000B 1000 00sw : 11 110 reg : imm` \<close>
+                    else if reg1 = 0b110 then
+                      if w = 0 \<and> r = 0 \<and> x = 0 then
+                        Some (7, Pxorl_ri dst imm)
                       else None
                     \<comment> \<open> P2878 `CMP: immediate with register`   -> `0100 000B 1000 00sw : 11 111 reg : imm` \<close>
                     \<comment> \<open> P2878 `CMP: immediate32 with qwordregister`   -> `0100 100B 1000 0001 : 11 111 qwordreg : imm32` \<close>
