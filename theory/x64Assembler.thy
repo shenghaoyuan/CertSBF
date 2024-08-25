@@ -671,7 +671,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
     let (imm::u8) = ucast n in
-      Some [ rex, op, rop, imm] |
+      Some [ rex, op, rop, imm ] |
   \<comment> \<open> P2888 `SAR register by CL`     -> ` 0100 000B 1101 001w : 11 111 reg ` \<close>
   Psarl_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
@@ -808,7 +808,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       Some [rex, op, rop]|
   \<comment> \<open> P2892 `TEST: immediate and register`   -> ` 0100 000B 1111 011w : 11 000 reg : imm ` \<close>
   Ptestl_ri rd n \<Rightarrow>
-    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
