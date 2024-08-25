@@ -231,14 +231,28 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Pxorl_rr dst src))) ) 
             else None
-          \<comment> \<open> P2892 `TEST: register1 and register2`   -> ` 0100 0R0B 1000 010w : 11 reg1 reg2` \<close>
+          else if h = 0xd3 then
+            \<comment> \<open> P2889 `SHL register by CL`              -> ` 1100 000w : 11 100 reg ` \<close>
+            if modrm = 0b11 \<and> reg1 = 0b100 then 
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                Some (2, Pshll_r dst))
+            \<comment> \<open> P2890 `SHR register by CL`              -> ` 1100 000w : 11 101 reg ` \<close>
+            else if modrm = 0b11 \<and> reg1 = 0b101 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                Some (2, Pshrl_r dst))  
+            \<comment> \<open> P2888 `SAR register by CL`              -> ` 1100 000w : 11 111 reg ` \<close>
+            else if modrm = 0b11 \<and> reg1 = 0b111 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                Some (2, Psarl_r dst))  
+          else None
+          \<comment> \<open> P2892 `TEST: register1 and register2`   -> ` 1000 010w : 11 reg1 reg2` \<close>
           else if h = 0x85 then
             if modrm = 0b11 then(
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some(2, Ptestl_rr dst src) )))
             else None
-          \<comment> \<open> P2878 `CMP: register1 with register2`   -> ` 0100 0R0B 0011 100w : 11 reg1 reg2 ` \<close>
+          \<comment> \<open> P2878 `CMP: register1 with register2`   -> ` 0011 100w : 11 reg1 reg2 ` \<close>
           else if h = 0x39 then
             if modrm = 0b11 then(
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
@@ -264,6 +278,21 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   if modrm = 0b11 \<and> reg1 = 0b000 then
                     Some (6, Pmovl_ri dst imm)
               else None)
+          else if h = 0xc1 then
+            let imm = l_bin!(pc+2) in ( 
+              \<comment> \<open> P2889 `SHL register by immediate count`      -> `1100 000w : 11 100 reg : imm8 ` \<close>
+              if modrm = 0b11 \<and> reg1 = 0b100 then 
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                   Some (3, Pshll_ri dst imm))
+              \<comment> \<open> P2890 `SHR register by immediate count`      -> ` 1100 000w : 11 101 reg : imm8 ` \<close>
+              else if modrm = 0b11 \<and> reg1 = 0b101 then 
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                   Some (3, Pshrl_ri dst imm))
+              \<comment> \<open> P2888 `SAR register by immediate count`      -> `1100 000w : 11 111 reg : imm8 ` \<close>
+              else if modrm = 0b11 \<and> reg1 = 0b111 then 
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                   Some (3, Psarl_ri dst imm))
+               else None)
           else if h = 0x81 then
             if modrm = 0b11 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
@@ -584,26 +613,29 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           \<comment> \<open> P2889 `SHL qwordregister by CL`         -> ` 0100 100B 1100 000w : 11 100 reg ` \<close>
             if modrm = 0b11 \<and> reg1 = 0b100 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then 
+                if w = 1  \<and> x = 0 \<and> r = 0 then 
                   Some (3, Pshlq_r dst) 
-                else 
-                  Some (3, Pshll_r dst)) 
+                else if w = 0  \<and> x = 0 \<and> r = 0 then 
+                  Some (3, Pshll_r dst)
+                else None) 
           \<comment> \<open> P2890 `SHR register by CL`              -> ` 0100 000B 1100 000w : 11 101 reg ` \<close>
           \<comment> \<open> P2890 `SHR qwrodregister by CL`         -> ` 0100 100B 1100 000w : 11 101 reg ` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b101 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then 
+                if w = 1  \<and> x = 0 \<and> r = 0 then 
                   Some (3, Pshrq_r dst) 
-                else 
-                  Some (3, Pshrl_r dst)) 
+                else if w = 0  \<and> x = 0 \<and> r = 0 then
+                  Some (3, Pshrl_r dst)
+                else None)  
           \<comment> \<open> P2888 `SAR register by CL`              -> ` 0100 000B 1100 000w : 11 111 reg ` \<close>
           \<comment> \<open> P2888 `SAR qwordregister by CL`         -> ` 0100 100B 1100 000w : 11 111 reg ` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b111 then
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then 
+                if w = 1  \<and> x = 0 \<and> r = 0 then 
                   Some (3, Psarq_r dst) 
-                else 
-                  Some (3, Psarl_r dst)) 
+                else if w = 0  \<and> x = 0 \<and> r = 0 then
+                  Some (3, Psarl_r dst)
+                else None)  
           else None
         \<comment> \<open> P2892 `TEST: register1 and register2`   -> ` 0100 0R0B 1000 010w : 11 reg1 reg2` \<close>
         \<comment> \<open> P2892 `TEST:  qwordregister1 and qwordregister2`   -> ` 0100 1R0B 1000 0101 : 11 qwordreg1 qwordreg2` \<close>
@@ -721,20 +753,23 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         \<comment> \<open> P2889 `SHL qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 100 reg : imm8 ` \<close>
             if modrm = 0b11 \<and> reg1 = 0b100 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (4, Pshlq_ri dst imm)
-                else Some (4, Pshll_ri dst imm))
+                if w = 1 \<and> x = 0 \<and> r = 0 then Some (4, Pshlq_ri dst imm)
+                else if w = 0 \<and> x = 0 \<and> r = 0 then Some (4, Pshll_ri dst imm)
+                else None)
         \<comment> \<open> P2890 `SHR register by immediate count`      -> ` 0100 000B 1100 000w : 11 101 reg : imm8 ` \<close>
         \<comment> \<open> P2890 `SHR qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 101 reg : imm8 ` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b101 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (4, Pshrq_ri dst imm)
-                else Some (4, Pshrl_ri dst imm))
+                if w = 1 \<and> x = 0 \<and> r = 0 then Some (4, Pshrq_ri dst imm)
+                else if w = 0 \<and> x = 0 \<and> r = 0 then Some (4, Pshrl_ri dst imm)
+                else None)
         \<comment> \<open> P2888 `SAR register by immediate count`      -> ` 0100 000B 1100 000w : 11 111 reg : imm8 ` \<close>
         \<comment> \<open> P2888 `SAR qwordregister by immediate count` -> ` 0100 100B 1100 000w : 11 111 reg : imm8 ` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b111 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (4, Psarq_ri dst imm)
-                else Some (4, Psarl_ri dst imm))
+                if w = 1 \<and> x = 0 \<and> r = 0 then Some (4, Psarq_ri dst imm)
+                else if w = 0 \<and> x = 0 \<and> r = 0 then Some (4, Psarl_ri dst imm)
+                else None)
             else None)
         \<comment> \<open> P2892 `TEST: immediate and register`   -> ` 0100 000B 1111 011w : 11 000 reg : imm ` \<close>
         \<comment> \<open> P2892 `TEST: immediate32 and qwordregister `   -> ` 0100 100B 1111 0111 : 11 000 qwordreg : imm32 ` \<close>

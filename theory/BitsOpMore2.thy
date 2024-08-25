@@ -132,10 +132,6 @@ lemma list_consists_8 : "length l = 8 \<Longrightarrow>
       less_Suc_eq list.sel(3) nat_1_add_1
       semiring_norm(26) semiring_norm(27) semiring_norm(28) take0)
 
-lemma bit_power_k_minus_1_le: "bit (2^k -1::int) n \<longleftrightarrow> n < k"
-  apply (simp only: bit_iff_odd)
-  by (simp add: even_decr_exp_div_exp_iff' linorder_not_le)
-
 lemma u64_ucast_ucast_and_shr_255_shl_same: "n \<le> 56 \<Longrightarrow>
   ((ucast ((ucast (and ((v::u64) >> n) 255)) ::u8) ::u64) << n) =
   ((and ((v::u64) >> n) 255) << n)"
@@ -146,24 +142,6 @@ lemma u64_ucast_ucast_and_shr_255_shl_same: "n \<le> 56 \<Longrightarrow>
   apply (auto simp add: bit_simps)
   subgoal for n1
   using bit_power_k_minus_1_le [of 8 "n1-n"] by simp
-  done
-
-lemma bit_power_k_add_m_ge : "bit (2^(k+m)-2^k::int) n \<Longrightarrow> k \<le> n \<and> n < k+m"
-  apply (induction k arbitrary: m n)
-  subgoal for m n
-    apply simp
-    using bit_power_k_minus_1_le by blast
-
-  subgoal for k m n
-    apply simp
-    apply (cases n)
-    subgoal
-      apply simp
-      by (simp add: bit_0)
-    subgoal for n1
-      apply simp
-      using bit_double_iff diff_Suc_1' by fastforce
-    done
   done
 
 lemma [simp]: "and (((v::u64) >> 56) << 56) 18374686479671623680 = and v 18374686479671623680"
@@ -215,23 +193,7 @@ lemma [simp]: "and (((v::u64) >> 8) << 8) 65280 = and v 65280"
   subgoal for n using bit_power_k_add_m_ge [of 8 8 n] by simp
   done
 
-lemma bit_power_k_add_m_lt [simp]: "n < k+m \<Longrightarrow> \<not> bit (2^(k+m)-2^k::int) n \<Longrightarrow> n < k"
-  apply (induction k arbitrary: m n)
-  subgoal for m n
-    apply simp
-    by (simp add: bit_power_k_minus_1_le)
-
-  subgoal for k m n
-    apply simp
-    apply (cases n)
-    subgoal by simp
-    subgoal for n1
-      apply simp
-      by (smt (verit, best) bit_double_Suc_iff possible_bit_def power_eq_0_iff)
-    done
-  done
-
-lemma bit_255_not : "n < 64 \<Longrightarrow>
+lemma bit_255_not_lt_64 : "n < 64 \<Longrightarrow>
   \<not> bit (18374686479671623680::int) n \<Longrightarrow> \<not> bit (71776119061217280::int) n \<Longrightarrow>
   \<not> bit (280375465082880::int) n \<Longrightarrow> \<not> bit (1095216660480::int) n \<Longrightarrow>
   \<not> bit (4278190080::int) n \<Longrightarrow> \<not> bit (16711680::int) n \<Longrightarrow>
@@ -247,6 +209,7 @@ lemma bit_255_not : "n < 64 \<Longrightarrow>
   apply blast
   done
 
+(*
 lemma [simp]: "(v::u64) =
     or (and ((v >> 56) << 56) 18374686479671623680)
      (or (and ((v >> 48) << 48) 71776119061217280)
@@ -260,7 +223,7 @@ lemma [simp]: "(v::u64) =
   apply (auto simp add: bit_simps)
   subgoal for n
     using bit_255_not by blast
-  done
+  done *)
 
 lemma u64_of_u8_list_same: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)"
   apply (unfold u64_of_u8_list_def u8_list_of_u64_def)
@@ -278,7 +241,7 @@ lemma u64_of_u8_list_same: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)
       apply (simp add: bit_or_iff)
       apply (auto simp add: bit_simps)
       subgoal for n
-        using bit_255_not by blast
+        using bit_255_not_lt_64 by blast
       done
     done
   done

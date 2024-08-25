@@ -552,7 +552,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
     let (imm::u8) = ucast n in
       Some [ rex, op, rop, imm ] |
-  \<comment> \<open> P2889 `SHL register by CL`                   -> ` 0100 000B 1101 001w : 11 100 reg ` \<close>
+  \<comment> \<open> P2889 `SHL register by CL`  -> ` 0100 000B 1101 001w : 11 100 reg ` \<close>
   Pshll_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
       False \<comment> \<open> W \<close>
@@ -566,7 +566,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         Some [ op, rop ] 
       else 
         Some [ rex, op, rop ] |
-  \<comment> \<open> P2889 `SHL qwordregister by CL`              -> ` 0100 100B 1101 001w : 11 100 reg ` \<close>
+  \<comment> \<open> P2889 `SHL qwordregister by CL`   -> ` 0100 100B 1101 001w : 11 100 reg ` \<close>
   Pshlq_r rd  \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
       True \<comment> \<open> W \<close>

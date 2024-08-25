@@ -231,4 +231,43 @@ lemma u8_ge_8_bit_false : "n \<ge> 8 \<Longrightarrow> \<not>bit (v::u8) n"
 
 lemma u8_bit_true_ge_8 : "bit (v::u8) n \<Longrightarrow> n < 8"
   by (metis le_neq_implies_less nat_le_linear u8_ge_8_bit_false)
+
+lemma bit_power_k_minus_1_le: "bit (2^k -1::int) n \<longleftrightarrow> n < k"
+  apply (simp only: bit_iff_odd)
+  by (simp add: even_decr_exp_div_exp_iff' linorder_not_le)
+
+lemma bit_power_k_add_m_ge : "bit (2^(k+m)-2^k::int) n \<Longrightarrow> k \<le> n \<and> n < k+m"
+  apply (induction k arbitrary: m n)
+  subgoal for m n
+    apply simp
+    using bit_power_k_minus_1_le by blast
+
+  subgoal for k m n
+    apply simp
+    apply (cases n)
+    subgoal
+      apply simp
+      by (simp add: bit_0)
+    subgoal for n1
+      apply simp
+      using bit_double_iff diff_Suc_1' by fastforce
+    done
+  done
+
+lemma bit_power_k_add_m_lt: "n < k+m \<Longrightarrow> \<not> bit (2^(k+m)-2^k::int) n \<Longrightarrow> n < k"
+  apply (induction k arbitrary: m n)
+  subgoal for m n
+    apply simp
+    by (simp add: bit_power_k_minus_1_le)
+
+  subgoal for k m n
+    apply simp
+    apply (cases n)
+    subgoal by simp
+    subgoal for n1
+      apply simp
+      by (smt (verit, best) bit_double_Suc_iff possible_bit_def power_eq_0_iff)
+    done
+  done
+
 end

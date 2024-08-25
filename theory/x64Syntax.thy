@@ -94,7 +94,7 @@ text \<open> skip float registers, as Solana rBPF doesn't deal with float \<clos
 
 datatype crbit = ZF | CF | PF | SF | OF
 
-datatype preg = PC | IR ireg | CR crbit | RA | TSC
+datatype preg = PC | IR ireg | CR crbit | TSC
 
 abbreviation "RIP \<equiv> PC"  \<comment> \<open> the RIP register in x86-64 (x64) architecture is the equivalent of the program counter (PC) in many other architectures.  \<close>
   
@@ -103,7 +103,7 @@ abbreviation "SP \<equiv> RSP"
 type_synonym label = nat
 
 datatype addrmode =
-  Addrmode "ireg option" "(ireg * int) option" int
+  Addrmode "ireg option" "(ireg * u8) option" int
 
 datatype testcond =
     Cond_e | Cond_ne

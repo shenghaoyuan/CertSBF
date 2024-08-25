@@ -2,7 +2,7 @@ theory x64DecodeProof
 imports
   Main
   rBPFCommType rBPFSyntax
-  x64Assembler x64Disassembler BitsOpMore2
+  x64Assembler x64Disassembler BitsOpMore2 BitsOpMore3
 begin
 
 declare if_split_asm [split]
@@ -69,33 +69,46 @@ lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> length l_bin - length l =
 lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> length l_bin - length l = 4" by fastforce
 lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> length l_bin - length l = 5" by fastforce
 
-lemma [simp]: "length l1 = 8 \<Longrightarrow> list_in_list l1 pc l \<Longrightarrow>
-[l ! pc, l ! (pc + 1), l ! (pc + 2), l ! (pc + 3), l ! (pc + 4), l ! (pc + 5), 
-  l ! (pc + 6), l ! (pc + 7)] = l1"
-  apply (cases "l1", simp)
-  subgoal for a1 l1 apply (cases "l1", simp)
-  subgoal for a2 l2 apply (cases "l2", simp)
-  subgoal for a3 l3 apply (cases "l3", simp)
-  subgoal for a4 l4 apply (cases "l4", simp)
-  subgoal for a5 l5 apply (cases "l5", simp)
-  subgoal for a6 l6 apply (cases "l6", simp)
-  subgoal for a7 l7 apply (cases "l7", simp)
-  subgoal for a8 l8 apply (cases "l8", simp)
-    apply (simp add: eval_nat_numeral(3) numeral_Bit0)
-  subgoal for a9 l9 apply (cases "l9", simp)
-    subgoal for a10 l10 apply (cases "l10", simp) 
-      sorry
+  \<comment> \<open> u32 \<close> 
+lemma list_in_list_u8_list_of_u32_simp : "list_in_list (u8_list_of_u32 imm) pc l \<Longrightarrow>
+  Some imm = u32_of_u8_list [l ! pc, l ! (pc + 1), l ! (pc + 2), l ! (pc + 3)]"
+  by (simp add: u32_of_u8_list_same u8_list_of_u32_def
+      Suc3_eq_add_3 add.commute)
+
+lemma list_in_list_u8_list_of_u32_simp_sym : "list_in_list (u8_list_of_u32 imm) pc l \<Longrightarrow>
+  u32_of_u8_list [l ! pc, l ! (pc + 1), l ! (pc + 2), l ! (pc + 3)] = Some imm"
+  using list_in_list_u8_list_of_u32_simp
+  by presburger
+
+lemma length_u8_list_of_u32_eq_4 : "length (u8_list_of_u32 imm) = 4"
+  by (simp add: u8_list_of_u32_def)
+
+  \<comment> \<open> u64 \<close> 
+lemma list_in_list_u8_list_of_u64_simp : "list_in_list (u8_list_of_u64 imm) pc l \<Longrightarrow>
+  Some imm = u64_of_u8_list [l ! pc, l ! (pc + 1), l ! (pc + 2), l ! (pc + 3), l ! (pc + 4), l ! (pc + 5), l ! (pc + 6), l ! (pc + 7)]"
+  by (simp add: u64_of_u8_list_same u8_list_of_u64_def
+        Suc3_eq_add_3 add.commute)
+
+lemma list_in_list_u8_list_of_u64_simp_sym : "list_in_list (u8_list_of_u64 imm) pc l \<Longrightarrow>
+  u64_of_u8_list [l ! pc, l ! (pc + 1), l ! (pc + 2), l ! (pc + 3), l ! (pc + 4), l ! (pc + 5), l ! (pc + 6), l ! (pc + 7)] = Some imm"
+  using list_in_list_u8_list_of_u64_simp
+  by presburger
+
+lemma length_u8_list_of_u64_eq_8 : "length (u8_list_of_u64 imm) = 8"
+  by (simp add: u8_list_of_u64_def)
 
 lemma x64_encode_decode_consistency:
-  "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow> x64_decode pc l = Some (length l_bin, ins)"
+  "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
+    x64_decode pc l = Some (length l_bin, ins)"
   apply (cases ins; simp_all)
-                      prefer 40
+                      prefer 4
   subgoal for dst imm
-    \<comment> \<open> Pshll_ri \<close>
-    sorry
-
-                      prefer 40
-  subgoal for imm
+ \<comment> \<open> Pmovq_ri\<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    using list_in_list_u8_list_of_u64_simp_sym [of imm "(Suc (Suc pc))" l]
+    using length_u8_list_of_u64_eq_8
+    apply (cases dst; simp_all add: bitfield_insert_u8_def x64_decode_def ireg_of_u8_def Suc3_eq_add_3 add.commute)
+    done
 
 (*proof done
 
@@ -115,12 +128,24 @@ lemma x64_encode_decode_consistency:
     done
 
   subgoal for dst imm
-  \<comment> \<open> Pmovl_ri  
+  \<comment> \<open> Pmovl_ri  \<close>
     apply (unfold Let_def)
-    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 0"; simp_all add:construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE )
-    subgoal 
-      apply (cases dst;cases imm; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def )\<close>
-    sorry
+    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64";
+        simp_all add:construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
+    subgoal \<comment> \<open> rex = 0x40  \<close>
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc pc))" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+
+    subgoal \<comment> \<open> rex <> 0x40  \<close>
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(pc+3)" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+    done
 
   subgoal for dst imm
  \<comment> \<open> Pmovq_ri
@@ -330,7 +355,33 @@ lemma x64_encode_decode_consistency:
     \<comment> \<open> Pxorl_ri \<close> 
     sorry
   
+  subgoal for dst imm
+    \<comment> \<open> Pshll_ri \<close>
+    apply (unfold Let_def)
+    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64",
+        simp_all)
 
+    subgoal \<comment> \<open> rex = 0x40 \<close>
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def
+          construct_rex_to_u8_def construct_modsib_to_u8_def)
+      done
 
+    subgoal  \<comment> \<open> rex <> 0x40 \<close>
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def
+          construct_rex_to_u8_def construct_modsib_to_u8_def Suc3_eq_add_3 add.commute)
+      done
+    done
+
+  subgoal for dst
+    \<comment> \<open> Pshlq_ri \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
+    apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def  Suc3_eq_add_3 add.commute)
+    done
+
+  subgoal for dst
+  \<comment> \<open> Pshll_r \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
 *)
 end

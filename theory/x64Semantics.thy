@@ -51,7 +51,7 @@ definition eval_addrmode32 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" 
     Val.add32 (case base of None \<Rightarrow> (Vint 0) | Some r \<Rightarrow> (rs (IR r)) )
       (Val.add32 (
         case ofs of None \<Rightarrow> (Vint 0) | Some (r, sc) \<Rightarrow>
-          if sc = 1 then (rs (IR r)) else Val.mul32 (rs (IR r)) (Vint (of_int sc))
+          if sc = 1 then (rs (IR r)) else Val.mul32 (rs (IR r)) (Vint (ucast sc))
         )
         (Vint (of_int const))
       )
@@ -63,7 +63,7 @@ definition eval_addrmode64 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" 
     Val.add64 (case base of None \<Rightarrow> (Vlong 0) | Some r \<Rightarrow> (rs (IR r)) )
       (Val.add64 (
         case ofs of None \<Rightarrow> (Vlong 0) | Some (r, sc) \<Rightarrow>
-          if sc = 1 then (rs (IR r)) else Val.mul64 (rs (IR r)) (Vlong (of_int sc))
+          if sc = 1 then (rs (IR r)) else Val.mul64 (rs (IR r)) (Vlong (ucast sc))
         )
         (Vlong (of_int const))
       )
