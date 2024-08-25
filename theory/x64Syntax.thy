@@ -204,7 +204,7 @@ datatype instruction =
   | Paddq_rr ireg ireg
   | Paddl_rr ireg ireg
   | Paddl_ri ireg u32
-  | Padd_mi addrmode u32 memory_chunk
+  | Paddq_mi addrmode u32 memory_chunk
   | Psubl_rr ireg ireg
   | Psubq_rr ireg ireg
   | Psubl_ri ireg u32
