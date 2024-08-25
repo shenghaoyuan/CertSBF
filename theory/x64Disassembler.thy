@@ -746,6 +746,32 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                         Some (7, Pcmpl_ri dst imm)
                       else None
                     else None))
+          else if modrm = 0b10 then
+            if reg2 = 0b100 then
+              let sib= l_bin!(pc+3) in
+              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
+              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
+              let(scale::u8) = unsigned_bitfield_extract_u8 5 2 sib in
+              let index  = bitfield_insert_u8 3 1 rindex x in
+              let base   = bitfield_insert_u8 3 1 rbase  b in
+                let d1 = l_bin!(pc+4) in
+                let d2 = l_bin!(pc+5) in
+                let d3 = l_bin!(pc+6) in
+                let d4 = l_bin!(pc+7) in
+                  case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                  if reg1 = 0b000 then
+                    let i1 = l_bin!(pc+8)  in
+                    let i2 = l_bin!(pc+9)  in
+                    let i3 = l_bin!(pc+10)  in
+                    let i4 = l_bin!(pc+11)  in
+                    case u32_of_u8_list [i1,i2,i3,i4] of None \<Rightarrow> None | Some imm \<Rightarrow> (
+                    if w = 1 \<and> r = 0 then
+                      case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
+                      case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                        Some (12, Paddq_mi (Addrmode (Some rb) (Some (ri, scale)) (signed dis)) imm M64 )))
+                    else None)
+                  else None)
+              else None                                
           else None
         else if op = 0xc1 then
           let imm = l_bin!(pc+3) in ( 

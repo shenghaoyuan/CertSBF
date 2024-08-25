@@ -230,6 +230,9 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg64 (rs (IR rd))))) m |
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add64 (rs (IR rd)) (rs (IR r1))))) m |
+  Paddq_mi   a n c \<Rightarrow> (case Mem.loadv  c m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
+                      (case Mem.storev c m (eval_addrmode64 a rs) (Val.add64 v (Vlong (scast n))) of None \<Rightarrow> Stuck |
+                         Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m'))| 
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (rs (IR r1))))) m |
   Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (Vint n)))) m |
   Psubq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.sub64 (rs (IR rd)) (rs (IR r1))))) m |
