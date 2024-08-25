@@ -46,12 +46,10 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             else if h1 = 0x89 then 
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
                 if modrm = 0b01  then
-                  let (imm::int) = uint (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
-                    if (imm \<le> 127) \<and> (imm \<ge> -128)then
-                      case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                      case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                          Some (4, Pmov_mr (Addrmode (Some dst) None imm) src  M16)))
-                    else None
+                  let (imm::u32) = scast(l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
+                    case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                    case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
+                        Some (4, Pmov_mr (Addrmode (Some dst) None imm) src  M16)))
                 else None
               else None
         else  
@@ -79,14 +77,12 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               else if op = 0x89 then 
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
                 if modrm = 0b01  then
-                  let (imm::int) = uint (l_bin!(pc+4)) in  \<comment> \<open> displacement8 \<close>
-                    if (imm \<le> 127) \<and> (imm \<ge> -128)then
+                  let (imm::u32) = scast (l_bin!(pc+4)) in  \<comment> \<open> displacement8 \<close>
                       case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                       case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
                         if w = 0 \<and> x = 0 then
                           Some (5, Pmov_mr (Addrmode (Some dst) None imm) src  M16)
                         else None))
-                    else None
                 else None
               else None
   else if h = 0x0f then \<comment> \<open> R8 escape \<close>
@@ -126,7 +122,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         let i4 = l_bin!(pc+5)  in
           case u32_of_u8_list [i1,i2,i3,i4] of None \<Rightarrow> None | Some d \<Rightarrow>(
           case cond_of_u8 flag of None \<Rightarrow> None | Some t \<Rightarrow>(
-            Some(6, Pjcc t (signed d))))
+            Some(6, Pjcc t d)))
       else None
   else if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then  \<comment> \<open> h is not rex  \<close>
       \<comment> \<open> R1 [opcode] \<close>
@@ -338,32 +334,26 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           \<comment> \<open> P2882 ` MOV: memory to reg`   ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
           else if h = 0x88 then
             if modrm = 0b01  then
-              let (imm::int) = uint (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
-                if (imm \<le> 127) \<and> (imm \<ge> -128)then
-                  case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                  case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                    Some (3, Pmov_mr (Addrmode (Some dst) None imm) src  M8)))
-                else None
+              let (dis::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
+                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
+                  Some (3, Pmov_mr (Addrmode (Some dst) None dis) src  M8)))
             else None
           else if h = 0x89 then
             if modrm = 0b01 then
               \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>
               \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
-              let (imm::int) = uint (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
-                if (imm \<le> 127) \<and> (imm \<ge> -128) then
-                  case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                  case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                      Some (3, Pmov_mr (Addrmode (Some dst) None 0) src M32)))
-                else None
+              let (imm::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
+                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
+                    Some (3, Pmov_mr (Addrmode (Some dst) None 0) src M32)))
             else None
           else if h = 0x8b then 
             if modrm = 0b01 then
-              let (imm::int) = uint (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
-                if (imm \<le> 127) \<and> (imm \<ge> -128)then
+              let (imm::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
                   case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                   case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                     Some (3, Pmov_rm src (Addrmode (Some dst) None imm)  M32)))
-                else None
             else None
           else None
     else if unsigned_bitfield_extract_u8 0 4 h = 0 then   \<comment> \<open> h is rex, the low 4-bit must not 0  \<close> 
@@ -483,13 +473,13 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             else if modrm = 0b01 then
               \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>
               \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
-              let (imm::int) = uint (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
+              let (dis::u32) = scast (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
                 case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
                   if w = 1 \<and> x = 0 then
-                    Some (4, Pmov_mr (Addrmode (Some dst) None 0) src M64)
+                    Some (4, Pmov_mr (Addrmode (Some dst) None dis) src M64)
                   else if w = 0 \<and> x = 0 then
-                    Some (4, Pmov_mr (Addrmode (Some dst) None 0) src M32)
+                    Some (4, Pmov_mr (Addrmode (Some dst) None dis) src M32)
                   else None))
             else None
           else if op = 0x87 then
@@ -749,9 +739,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else if modrm = 0b10 then
             if reg2 = 0b100 then
               let sib= l_bin!(pc+3) in
-              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
               let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
-              let(scale::u8) = unsigned_bitfield_extract_u8 5 2 sib in
+              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
+              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
               let index  = bitfield_insert_u8 3 1 rindex x in
               let base   = bitfield_insert_u8 3 1 rbase  b in
                 let d1 = l_bin!(pc+4) in
@@ -768,7 +758,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                     if w = 1 \<and> r = 0 then
                       case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
                       case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
-                        Some (12, Paddq_mi (Addrmode (Some rb) (Some (ri, scale)) (signed dis)) imm M64 )))
+                        Some (12, Paddq_mi (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) imm M64 )))
                     else None)
                   else None)
               else None                                
@@ -818,24 +808,24 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         else if h = 0x88 then
           \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
           if modrm = 0b01 \<and> x = 0 \<and> w = 0 then
-            let (dis::int) = uint (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
+            let (dis::u32) = scast (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                Some (4, Pmov_mr (Addrmode (Some dst) None dis) src  M8)))
+                Some (4, Pmov_mr (Addrmode (Some dst) None dis) src M8)))
           else None
         else if op = 0x8b then    
           if modrm = 0b01 \<and> x = 0 then
           \<comment> \<open> P2882 ` MOV: memory to reg`             ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
           \<comment> \<open> P2882 ` MOV: memory64 to qwordregister` ->  `0100 1RXB : 1000 1011 : mod qwordreg r/m`\<close>
-            let (dis::int) = uint (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
-                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                  Some (4, Pmov_rm src (Addrmode (Some dst) None dis)  (if w = 1 then M64 else M32))))  
+            let (dis::u32) = scast (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
+                Some (4, Pmov_rm src (Addrmode (Some dst) None dis)  (if w = 1 then M64 else M32))))  
           else None
         \<comment> \<open> P2881 `LEA: Load Effective Address: in qwordregister `  -> `0100 1RXB : 1000 1101 : mod qwordreg r/m` \<close>
         else if op = 0x8d then    
           if modrm = 0b01 then
-            let (dis::int) = uint (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
+            let (dis::u32) = scast (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
                 if w = 1 \<and> x = 0 then
@@ -850,7 +840,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
                 if w = 1 \<and> x = 0 then
-                  Some (7, Pleaq src (Addrmode (Some dst) None (signed dis)))
+                  Some (7, Pleaq src (Addrmode (Some dst) None dis))
                 else None)))
           else None
     \<comment> \<open> R6.6 [rex + opcode + modrm + displacement + imm] \<close>

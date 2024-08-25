@@ -103,7 +103,7 @@ abbreviation "SP \<equiv> RSP"
 type_synonym label = nat
 
 datatype addrmode =
-  Addrmode "ireg option" "(ireg * u8) option" int
+  Addrmode "ireg option" "(ireg * u8) option" u32
 
 datatype testcond =
     Cond_e | Cond_ne
@@ -257,10 +257,10 @@ datatype instruction =
   | Pcmpl_ri ireg u32
   | Pcmpq_ri ireg u32
 
-  | Pjcc testcond i32
-  | Pjmp i32
+  | Pjcc testcond u32
+  | Pjmp u32
   | Pcall_r ireg
-  | Pcall_i i32
+  | Pcall_i u32
   | Pret
   | Prdtsc
   | Pnop
