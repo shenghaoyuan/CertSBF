@@ -2,7 +2,7 @@ theory x64DecodeProof
 imports
   Main
   rBPFCommType rBPFSyntax
-  x64Assembler x64Disassembler BitsOpMore2 BitsOpMore3
+  x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3
 begin
 
 declare if_split_asm [split]
@@ -110,16 +110,61 @@ list_in_list l2 (pc + length l1) l                  \<Longrightarrow> list_in_li
 
 lemma Suc4_eq_add_4: "(Suc (Suc (Suc (Suc pc)))) = pc + 4" by simp
 
+lemma and_7_or_192_simp: "(and 7 (or (and 192 (scale << 6)) v ) ) = and 7 (v::u8)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        done
+      done
+    done
+  done
+
+lemma construct_modsib_to_u8_imply_base_reg_simp: "
+  rex = construct_rex_to_u8 True False (and (u8_of_ireg index_reg) 8 \<noteq> 0)
+    (and (u8_of_ireg base_reg) 8 \<noteq> 0) \<Longrightarrow>
+  v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
+    ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 0 3 v)
+      (unsigned_bitfield_extract_u8 0 1 rex)) = Some base_reg"
+  apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+      bitfield_insert_u8_def Let_def)
+  apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
+  apply (simp only: and_7_or_192_simp)
+  apply (cases index_reg; cases base_reg; simp)
+  done
+
 lemma construct_modsib_to_u8_imply_base_reg: "
   construct_rex_to_u8 True False (and (u8_of_ireg index_reg) 8 \<noteq> 0)
     (and (u8_of_ireg base_reg) 8 \<noteq> 0) = rex \<Longrightarrow>
   construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) = v \<Longrightarrow>
     ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 0 3 v)
       (unsigned_bitfield_extract_u8 0 1 rex)) = Some base_reg"
+  using construct_modsib_to_u8_imply_base_reg_simp by blast
+
+lemma and_7_or_24_simp: "and 7 (or (and 24 ((scale << 6) >> 3)) v) = and 7 (v::u8)"
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        done
+      done
+    done
+  done
+
+lemma construct_modsib_to_u8_imply_index_reg_simp: "
+  rex = construct_rex_to_u8 True False (and (u8_of_ireg index_reg) 8 \<noteq> 0)
+    (and (u8_of_ireg base_reg) 8 \<noteq> 0) \<Longrightarrow>
+  v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
+    ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 3 3 v)
+      (unsigned_bitfield_extract_u8 1 1 rex)) = Some index_reg"
   apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
       bitfield_insert_u8_def Let_def)
   apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
-  sorry
+  apply (simp only: and_7_or_24_simp)
+  apply (cases index_reg; cases base_reg; simp)
+  done
 
 lemma construct_modsib_to_u8_imply_index_reg: "
   construct_rex_to_u8 True False (and (u8_of_ireg index_reg) 8 \<noteq> 0)
@@ -127,16 +172,56 @@ lemma construct_modsib_to_u8_imply_index_reg: "
   construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) = v \<Longrightarrow>
     ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 3 3 v)
       (unsigned_bitfield_extract_u8 1 1 rex)) = Some index_reg"
-  apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
-      bitfield_insert_u8_def Let_def)
-  apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
-  sorry
+  using construct_modsib_to_u8_imply_index_reg_simp by blast
+
+lemma word_of_nat_3_eq: "word_of_nat n \<le> (3::u8) \<longleftrightarrow> ((word_of_nat n) ::u8) \<le> word_of_nat 3"
+  by simp
+
+lemma u8_le3_eq1: "(scale::u8) \<le> 3 \<Longrightarrow> scale = 0 \<or> scale = 1 \<or> scale = 2 \<or> scale = 3"
+  apply (cases scale, simp_all)
+  subgoal for n
+    apply (simp only: word_of_nat_3_eq)
+    apply (simp only: word_of_nat_less_eq_iff)
+    apply simp
+    apply (simp only: take_bit_eq_mod)
+    apply simp
+    by (metis Abs_fnat_hom_0 One_nat_def le_neq_implies_less less_2_cases less_Suc_eq
+        numeral_2_eq_2 numeral_3_eq_3 of_nat_1 of_nat_numeral)
+  done
+
+lemma u8_le3_eq2: "scale = 0 \<or> scale = 1 \<or> scale = 2 \<or> scale = 3 \<Longrightarrow> (scale::u8) \<le> 3"
+  apply (erule disjE, simp)
+  apply (erule disjE, simp)
+  apply (erule disjE, simp)
+  apply simp
+  done
+
+lemma u8_le3_eq: "(scale::u8) \<le> 3 \<longleftrightarrow> scale = 0 \<or> scale = 1 \<or> scale = 2 \<or> scale = 3"
+  using u8_le3_eq1 u8_le3_eq2 by blast
+
+
+lemma scale_le3_eq_simp: "scale \<le> 3 \<Longrightarrow> and 3 ((scale << 6) >> 6) = (scale::u8)"
+  apply (simp only: u8_le3_eq)
+  apply (erule disjE, simp)
+  apply (erule disjE, simp)
+  apply (erule disjE, simp)
+  apply simp
+  done
+
+lemma scale_le3_eq: "\<not> 3 < scale \<Longrightarrow> and 3 ((scale << 6) >> 6) = (scale::u8)"
+  using scale_le3_eq_simp
+  using linorder_le_less_linear by blast 
+
+lemma construct_modsib_to_u8_imply_scale_simp: " \<not> 3 < scale \<Longrightarrow>
+  v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
+    unsigned_bitfield_extract_u8 6 2 v = scale"
+  apply (simp add: construct_modsib_to_u8_def bitfield_insert_u8_def Let_def)
+  using scale_le3_eq by blast
 
 lemma construct_modsib_to_u8_imply_scale: " \<not> 3 < scale \<Longrightarrow>
   construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) = v \<Longrightarrow>
     unsigned_bitfield_extract_u8 6 2 v = scale"
-  apply (simp add: construct_modsib_to_u8_def bitfield_insert_u8_def Let_def)
-  sorry
+  using construct_modsib_to_u8_imply_scale_simp by blast
 
 
 lemma x64_encode_decode_consistency:
