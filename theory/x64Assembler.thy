@@ -906,8 +906,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         Some [rex, op, rop] |
   \<comment> \<open> P2878 `CALL: direct`   -> `1110 1000 : displacement32` \<close>
   Pcall_i d  \<Rightarrow>
-    let (op::u8) = 0xe8 in
-      Some [op,(ucast (and d 0xff)),(ucast (d >> 8)),(ucast (d >> 16)),(ucast (d >> 24))]|
+      Some ([0xe8] @ (u8_list_of_u32 d))|
   \<comment> \<open> P2887 ` RET near`   -> ` 1100 0011` \<close>
   Pret \<Rightarrow>
     Some [0xc3]|

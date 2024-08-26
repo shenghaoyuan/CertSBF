@@ -246,6 +246,7 @@ datatype instruction =
 
   | Ppushl_r ireg
   | Ppushl_i u32
+  | Ppushl_rm ireg addrmode memory_chunk
   | Ppopl  ireg
 
   | Ptestl_rr ireg ireg

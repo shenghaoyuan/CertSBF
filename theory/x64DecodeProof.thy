@@ -144,36 +144,8 @@ lemma x64_encode_decode_consistency:
     x64_decode pc l = Some (length l_bin, ins)"
   apply (cases ins; simp_all)
 
-                      prefer 61
-  subgoal for dst imm
-  \<comment> \<open> Ptestl_ri  \<close>
-    apply (unfold Let_def)
-    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64";
-        simp_all add:construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
-    subgoal \<comment> \<open> rex = 0x40  \<close>
-      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc pc))" l]
-      using length_u8_list_of_u32_eq_4
-      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
-          ireg_of_u8_def Suc3_eq_add_3 add.commute)
-      done
+                      prefer 73
 
-    subgoal \<comment> \<open> rex <> 0x40  \<close>
-      using list_in_list_u8_list_of_u32_simp_sym [of imm "(pc+3)" l]
-      using length_u8_list_of_u32_eq_4
-      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
-          ireg_of_u8_def Suc3_eq_add_3 add.commute)
-      done
-    done
-
-
-                      prefer 61
-  subgoal for dst imm
-  \<comment> \<open> Ptestq_ri  \<close>
-    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
-    using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc (Suc pc)))" l]
-    using length_u8_list_of_u32_eq_4
-    apply (cases dst; simp_all add: bitfield_insert_u8_def x64_decode_def ireg_of_u8_def Suc3_eq_add_3 add.commute)
-    done
 
 (*proof done
 
@@ -241,11 +213,11 @@ lemma x64_encode_decode_consistency:
     \<comment> \<open> Pmov_mi \<close> 
     sorry
 
-  subgoal for dst src chunk
+  subgoal for test dst src
     \<comment> \<open> Pcmovl \<close> 
     sorry
 
-  subgoal for dst chunk
+  subgoal for test dst src
     \<comment> \<open> Pcmovq  \<close> 
     sorry
 
@@ -650,6 +622,122 @@ lemma x64_encode_decode_consistency:
     \<comment> \<open> Ptestq_rr \<close>
     apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst imm
+  \<comment> \<open> Ptestl_ri  \<close>
+    apply (unfold Let_def)
+    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64";
+        simp_all add:construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
+    subgoal \<comment> \<open> rex = 0x40  \<close>
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc pc))" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+
+    subgoal \<comment> \<open> rex <> 0x40  \<close>
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(pc+3)" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+    done
+
+  subgoal for dst imm
+  \<comment> \<open> Ptestq_ri  \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc (Suc pc)))" l]
+    using length_u8_list_of_u32_eq_4
+    apply (cases dst; simp_all add: bitfield_insert_u8_def x64_decode_def ireg_of_u8_def Suc3_eq_add_3 add.commute)
+    done
+
+  subgoal for dst src
+    \<comment> \<open> Pcmpl_rr \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst src
+    \<comment> \<open> Pcmpq_rr \<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def;  erule conjE; erule conjE)
+    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for dst imm
+  \<comment> \<open> Pcmpl_ri  \<close>
+    apply (unfold Let_def)
+    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64";
+        simp_all add:construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
+    subgoal \<comment> \<open> rex = 0x40  \<close>
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc pc))" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+
+    subgoal \<comment> \<open> rex <> 0x40  \<close>
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(pc+3)" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+    done
+
+  subgoal for dst imm
+  \<comment> \<open> Pcmpq_ri\<close>
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE; erule conjE)
+    using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc (Suc pc)))" l]
+    using length_u8_list_of_u32_eq_4
+    apply (cases dst; simp_all add: bitfield_insert_u8_def x64_decode_def ireg_of_u8_def Suc3_eq_add_3 add.commute)
+    done
+
+  subgoal for test imm
+    \<comment> \<open> Pjcc \<close>
+    subgoal 
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc (Suc pc))" l]
+      using length_u8_list_of_u32_eq_4
+      apply (cases test; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def
+            Suc3_eq_add_3 add.commute)
+    done
+
+  subgoal for imm
+    \<comment> \<open> Pjmp \<close>
+    subgoal 
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc pc)" l]
+      using length_u8_list_of_u32_eq_4
+      apply (auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def
+            Suc3_eq_add_3 add.commute)
+    done
+
+  subgoal for dst 
+    \<comment> \<open> Pcall_r \<close> 
+    apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def)
+    subgoal by (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    done
+
+  subgoal for imm 
+    \<comment> \<open> Pcall_i \<close> 
+    subgoal 
+      using list_in_list_u8_list_of_u32_simp_sym [of imm "(Suc pc)" l]
+      using length_u8_list_of_u32_eq_4
+      apply (auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def
+            Suc3_eq_add_3 add.commute)
+    done
+
+  subgoal 
+    \<comment> \<open> Pret \<close>
+    apply(unfold Let_def x64_decode_def; simp)
+    done
+
+  subgoal 
+    \<comment> \<open> Prdtsc \<close>
+    apply(unfold Let_def x64_decode_def; simp)
+    done
+
+  subgoal 
+    \<comment> \<open> Pnop \<close>
+    apply(unfold Let_def x64_decode_def; simp)
     done
 
 

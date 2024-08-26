@@ -139,8 +139,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
           Some (1, Ppopl dst))
       \<comment> \<open> R4 [opcode + displacement] \<close>
-      else if h = 0xe8 then
-        \<comment> \<open> P2881 `JMP: direct` -> `1110 1001 : displacement32` \<close>
+      else if h = 0xe8 then   
+        \<comment> \<open> P2878 `CALL: direct`   -> `1110 1000 : displacement32` \<close>
         let i1 = l_bin!(pc+1)  in
         let i2 = l_bin!(pc+2)  in
         let i3 = l_bin!(pc+3)  in
@@ -148,7 +148,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           case u32_of_u8_list [i1,i2,i3,i4] of None \<Rightarrow> None |
             Some d \<Rightarrow> ( Some (5, Pcall_i (scast d))) 
       else if h = 0xe9 then
-        \<comment> \<open> P2878 `CALL: direct`   -> `1110 1000 : displacement32` \<close>
+        \<comment> \<open> P2881 `JMP: direct` -> `1110 1001 : displacement32` \<close>
         let i1 = l_bin!(pc+1)  in
         let i2 = l_bin!(pc+2)  in
         let i3 = l_bin!(pc+3)  in
@@ -198,6 +198,16 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           \<comment> \<open> P2879 `IDIV AL, AX, or EAX by register2`   -> ` 0100 000B : 1111 011w : 11 111 reg` \<close>
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                  Some (2, Pidivl_r dst))
+           \<comment> \<open> P2892 `TEST: immediate and register`   -> `  1111 011w : 11 000 reg : imm ` \<close>
+            else if modrm = 0b11 \<and> reg1 = 0b000 then
+              let i1 = l_bin!(pc+2)  in
+              let i2 = l_bin!(pc+3)  in
+              let i3 = l_bin!(pc+4)  in
+              let i4 = l_bin!(pc+5)  in
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                    case u32_of_u8_list [i1, i2, i3,i4] of None \<Rightarrow> None |
+                      Some imm \<Rightarrow> 
+                          Some (6, Ptestl_ri dst imm))
             else None
           \<comment> \<open> P2891 `SUB register1 from register2` -> `0100 WR0B : 0010 100w : 11 reg1 reg2` \<close> 
           else if h = 0x29 then
@@ -318,18 +328,6 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                         Some (6, Pcmpl_ri dst imm)
                       else None)
             else None
-          \<comment> \<open> P2892 `TEST: immediate and register`   -> `  1111 011w : 11 000 reg : imm ` \<close>
-          else if h = 0xf7 then
-            let i1 = l_bin!(pc+2)  in
-            let i2 = l_bin!(pc+3)  in
-            let i3 = l_bin!(pc+4)  in
-            let i4 = l_bin!(pc+5)  in
-              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                  case u32_of_u8_list [i1, i2, i3,i4] of None \<Rightarrow> None |
-                    Some imm \<Rightarrow> 
-                      if modrm = 0b11 \<and> reg1 = 0b000 then
-                        Some (6, Ptestl_ri dst imm) 
-                      else None)
           \<comment> \<open> R5 [opcode + modrm + displacement] \<close>
           \<comment> \<open> P2882 ` MOV: memory to reg`   ->  `0100 0RXB : 1000 101w : mod reg r/m`\<close>
           else if h = 0x88 then
@@ -506,8 +504,11 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (3, Paddq_rr dst src)
-                else Some (3, Paddl_rr dst src) )))
+                if w = 1 \<and> b = 0 then 
+                  Some (3, Paddq_rr dst src)
+                else if w = 1 \<and> b = 0 then
+                   Some (3, Paddl_rr dst src)
+                else None )))
             else None
           else if op = 0x29 then
             \<comment> \<open> P2891 `SUB register1 from register2` -> `0100 WR0B : 0010 100w : 11 reg1 reg2` \<close> 
@@ -521,11 +522,14 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else None)))
             else None
           else if op = 0xf7 then
-            \<comment> \<open> P2884 `NEG  register2`                           -> ` 0100 W00B : 1111 011w : 11 011 reg` \<close>
+            \<comment> \<open> P2884 `NEG  register2`     -> ` 0100 W00B : 1111 011w : 11 011 reg` \<close>
             if modrm = 0b11 \<and> reg1 = 0b011 then 
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 then Some (3, Pnegq dst) 
-                else Some (3, Pnegl dst))
+                if w = 1 \<and> r = 0 \<and> x = 0 then 
+                  Some (3, Pnegq dst) 
+                else if w = 0 \<and> r = 0 \<and> x = 0 then 
+                  Some (3, Pnegl dst)
+                else None)
             \<comment> \<open> P2884 `MUL  AL, AX, or EAX with register2`       -> ` 0100 000B : 1111 011w : 11 100 reg` \<close>
             \<comment> \<open> P2884 `MUL  RAX with qwordregister (to RDX:RAX)` -> ` 0100 100B : 1111 011w : 11 100 qowrdreg` \<close>
             else if modrm = 0b11 \<and> reg1 = 0b100 then
@@ -562,6 +566,20 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else if w = 0 \<and> r = 0 \<and> x = 0 then 
                   Some (3, Pidivl_r dst)
                 else None)
+            \<comment> \<open> P2892 `TEST: immediate and register`   -> ` 0100 000B 1111 011w : 11 000 reg : imm ` \<close>
+            \<comment> \<open> P2892 `TEST: immediate32 and qwordregister `   -> ` 0100 100B 1111 0111 : 11 000 qwordreg : imm32 ` \<close>
+            else if modrm = 0b11 \<and> reg1 = 0b000 then
+              let i1 = l_bin!(pc+3)  in
+              let i2 = l_bin!(pc+4)  in
+              let i3 = l_bin!(pc+5)  in
+              let i4 = l_bin!(pc+6)  in
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                case u32_of_u8_list [i1, i2, i3, i4] of None \<Rightarrow> None | Some imm \<Rightarrow> (
+                    if w = 1 \<and> r = 0 \<and> x = 0 then
+                      Some (7, Ptestq_ri dst imm)
+                    else if w = 0 \<and> r = 0 \<and> x = 0 then
+                      Some (7, Ptestl_ri dst imm)
+                    else None))
             else None
           else if op = 0x09 then
           \<comment> \<open> P2884 `OR register1 to register2` -> ` 0100 WR0B : 0000 100w : 11 reg1 reg2` \<close>
@@ -656,7 +674,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         else if op = 0xff then
           if modrm = 0b11 \<and> reg1 = 0b010 then
             case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-              if w = 0 \<and> r = 0 \<and> b = 0 then
+              if w = 0 \<and> r = 0 \<and> x = 0 then
                 Some (3, Pcall_r dst)
               else None) 
           else None
@@ -788,22 +806,6 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else if w = 0 \<and> x = 0 \<and> r = 0 then Some (4, Psarl_ri dst imm)
                 else None)
             else None)
-        \<comment> \<open> P2892 `TEST: immediate and register`   -> ` 0100 000B 1111 011w : 11 000 reg : imm ` \<close>
-        \<comment> \<open> P2892 `TEST: immediate32 and qwordregister `   -> ` 0100 100B 1111 0111 : 11 000 qwordreg : imm32 ` \<close>
-        else if op = 0xf7 then
-          let i1 = l_bin!(pc+3)  in
-          let i2 = l_bin!(pc+4)  in
-          let i3 = l_bin!(pc+5)  in
-          let i4 = l_bin!(pc+6)  in
-            case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-            case u32_of_u8_list [i1, i2, i3, i4] of None \<Rightarrow> None | Some imm \<Rightarrow> (
-              if modrm = 0b11 \<and> reg1 = 0b000 then
-                if w = 1 \<and> r = 0 \<and> x = 0 then
-                  Some (7, Ptestq_ri dst imm)
-                else if w = 0 \<and> r = 0 \<and> x = 0 then
-                  Some (7, Ptestl_ri dst imm)
-                else None
-              else None))
     \<comment> \<open> R6.5 [rex + opcode + modrm + displacement] \<close>
         else if h = 0x88 then
           \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
