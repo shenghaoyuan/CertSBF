@@ -936,14 +936,12 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 let d3 = l_bin!(pc+6) in
                 let d4 = l_bin!(pc+7) in
                   case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
-                  if reg1 = 0b110 then
                     if w = 1  then
                       case ireg_of_u8 src   of None \<Rightarrow> None | Some src \<Rightarrow> (
                       case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
                       case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
                         Some (8, Pmov_rm src (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) M64))))
-                    else None
-                  else None)
+                    else None)
           else None
         \<comment> \<open> P2881 `LEA: Load Effective Address: in qwordregister `  -> `0100 1RXB : 1000 1101 : mod qwordreg r/m` \<close>
         else if op = 0x8d then    

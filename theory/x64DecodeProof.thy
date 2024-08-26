@@ -223,11 +223,94 @@ lemma construct_modsib_to_u8_imply_scale: " \<not> 3 < scale \<Longrightarrow>
     unsigned_bitfield_extract_u8 6 2 v = scale"
   using construct_modsib_to_u8_imply_scale_simp by blast
 
-value "scast (0::u32) = (0::u8)"
-value "scast (0::u8) = (0::u32)"
+lemma [simp]: "(ofs::u32) \<le> 127 \<Longrightarrow>
+    bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))) = False" sorry
 
-lemma scast_uscat: "ofs \<le> 128 \<Longrightarrow> scast (ofs::u32) = (v::u8) \<Longrightarrow> (scast v) = ofs"
-  sorry
+lemma [simp]: "(ofs::u32) \<le> 127 \<Longrightarrow>
+    bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = False" sorry
+
+lemma [simp]: "-128 \<le> (ofs::u32) \<Longrightarrow>
+  bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True" sorry
+
+lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
+  (v::u8) = scast (ofs::u32) \<Longrightarrow> (scast v) = ofs"
+  apply simp
+  apply (simp only: scast_eq)
+
+  apply (simp add: bit_eq_iff)
+  apply (auto simp add: bit_simps)
+  subgoal for n
+    apply (drule_tac x="n" in spec)
+    apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal for n6 apply (cases n6, simp_all)
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+
+  subgoal for n
+    apply (drule_tac x="n" in spec)
+    apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal for n6 apply (cases n6, simp_all)
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+
+  subgoal for n
+    apply (drule_tac x="n" in spec)
+    apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal for n6 apply (cases n6, simp_all)
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+
+  subgoal for n
+    apply (drule_tac x="n" in spec)
+    apply (cases n, simp_all)
+    subgoal for n1 apply (cases n1, simp_all)
+      subgoal for n2 apply (cases n2, simp_all)
+        subgoal for n3 apply (cases n3, simp_all)
+          subgoal for n4 apply (cases n4, simp_all)
+            subgoal for n5 apply (cases n5, simp_all)
+              subgoal for n6 apply (cases n6, simp_all)
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma scast_u32_scast_u8_eq: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
+  scast (ofs::u32) = (v::u8) \<Longrightarrow> (scast v) = ofs"
+  using scast_u32_scast_u8_eq_simp by blast
 
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
@@ -237,11 +320,79 @@ lemma x64_encode_decode_consistency:
   prefer 5
   subgoal for dst addr chunk
   \<comment> \<open> Pmov_rm \<close>
-    apply (unfold Let_def)
-    apply (cases addr)
-    apply (cases chunk, simp_all)
+    apply (cases addr, simp)
     subgoal for base index2 ofs
-      apply (cases base, simp_all)
+      apply (cases base; simp)
+      subgoal for base_reg
+        apply (cases index2; simp add: Let_def)
+        subgoal \<comment> \<open> ofs < u8 /\ index2 = None  /\ not rex \<close>
+          sorry
+(*
+          apply (cases chunk; simp)
+          apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def)
+          using scast_u32_scast_u8_eq
+          apply (cases dst; simp; cases base_reg; simp add: x64_decode_def Let_def ireg_of_u8_def
+                bitfield_insert_u8_def)
+          done *)
+
+        subgoal \<comment> \<open> ofs < u8 /\ index2 = None  /\ has rex \<close>
+          sorry
+(*
+          using scast_u32_scast_u8_eq
+          apply (cases chunk; simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
+            bitfield_insert_u8_def Let_def)
+          subgoal \<comment> \<open> index2 = None  /\ has rex  /\ M32 \<close>
+            apply (cases dst; simp; cases base_reg; simp add: x64_decode_def Let_def ireg_of_u8_def
+                  bitfield_insert_u8_def  Suc3_eq_add_3 add.commute)
+            done
+          subgoal \<comment> \<open> index2 = None  /\ has rex  /\ M64 \<close>
+            apply (cases dst; simp; cases base_reg; simp add: x64_decode_def Let_def ireg_of_u8_def
+                  bitfield_insert_u8_def  Suc3_eq_add_3 add.commute)
+            done
+          done *)
+
+        subgoal \<comment> \<open> ofs > u8 /\ index2 = None  /\ not rex \<close>
+          sorry
+(*
+          apply (cases chunk; simp; erule conjE)
+          apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def)
+
+          using list_in_list_u8_list_of_u32_simp_sym [of ofs "(Suc (Suc pc))" l]
+          using length_u8_list_of_u32_eq_4
+
+          apply (cases dst; simp; cases base_reg; simp add: x64_decode_def Let_def ireg_of_u8_def
+                    bitfield_insert_u8_def Suc3_eq_add_3 add.commute)
+          done *)
+
+        subgoal \<comment> \<open> ofs > u8 /\ index2 = None  /\ has rex \<close>
+
+          apply (cases chunk; simp; erule conjE; erule conjE; erule conjE)
+          apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def)
+          subgoal
+            using list_in_list_u8_list_of_u32_simp_sym [of ofs "(Suc (Suc (Suc pc)))" l]
+            using length_u8_list_of_u32_eq_4
+
+            apply (cases dst; simp; cases base_reg; simp add: x64_decode_def Let_def ireg_of_u8_def
+                    bitfield_insert_u8_def Suc3_eq_add_3 Suc4_eq_add_4 add.commute)
+          done
+
+
+        subgoal \<comment> \<open> index2 = Some \<close>
+          apply (cases chunk; simp)
+          apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def
+              bitfield_insert_u8_def Let_def)
+          apply (cases dst; simp; cases base_reg; simp add: x64_decode_def Let_def ireg_of_u8_def
+                bitfield_insert_u8_def)
+
+          done
+
+
+    apply (unfold Let_def)
+    apply (cases chunk, simp_all)
+      apply (cases base, s- 128 \<le> ofsimp_all)
       subgoal for base_reg by (cases index2, simp_all)
       subgoal for base_reg by (cases index2, simp_all)
       subgoal for base_reg by (cases index2, simp_all)

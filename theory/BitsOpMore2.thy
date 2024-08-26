@@ -26,7 +26,7 @@ word_of_int (uint v_u8)  :: u64
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
               subgoal for n6 apply (cases n6, simp_all)
-                subgoal for n6 apply (cases n6, simp_all)
+                subgoal for n7 apply (cases n7, simp_all)
                   done
                 done
               done
