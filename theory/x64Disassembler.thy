@@ -444,7 +444,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
       \<comment> \<open> R8.5 [rex + escape + opcode + modrm] \<close>
       \<comment> \<open> P2919 `MOVcc : resgister2  to resgister1 ` -> `0100 0R0B 0000 1111: 0100 tttn : 11 reg1 reg2` \<close>
       \<comment> \<open> P2919 `MOVcc : qwordregister2 to qwordregister1` -> ` 0100 1R0B 0000 1111: 0100 tttn : 11 qwordreg1 qwordreg2` \<close>
-        else if unsigned_bitfield_extract_u8 4 4 op = 0b0100 then
+        else if unsigned_bitfield_extract_u8 4 4 op1 = 0b0100 then
           let flag = (unsigned_bitfield_extract_u8 0 4 op1)  in 
           let reg = l_bin!(pc+3) in
           let modrm = unsigned_bitfield_extract_u8 6 2 reg in
@@ -786,8 +786,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 \<comment> \<open> R6.6 [rex + opcode + modrm + displacement + imm] \<close>
                 \<comment> \<open> P2882 `MOV immediate32 to memory64 (zero extend)` -> ` 0100 10XB 1100 0111 : mod 000 r/m : imm32` \<close>
                 else if modrm = 0b01 then
-                  if w = 1 \<and> x = 0 then
-                    Some (8, Pmov_mi (Addrmode (Some dst) None (signed (l_bin!(pc+3)))) imm M64)
+                  if w = 1 then
+                    let (dis::u32) = scast (l_bin!(pc+3))in
+                    Some (8, Pmov_mi (Addrmode (Some dst) None dis) imm M64)
                   else None
                 else if modrm = 0b10  then
                   let d1 = l_bin!(pc+3)  in
@@ -796,8 +797,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   let d4 = l_bin!(pc+6)  in
                     case u32_of_u8_list [d1, d2, d3, d4] of None \<Rightarrow> None |
                       Some dis \<Rightarrow> (
-                        if w = 1 \<and> x = 0 then
-                          Some (11, Pmov_mi (Addrmode (Some dst) None (signed dis)) imm M64)
+                        if w = 1 then
+                          Some (11, Pmov_mi (Addrmode (Some dst) None dis) imm M64)
                         else None)
                 else None
               else None)
@@ -925,7 +926,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   Some (7, Pmov_rm src (Addrmode (Some dst) None dis) (if w = 1 then M64 else M32))
                 else None)))  
             else \<comment> \<open> sib \<close>
-              let sib= l_bin!(pc+3) in
+              let sib = l_bin!(pc+3) in
               let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
               let rindex = unsigned_bitfield_extract_u8 3 3 sib in
               let scale  = unsigned_bitfield_extract_u8 6 2 sib in
@@ -940,7 +941,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                       case ireg_of_u8 src   of None \<Rightarrow> None | Some src \<Rightarrow> (
                       case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
                       case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
-                        Some (8, Pmov_rm src (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) M64))))
+                        Some (8, Pmov_rm src (Addrmode (Some rb) (Some (ri, scale))  dis) M64))))
                     else None)
           else None
         \<comment> \<open> P2881 `LEA: Load Effective Address: in qwordregister `  -> `0100 1RXB : 1000 1101 : mod qwordreg r/m` \<close>

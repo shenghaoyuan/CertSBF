@@ -125,7 +125,7 @@ fun u8_of_cond :: "testcond \<Rightarrow> u8" where
 "u8_of_cond Cond_le = 14" | (* LE, NG: Less than or equal to, Not greater than *)
 "u8_of_cond Cond_g  = 15"   (* NLE, G: Not less than or equal to, Greater*)
 
-fun cond_of_u8 :: "u8 \<Rightarrow> testcond option" where
+definition cond_of_u8 :: "u8 \<Rightarrow> testcond option" where
 "cond_of_u8 i = (
   if i = 2 then
     Some Cond_b
