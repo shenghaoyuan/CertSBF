@@ -24,6 +24,9 @@ definition i8_MIN :: "i8" where
 definition i8_MAX :: "i8" where
 "i8_MAX = 0x7F"
 
+definition u8_MAX :: "u8" where
+"u8_MAX = 0xFF"
+
 definition i32_MIN :: "i32" where
 "i32_MIN = 0x80000000"
 

@@ -51,7 +51,7 @@ definition eval_addrmode32 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" 
     Val.add32 (case base of None \<Rightarrow> (Vint 0) | Some r \<Rightarrow> (rs (IR r)) )
       (Val.add32 (
         case ofs of None \<Rightarrow> (Vint 0) | Some (r, sc) \<Rightarrow>
-          Val.mul32 (rs (IR r)) (Vint (ucast sc))
+          Val.shl32 (rs (IR r)) (Vbyte (ucast sc))
         )
         (Vint const)
       )
@@ -63,7 +63,7 @@ definition eval_addrmode64 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" 
     Val.add64 (case base of None \<Rightarrow> (Vlong 0) | Some r \<Rightarrow> (rs (IR r)) )
       (Val.add64 (
         case ofs of None \<Rightarrow> (Vlong 0) | Some (r, sc) \<Rightarrow>
-          Val.mul64 (rs (IR r)) (Vlong (ucast sc))
+          Val.shl64 (rs (IR r)) (Vbyte (ucast sc))
         )
         (Vlong (scast const))
       )
@@ -216,8 +216,12 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pcmovl   t rd r1\<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (testVal32 t rs (rs (IR rd)) (rs (IR r1))))) m |
   Pcmovq   t rd r1\<Rightarrow> Next (nextinstr  sz (rs#(IR rd) <- (testVal64 t rs (rs (IR rd)) (rs (IR r1))))) m |
   Pxchgq_rr rd r1 \<Rightarrow> let tmp = rs (IR rd) in
-                       let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
-                         Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
+                     let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
+                       Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
+  Pxchgq_rm r1 a c\<Rightarrow> (case Mem.loadv M64 m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
+                     (let tmp = (rs (IR r1)) in 
+                       case Mem.storev M64 m (eval_addrmode64 a rs) tmp of None \<Rightarrow> Stuck |
+                        Some m' \<Rightarrow> Next (nextinstr_nf sz  (rs#(IR r1) <- v)) m'))| 
   Pmov_mi   a n c \<Rightarrow> (case Mem.storev c m (eval_addrmode64 a rs) (Vint n) of
                         None \<Rightarrow> Stuck| 
                         Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m') |  \<comment> \<open>store imm32 to mem32/64 \<close>
@@ -230,7 +234,7 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg64 (rs (IR rd))))) m |
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add64 (rs (IR rd)) (rs (IR r1))))) m |
-  Paddq_mi   a n c \<Rightarrow> (case Mem.loadv  c m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
+  Paddq_mi  a n c \<Rightarrow> (case Mem.loadv  c m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
                       (case Mem.storev c m (eval_addrmode64 a rs) (Val.add64 v (Vlong (scast n))) of None \<Rightarrow> Stuck |
                          Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m'))| 
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (rs (IR r1))))) m |
@@ -287,6 +291,8 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 
   Ppushl_r  r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
   Ppushl_i  n     \<Rightarrow> exec_push sz M32 m rs (Vint (ucast n)) |
+  Ppushq_m  a c   \<Rightarrow> (case Mem.loadv M64 m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow>(
+                     exec_push sz M64 m rs v))|
   Ppopl     rd    \<Rightarrow> exec_pop  sz M32 m rs (IR rd) |
 
   Ptestl_rr r1 r2 \<Rightarrow> Next (nextinstr sz (compare_ints  (Val.and32 (rs (IR r1)) (rs (IR r2))) (Vint 0) rs)) m |
@@ -305,7 +311,7 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pjmp      d     \<Rightarrow> Next (nextinstr (scast d) rs) m |
   Pcall_r   r1    \<Rightarrow> exec_call sz M64 m rs (rs (IR r1))|
   Pcall_i   d     \<Rightarrow> exec_call sz M64 m rs (Vlong (scast d))|
-  Pret            \<Rightarrow> exec_ret  sz M64 m rs| \<comment>\<open> In 64-bit mode, the default operation size of near returns is the stack-address size, i.e., 64 bits. \<close>
+  Pret            \<Rightarrow> exec_ret  sz M64 m rs|  \<comment>\<open> In 64-bit mode, the default operation size of near returns is the stack-address size, i.e., 64 bits. \<close>
   Prdtsc          \<Rightarrow> let rs1 = (rs#(IR RAX)<- (Val.intoflongl ((rs TSC)))) in
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.intoflongh  (rs TSC)))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |

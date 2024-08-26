@@ -193,6 +193,7 @@ datatype instruction =
   | Pcmovl testcond ireg ireg
   | Pcmovq testcond ireg ireg
   | Pxchgq_rr ireg ireg
+  | Pxchgq_rm ireg addrmode memory_chunk
   (** Moves with conversion *)
   | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
   | Pcdq 
@@ -246,7 +247,7 @@ datatype instruction =
 
   | Ppushl_r ireg
   | Ppushl_i u32
-  | Ppushl_rm ireg addrmode memory_chunk
+  | Ppushq_m addrmode memory_chunk
   | Ppopl  ireg
 
   | Ptestl_rr ireg ireg

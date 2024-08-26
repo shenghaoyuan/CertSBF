@@ -37,20 +37,42 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         False \<comment> \<open> X \<close>
         (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
         ) in
-      if (dis \<le> 127) \<and> (dis \<ge> -128) then   \<comment> \<open> displacement8 : mod 01\<close>
+      if dis \<le> 128 then   \<comment> \<open> displacement8 : mod 01\<close>
         let (dis::u8) = ucast dis in
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg rb) in
         if rex = 0x40 then    
           case c of 
             M32 \<Rightarrow> Some [0x8b, rop, dis] |
-            M64 \<Rightarrow> Some [0x8b, rop, dis] |
             _   \<Rightarrow> None
         else 
           case c of 
             M32 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
             M64 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
             _   \<Rightarrow> None
-      else None)
+      else  \<comment> \<open> displacement8 : mod 10\<close>
+        let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg rd) (u8_of_ireg rb) in
+        if rex = 0x40 then    
+          case c of 
+            M32 \<Rightarrow> Some ([0x8b, rop] @ (u8_list_of_u32 dis)) |
+            _   \<Rightarrow> None
+        else 
+          case c of 
+            M32 \<Rightarrow> Some ([rex, 0x8b, rop] @ (u8_list_of_u32 dis)) |
+            M64 \<Rightarrow> Some ([rex, 0x8b, rop] @ (u8_list_of_u32 dis)) |
+            _   \<Rightarrow> None)
+    |  Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>
+        if scale > 3 then None
+        else 
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 1RXB \<close>
+            True \<comment> \<open> W \<close>
+            (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+            (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
+            (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+            ) in
+        let (op:: u8) = 0x89 in
+        let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg rd) 0b100 in
+        let (sib::u8) = construct_modsib_to_u8 scale (u8_of_ireg ri) (u8_of_ireg rb) in
+          Some ([rex, op, rop, sib] @ (u8_list_of_u32 dis))
     | _ \<Rightarrow> None) 
   |
   \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
@@ -65,23 +87,46 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         False \<comment> \<open> X \<close>
         (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
         ) in
-      if (dis \<le> 127) \<and> (dis \<ge> -128) then   \<comment> \<open> displacement8 : mod 01 TOOD: mod 10 \<close>
+      if dis \<le> 128 then   \<comment> \<open> displacement8 : mod 01 \<close>
         let (dis::u8) = ucast dis in
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
-        if rex = 0x40 then
+        if rex = 0x40 then(
           case c of 
             M8  \<Rightarrow> Some [0x88, rop, dis] |
             M16 \<Rightarrow> Some [0x66, 0x89, rop, dis] |
             M32 \<Rightarrow> Some [0x89, rop, dis] |
-            M64 \<Rightarrow> Some [0x89, rop, dis]
-        else 
+            _   \<Rightarrow> None)
+        else (
           case c of 
             M8  \<Rightarrow> Some [rex, 0x88, rop, dis] |
             M16 \<Rightarrow> Some [0x66,rex, 0x89, rop, dis] |
             M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
-            M64 \<Rightarrow> Some [rex, 0x89, rop, dis]
-      else None
-    | _ \<Rightarrow> None)
+            M64 \<Rightarrow> Some [rex, 0x89, rop, dis])
+      else    \<comment> \<open> displacement8 : mod 10\<close>       
+        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
+        if rex = 0x40 then(
+          case c of 
+            M32 \<Rightarrow> Some ([0x89, rop] @ (u8_list_of_u32 dis)) |
+            _   \<Rightarrow> None)
+        else (
+          case c of 
+            M32 \<Rightarrow> Some ([rex, 0x89, rop] @ (u8_list_of_u32 dis)) |
+            M64 \<Rightarrow> Some ([rex, 0x89, rop] @ (u8_list_of_u32 dis)) |
+            _   \<Rightarrow> None)
+    |  Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>
+        if scale > 3 then None
+        else 
+          let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 1RXB \<close>
+            True \<comment> \<open> W \<close>
+            (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+            (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
+            (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+            ) in
+        let (op:: u8) = 0x89 in
+        let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg r1) 0b100 in
+        let (sib::u8) = construct_modsib_to_u8 scale (u8_of_ireg ri) (u8_of_ireg rb) in
+            Some ([rex, op, rop, sib] @ (u8_list_of_u32 dis))
+    | _ \<Rightarrow> None) 
   |
   \<comment> \<open> P2887 `MOV register1 to register2` -> `0100 0R0B : 1000 1001 : 11 reg1 reg2` \<close>
   Pmovl_rr rd r1 \<Rightarrow>
@@ -198,6 +243,23 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     let (op::u8) = 0x87 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
       Some [rex, op, rop] |
+  \<comment> \<open> P2893 `XCHG: memory64 with qwordregister `   -> ` 0100 1R0B 1000 011w : 11 reg1 reg2 ` \<close>
+  Pxchgq_rm r1 a M64 \<Rightarrow>( 
+    case a of Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>(
+      if scale > 3 then None
+      else 
+        let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1RXB` \<close>
+          True \<comment> \<open> W \<close>
+          (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+          (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
+          (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+          ) in
+        let (op:: u8) = 0x87 in
+        let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg r1) 0b100 in
+        let (sib::u8) = construct_modsib_to_u8 scale (u8_of_ireg ri) (u8_of_ireg rb) in
+            Some ([rex, op, rop, sib] @ (u8_list_of_u32 dis))
+      ) |
+      _ \<Rightarrow> None)|
   \<comment> \<open> P2878 `CDQ : sign_extend_eax_edx `   -> ` 1001 1001 ` \<close>  
   Pcdq \<Rightarrow>
     Some [0x99] |
@@ -248,7 +310,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     case a of Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>(
       if scale > 3 then None
       else 
-        let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1RXB` \<close>
+        let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `10XB` \<close>
           True \<comment> \<open> W \<close>
           False \<comment> \<open> R \<close>
           (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
@@ -758,7 +820,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       else 
         Some [rex, op] |
   \<comment> \<open> P2885 `PUSH: memory64`   -> ` 0100 W00BS : 1111 1111 : 11 110 reg64 ` \<close>
-  \<comment> \<open> P2885 `PUSH: imm32`   -> ` 0110 1000 : imm32 `(ucast (and n 0xff)),(ucast (n >> 8)),(ucast (n >> 16)),(ucast (n >> 24)) \<close>
+  \<comment> \<open> P2885 `PUSH: imm32`   -> ` 0110 1000 : imm32 ` \<close>
   Ppushl_i n \<Rightarrow>
     let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `100B` \<close>
       True  \<comment> \<open> W ; Solana may made mistake here, but it won't bring mistakes \<close> 
@@ -768,6 +830,22 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       ) in
     let (op::u8) = 0x68 in
       Some ([rex,op] @ (u8_list_of_u32 n)) |
+  \<comment> \<open> P2885 `PUSH: memory64`   -> `0100 W00BS : 1111 1111 : mod 110 r/m ` \<close>
+  Ppushq_m a M64 \<Rightarrow>(
+    case a of Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>(
+      if scale > 3 then None
+      else 
+        let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `100B` \<close>
+        True \<comment> \<open> W \<close>
+        False \<comment> \<open> R \<close>
+        (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
+        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        ) in
+      let (op::u8) = 0xff in 
+      let (rop::u8) = construct_modsib_to_u8 0b10 0b110 0b100 in
+      let (sib::u8) = construct_modsib_to_u8 scale (u8_of_ireg ri) (u8_of_ireg rb) in
+         Some ([rex, op, rop, sib] @ (u8_list_of_u32 dis)))
+    | _ \<Rightarrow> None)|
   \<comment> \<open> P2885 `POP: qwordregister (alternate encoding)`   -> ` 0100 W00B : 0101 1 reg64 ` \<close>
   Ppopl rd \<Rightarrow>
     let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `000B` \<close>

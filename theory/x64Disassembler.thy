@@ -46,12 +46,12 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             else if h1 = 0x89 then 
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
                 if modrm = 0b01  then
-                  let (imm::u32) = scast(l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
+                  let (dis::u32) = scast(l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
                     case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                     case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                        Some (4, Pmov_mr (Addrmode (Some dst) None imm) src  M16)))
+                        Some (4, Pmov_mr (Addrmode (Some dst) None dis) src  M16)))
                 else None
-              else None
+            else None
         else  
           let w = unsigned_bitfield_extract_u8 3 1 h1 in
           let r = unsigned_bitfield_extract_u8 2 1 h1 in
@@ -169,6 +169,22 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                 Some (2, Pmovl_rr dst src)))
+            else if modrm = 0b01 then
+              \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>
+              \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
+              let (dis::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
+                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
+                    Some (3, Pmov_mr (Addrmode (Some dst) None dis) src M32)))
+            else if modrm = 0b10 then 
+              let d1 = l_bin!(pc+2) in
+              let d2 = l_bin!(pc+3) in
+              let d3 = l_bin!(pc+4) in
+              let d4 = l_bin!(pc+5) in
+                case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                   Some (6, Pmov_mr (Addrmode (Some dst) None dis) src M32))))
             else None
           else if h = 0x01 then
           \<comment> \<open> P2876 `ADD register1 to register2` -> `0100 0R0B : 0000 000w : 11 reg1 reg2` \<close>
@@ -337,21 +353,21 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
                   Some (3, Pmov_mr (Addrmode (Some dst) None dis) src  M8)))
             else None
-          else if h = 0x89 then
-            if modrm = 0b01 then
-              \<comment> \<open> P2882 ` MOV: reg to memory` ->  `0100 WRXB : 1000 1001 : mod reg r/m` \<close>
-              \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
-              let (imm::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
-                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
-                    Some (3, Pmov_mr (Addrmode (Some dst) None 0) src M32)))
-            else None
           else if h = 0x8b then 
             if modrm = 0b01 then
-              let (imm::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
+              let (dis::u32) = scast (l_bin!(pc+2)) in  \<comment> \<open> displacement8 \<close>
                   case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
                   case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                    Some (3, Pmov_rm src (Addrmode (Some dst) None imm)  M32)))
+                    Some (3, Pmov_rm src (Addrmode (Some dst) None dis)  M32)))
+            else if modrm = 0b10 then \<comment> \<open> displacement32 \<close>
+              let d1 = l_bin!(pc+2) in
+              let d2 = l_bin!(pc+3) in
+              let d3 = l_bin!(pc+4) in
+              let d4 = l_bin!(pc+5) in
+                case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                   Some (6, Pmov_rm src (Addrmode (Some dst) None dis) M32))))
             else None
           else None
     else if unsigned_bitfield_extract_u8 0 4 h = 0 then   \<comment> \<open> h is rex, the low 4-bit must not 0  \<close> 
@@ -480,16 +496,67 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   else if w = 0 \<and> x = 0 then
                     Some (4, Pmov_mr (Addrmode (Some dst) None dis) src M32)
                   else None))
+            else if modrm = 0b10 then
+              if reg2 \<noteq> 0b100 then 
+                let d1 = l_bin!(pc+3) in
+                let d2 = l_bin!(pc+4) in
+                let d3 = l_bin!(pc+5) in
+                let d4 = l_bin!(pc+6) in
+                  case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                      case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                      case ireg_of_u8 dst of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                        Some (7, Pmov_mr (Addrmode (Some rb) None (scast dis)) src (if w = 1 then M64 else M32)))))
+              else 
+                let sib= l_bin!(pc+3) in
+                let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
+                let rindex = unsigned_bitfield_extract_u8 3 3 sib in
+                let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+                let index  = bitfield_insert_u8 3 1 rindex x in
+                let base   = bitfield_insert_u8 3 1 rbase  b in
+                  let d1 = l_bin!(pc+4) in
+                  let d2 = l_bin!(pc+5) in
+                  let d3 = l_bin!(pc+6) in
+                  let d4 = l_bin!(pc+7) in
+                    case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                      if w = 1 then
+                        case ireg_of_u8 src   of None \<Rightarrow> None | Some src \<Rightarrow> (
+                        case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
+                        case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                          Some (8, Pmov_mr (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) src M64))))
+                      else None)
             else None
           else if op = 0x87 then
           \<comment> \<open> P2893 `XCHG: register1 with register2 `   -> ` 0100 1R0B 1000 011w : 11 reg1 reg2 ` \<close>
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 \<and> x = 0 then 
+                if w = 1 \<and> x = 0 then           
                   Some (3, Pxchgq_rr dst src)
                 else None)))
-            else None
+          \<comment> \<open> P2893 `XCHG: memory64 with qwordregister `  -> ` 0100 1RXB 1000 011w : 11 reg1 reg2 ` \<close>
+          else if modrm = 0b10 then 
+            if reg2 = 0b100 then                           
+              let sib= l_bin!(pc+3) in
+              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
+              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
+              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let index  = bitfield_insert_u8 3 1 rindex x in
+              let base   = bitfield_insert_u8 3 1 rbase  b in
+                let d1 = l_bin!(pc+4) in
+                let d2 = l_bin!(pc+5) in
+                let d3 = l_bin!(pc+6) in
+                let d4 = l_bin!(pc+7) in
+                  case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                  if reg1 = 0b110 then
+                    if w = 1  then
+                      case ireg_of_u8 src   of None \<Rightarrow> None | Some src \<Rightarrow> (
+                      case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
+                      case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                        Some (8, Pxchgq_rm src (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) M64))))
+                    else None
+                  else None)
+              else None
+          else None
           else if op = 0x63 then
           \<comment> \<open> P2883 `MOVXD dwordregister2 to qwordregister1` -> ` 0100 1R0B 0110 0011 : 11 quadreg1 dwordreg2` \<close>
             if modrm = 0b11 then (
@@ -677,6 +744,28 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               if w = 0 \<and> r = 0 \<and> x = 0 then
                 Some (3, Pcall_r dst)
               else None) 
+        \<comment> \<open> P2885 `PUSH: memory64`   -> `0100 W00BS : 1111 1111 : mod 110 r/m ` \<close>
+          else if modrm = 0b10 then 
+            if reg2 = 0b100 then                           
+              let sib= l_bin!(pc+3) in
+              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
+              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
+              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let index  = bitfield_insert_u8 3 1 rindex x in
+              let base   = bitfield_insert_u8 3 1 rbase  b in
+                let d1 = l_bin!(pc+4) in
+                let d2 = l_bin!(pc+5) in
+                let d3 = l_bin!(pc+6) in
+                let d4 = l_bin!(pc+7) in
+                  case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                  if reg1 = 0b110 then
+                    if w = 1 \<and> r = 0 then
+                      case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
+                      case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                        Some (8, Ppushq_m (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) M64 )))
+                    else None
+                  else None)
+              else None
           else None
         \<comment> \<open> R6.4 [rex + opcode + modrm + imm] \<close>
         else if op = 0xc7 then
@@ -780,7 +869,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                         Some (12, Paddq_mi (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) imm M64 )))
                     else None)
                   else None)
-              else None                                
+              else None
           else None
         else if op = 0xc1 then
           let imm = l_bin!(pc+3) in ( 
@@ -823,6 +912,38 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
                 Some (4, Pmov_rm src (Addrmode (Some dst) None dis)  (if w = 1 then M64 else M32))))  
+          else if modrm = 0b10  then
+            if reg2 \<noteq> 0b100 then
+              let d1 = l_bin!(pc+3) in
+              let d2 = l_bin!(pc+4) in
+              let d3 = l_bin!(pc+5) in
+              let d4 = l_bin!(pc+6) in
+              case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+              case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> ( 
+                if x = 0 then
+                  Some (7, Pmov_rm src (Addrmode (Some dst) None dis) (if w = 1 then M64 else M32))
+                else None)))  
+            else \<comment> \<open> sib \<close>
+              let sib= l_bin!(pc+3) in
+              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
+              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
+              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let index  = bitfield_insert_u8 3 1 rindex x in
+              let base   = bitfield_insert_u8 3 1 rbase  b in
+                let d1 = l_bin!(pc+4) in
+                let d2 = l_bin!(pc+5) in
+                let d3 = l_bin!(pc+6) in
+                let d4 = l_bin!(pc+7) in
+                  case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
+                  if reg1 = 0b110 then
+                    if w = 1  then
+                      case ireg_of_u8 src   of None \<Rightarrow> None | Some src \<Rightarrow> (
+                      case ireg_of_u8 index of None \<Rightarrow> None | Some ri \<Rightarrow> (
+                      case ireg_of_u8 base  of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                        Some (8, Pmov_rm src (Addrmode (Some rb) (Some (ri, scale)) (scast dis)) M64))))
+                    else None
+                  else None)
           else None
         \<comment> \<open> P2881 `LEA: Load Effective Address: in qwordregister `  -> `0100 1RXB : 1000 1101 : mod qwordreg r/m` \<close>
         else if op = 0x8d then    
