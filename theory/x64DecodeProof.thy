@@ -223,13 +223,55 @@ lemma construct_modsib_to_u8_imply_scale: " \<not> 3 < scale \<Longrightarrow>
     unsigned_bitfield_extract_u8 6 2 v = scale"
   using construct_modsib_to_u8_imply_scale_simp by blast
 
+value "scast (0::u32) = (0::u8)"
+value "scast (0::u8) = (0::u32)"
+
+lemma scast_uscat: "ofs \<le> 128 \<Longrightarrow> scast (ofs::u32) = (v::u8) \<Longrightarrow> (scast v) = ofs"
+  sorry
 
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
     x64_decode pc l = Some (length l_bin, ins)"
   apply (cases ins; simp_all)
 
-                      prefer 73
+  prefer 5
+  subgoal for dst addr chunk
+  \<comment> \<open> Pmov_rm \<close>
+    apply (unfold Let_def)
+    apply (cases addr)
+    apply (cases chunk, simp_all)
+    subgoal for base index2 ofs
+      apply (cases base, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      done
+
+    subgoal for base index2 ofs
+      apply (cases base, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      subgoal for base_reg by (cases index2, simp_all)
+      done
+
+    subgoal for base index2 ofs
+      apply (cases base, simp_all)
+      subgoal for base_reg 
+        apply (cases index2, simp_all)
+        subgoal
+          apply (erule conjE;erule conjE)
+          apply (cases dst)
+          subgoal
+            apply simp
+            apply (simp add: construct_rex_to_u8_def bitfield_insert_u8_def Let_def ireg_of_u8_def
+                construct_modsib_to_u8_def)
+            apply (cases base_reg, simp add: x64_decode_def Let_def ireg_of_u8_def  bitfield_insert_u8_def)
+
+
+
+
 
 
 (*proof done

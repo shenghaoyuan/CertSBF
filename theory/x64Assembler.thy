@@ -38,7 +38,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       if dis \<le> 128 then   \<comment> \<open> displacement8 : mod 01\<close>
-        let (dis::u8) = ucast dis in
+        let (dis::u8) = scast dis in
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg rb) in
         if rex = 0x40 then    
           case c of 
@@ -61,7 +61,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
             M64 \<Rightarrow> Some ([rex, 0x8b, rop] @ (u8_list_of_u32 dis)) |
             _   \<Rightarrow> None)
     |  Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>
-        if scale > 3 then None
+        if scale > 3 | c \<noteq> M64 then None
         else 
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 1RXB \<close>
             True \<comment> \<open> W \<close>
@@ -88,7 +88,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       if dis \<le> 128 then   \<comment> \<open> displacement8 : mod 01 \<close>
-        let (dis::u8) = ucast dis in
+        let (dis::u8) = scast dis in
         let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
         if rex = 0x40 then(
           case c of 
