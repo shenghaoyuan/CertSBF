@@ -104,7 +104,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
             M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
             M64 \<Rightarrow> Some [rex, 0x89, rop, dis])
       else if (and (u8_of_ireg rb) 0b0111 \<noteq> 0b100) then   \<comment> \<open> displacement8 : mod 10\<close>       
-        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rb) in
+        let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg r1) (u8_of_ireg rb) in
         if rex = 0x40 then(
           case c of 
             M32 \<Rightarrow> Some ([0x89, rop] @ (u8_list_of_u32 dis)) |

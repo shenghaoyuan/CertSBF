@@ -895,7 +895,7 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else None)
             else None)
     \<comment> \<open> R6.5 [rex + opcode + modrm + displacement] \<close>
-        else if h = 0x88 then
+        else if op = 0x88 then
           \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `0100 0RXB : 1000 1000 : mod reg r/m `\<close>
           if modrm = 0b01 \<and> x = 0 \<and> w = 0 then
             let (dis::u32) = scast (l_bin!(pc+3)) in  \<comment> \<open> displacement8 \<close>
