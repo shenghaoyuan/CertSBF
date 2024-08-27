@@ -241,7 +241,7 @@ lemma Suc7_eq_add_7:"(Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = 7+n" by simp
 lemma bit_n_plus_le_7: "(v::u32) \<le> 127 \<Longrightarrow> bit v (7+m) = False"
   using bit_n_plus_le [of v 7 m] by simp
 
-lemma [simp]: "(ofs::u32) \<le> 127 \<Longrightarrow>
+lemma u32_le_127_ge_7_False: "(ofs::u32) \<le> 127 \<Longrightarrow>
     bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = False"
   apply (simp only: Suc7_eq_add_7)
   using bit_n_plus_le_7 [of ofs n] by simp
@@ -249,21 +249,22 @@ lemma [simp]: "(ofs::u32) \<le> 127 \<Longrightarrow>
 (*
 lemma [simp]: "- (2 * 2 ^ n) \<le> v \<Longrightarrow> - (2 ^ n) \<le> (v::u32) div 2"
   apply (cases "even v")
+  subgoal
+    apply (elim evenE)
+    subgoal for b
+      apply simp
 
-
-lemma bit_n_ge: "(v::u32) \<ge> - (2^n) \<Longrightarrow> bit v n"
-  apply (simp only: bit_iff_odd)
+lemma bit_minus_n_ge: "- (2^n) \<le> (v::u32) \<Longrightarrow> bit v n"
+  apply (simp add: bit_iff_odd)
   apply (induction n arbitrary: v)
   subgoal for v apply simp
     using dvd_minus_iff odd_one word_order.extremum_uniqueI by blast
 
-  subgoal for n v apply simp
+  subgoal for n v apply simp *)
 
-value "(-128::u32)"
-value "(2^32::u32)" *)
-
-lemma [simp]: "-128 \<le> (ofs::u32) \<Longrightarrow>
+lemma u32_ge_minus_128_ge_7_True: "-128 \<le> (ofs::u32) \<Longrightarrow>
   bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True" sorry
+
 
 lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
   (v::u8) = scast (ofs::u32) \<Longrightarrow> (scast v) = ofs"
@@ -280,7 +281,7 @@ lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrig
         subgoal for n3 apply (cases n3, simp_all)
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
-              subgoal for n6 apply (cases n6, simp_all)
+              subgoal for n6 apply (cases n6, simp_all add: u32_le_127_ge_7_False)
                 done
               done
             done
@@ -297,7 +298,7 @@ lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrig
         subgoal for n3 apply (cases n3, simp_all)
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
-              subgoal for n6 apply (cases n6, simp_all)
+              subgoal for n6 apply (cases n6, simp_all add: u32_le_127_ge_7_False)
                 done
               done
             done
@@ -314,7 +315,7 @@ lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrig
         subgoal for n3 apply (cases n3, simp_all)
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
-              subgoal for n6 apply (cases n6, simp_all)
+              subgoal for n6 apply (cases n6, simp_all add: u32_ge_minus_128_ge_7_True)
                 done
               done
             done
@@ -331,7 +332,7 @@ lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrig
         subgoal for n3 apply (cases n3, simp_all)
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
-              subgoal for n6 apply (cases n6, simp_all)
+              subgoal for n6 apply (cases n6, simp_all add: u32_ge_minus_128_ge_7_True)
                 done
               done
             done
