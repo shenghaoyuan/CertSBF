@@ -503,9 +503,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 let d3 = l_bin!(pc+5) in
                 let d4 = l_bin!(pc+6) in
                   case u32_of_u8_list [d1,d2,d3,d4] of None \<Rightarrow> None | Some dis \<Rightarrow>(
-                      case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
-                      case ireg_of_u8 dst of None \<Rightarrow> None | Some rb \<Rightarrow> (
-                        Some (7, Pmov_mr (Addrmode (Some rb) None (scast dis)) src (if w = 1 then M64 else M32)))))
+                    case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
+                    case ireg_of_u8 dst of None \<Rightarrow> None | Some rb \<Rightarrow> (
+                      Some (7, Pmov_mr (Addrmode (Some rb) None dis) src (if w = 1 then M64 else M32)))))
               else 
                 let sib= l_bin!(pc+3) in
                 let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
@@ -569,9 +569,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             if modrm = 0b11 then (
               case ireg_of_u8 src of None \<Rightarrow> None | Some src \<Rightarrow> (
               case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
-                if w = 1 \<and> b = 0 then 
+                if w = 1 \<and> x = 0 then 
                   Some (3, Paddq_rr dst src)
-                else if w = 1 \<and> b = 0 then
+                else if w = 0 \<and> x = 0 then
                    Some (3, Paddl_rr dst src)
                 else None )))
             else None

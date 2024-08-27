@@ -81,16 +81,16 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   \<comment> \<open> P2882 ` MOV: reg to memory`             ->  `0100 0RXB : 1000 1001 : mod reg r/m` \<close>
   \<comment> \<open> P2882 ` MOV: qwordregister to memory64` ->  `0100 1RXB 1000 1001 : mod qwordreg r/m` \<close>
   Pmov_mr  a r1 c \<Rightarrow> (
-    case a of Addrmode (Some rd) None dis \<Rightarrow> 
+    case a of Addrmode (Some rb) None dis \<Rightarrow> 
       let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
         (c = M64) \<comment> \<open> W \<close>
         (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
         False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       if dis \<le> 127 \<or> dis \<ge> -128  then   \<comment> \<open> displacement8 : mod 01 \<close>
         let (dis::u8) = scast dis in
-        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
+        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rb) in
         if rex = 0x40 then(
           case c of 
             M8  \<Rightarrow> Some [0x88, rop, dis] |
@@ -103,8 +103,8 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
             M16 \<Rightarrow> Some [0x66,rex, 0x89, rop, dis] |
             M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
             M64 \<Rightarrow> Some [rex, 0x89, rop, dis])
-      else    \<comment> \<open> displacement8 : mod 10\<close>       
-        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rd) in
+      else if (and (u8_of_ireg rb) 0b0111 \<noteq> 0b100) then   \<comment> \<open> displacement8 : mod 10\<close>       
+        let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg r1) (u8_of_ireg rb) in
         if rex = 0x40 then(
           case c of 
             M32 \<Rightarrow> Some ([0x89, rop] @ (u8_list_of_u32 dis)) |
@@ -114,8 +114,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
             M32 \<Rightarrow> Some ([rex, 0x89, rop] @ (u8_list_of_u32 dis)) |
             M64 \<Rightarrow> Some ([rex, 0x89, rop] @ (u8_list_of_u32 dis)) |
             _   \<Rightarrow> None)
+        else None
     |  Addrmode (Some rb) (Some (ri,scale)) dis \<Rightarrow>
-        if scale > 3 then None
+        if scale > 3 | c \<noteq> M64 then None
         else 
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 1RXB \<close>
             True \<comment> \<open> W \<close>
@@ -788,7 +789,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       Some [rex, ex, op] |
   \<comment> \<open> P2881 `LEA: Load Effective Address: in qwordregister `  -> `0100 1RXB : 1000 1101 : mod qwordreg r/m` \<close>
   Pleaq rd a \<Rightarrow>(
-    case a of Addrmode (Some rb) None dis \<Rightarrow>
+    case a of Addrmode (Some rb) None dis \<Rightarrow>(
       let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
         True \<comment> \<open> W \<close>
         (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
@@ -797,12 +798,13 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         ) in
       let (op:: u8) = 0x8d in
         if dis \<le> 127 \<or> dis \<ge> -128  then   \<comment> \<open> displacement8 : mod 01 \<close>
-          let (dis::u8) = ucast dis in
+          let (dis::u8) = scast dis in
           let (rop::u8) = construct_modsib_to_u8 0b01 (u8_of_ireg rd) (u8_of_ireg rb) in
             Some ([ rex, op, rop, dis ])
         else  \<comment> \<open> displacement32 : mod 10 \<close>
           let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg rd) (u8_of_ireg rb) in
-              Some ([ rex, op, rop ] @ (u8_list_of_u32 dis)))|
+              Some ([ rex, op, rop ] @ (u8_list_of_u32 dis)))
+      | _ \<Rightarrow> None)|
   \<comment> \<open> P2886 `RDTSC – Read Time-Stamp Counter`   -> ` 0000 1111 0011 0001 ` \<close>
   Prdtsc \<Rightarrow>
     let (opes::u8) = 0x0f in
