@@ -223,11 +223,46 @@ lemma construct_modsib_to_u8_imply_scale: " \<not> 3 < scale \<Longrightarrow>
     unsigned_bitfield_extract_u8 6 2 v = scale"
   using construct_modsib_to_u8_imply_scale_simp by blast
 
-lemma [simp]: "(ofs::u32) \<le> 127 \<Longrightarrow>
-    bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))) = False" sorry
+lemma bit_n_ge: "bit v n \<Longrightarrow> (v::u32) \<ge> 2^n"
+  apply (simp only: bit_iff_odd)
+  by (metis div_word_less dvd_0_right verit_comp_simplify1(3))
 
-lemma [simp]: "(ofs::u32) \<le> 127 \<Longrightarrow>
-    bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = False" sorry
+lemma bit_n_plus_ge: "bit v (n+m) \<Longrightarrow> (v::u32) \<ge> 2^n"
+  apply (simp only: bit_iff_odd)
+  by (metis (no_types, lifting) div_0 div_exp_eq div_word_less even_zero verit_comp_simplify1(3))
+
+lemma bit_n_plus_lt: "(v::u32) < 2^n \<Longrightarrow> bit v (n+m) = False" using bit_n_plus_ge
+  using verit_comp_simplify1(3) by blast
+
+lemma bit_n_plus_le: "(v::u32) \<le> 2^n - 1 \<Longrightarrow> bit v (n+m) = False" using bit_n_plus_lt
+  by (meson bit_n_plus_ge exp_add_not_zero_imp_left exp_eq_0_imp_not_bit one_neq_zero
+      order_trans sub_wrap word_less_1)
+
+lemma Suc7_eq_add_7:"(Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = 7+n" by simp
+
+lemma bit_n_plus_le_7: "(v::u32) \<le> 127 \<Longrightarrow> bit v (7+m) = False"
+  using bit_n_plus_le [of v 7 m] by simp
+
+lemma ofs_ge_n: "(ofs::u32) \<le> 127 \<Longrightarrow>
+    bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = False"
+  apply (simp only: Suc7_eq_add_7)
+  using bit_n_plus_le_7 [of ofs n] by simp
+
+(*
+lemma [simp]: "- (2 * 2 ^ n) \<le> v \<Longrightarrow> - (2 ^ n) \<le> (v::u32) div 2"
+  apply (cases "even v")
+
+
+lemma bit_n_ge: "(v::u32) \<ge> - (2^n) \<Longrightarrow> bit v n"
+  apply (simp only: bit_iff_odd)
+  apply (induction n arbitrary: v)
+  subgoal for v apply simp
+    using dvd_minus_iff odd_one word_order.extremum_uniqueI by blast
+
+  subgoal for n v apply simp
+
+value "(-128::u32)"
+value "(2^32::u32)" *)
 
 lemma [simp]: "-128 \<le> (ofs::u32) \<Longrightarrow>
   bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True" sorry
