@@ -1,7 +1,7 @@
 theory x64_encode_movl_rr_2
 imports
   Main
-  rBPFCommType rBPFSyntax
+  rBPFCommType
   x64Syntax BitsOpMore
 begin
 

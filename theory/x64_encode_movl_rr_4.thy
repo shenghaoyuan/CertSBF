@@ -1,7 +1,7 @@
 theory x64_encode_movl_rr_4
 imports
   Main
-  rBPFCommType rBPFSyntax
+  rBPFCommType
   x64Syntax BitsOpMore
 begin
 
@@ -85,11 +85,15 @@ lemma encode_movl_rr_4_subgoal_4 : "and 15 ((v::u8) >> 4) = 4 \<Longrightarrow> 
     done
   done
 
-lemma encode_movl_rr_4_subgoal_k : "and 15 (v >> 4) = 4 \<Longrightarrow> and 3 ((k::u8) >> 6) = 3 \<Longrightarrow>
+lemma encode_movl_rr_4_subgoal_k : "and 15 (v >> 4) = 4 \<Longrightarrow>
+    and 15 v \<noteq> 0 \<Longrightarrow>
+    and 3 (k >> 6) = 3 \<Longrightarrow>
+    u8_of_ireg src = or 8 (and 7 (k >> 3)) \<Longrightarrow>
+    u8_of_ireg dst = or (and 8 (v << 3)) (and 7 k) \<Longrightarrow>
     \<not> bit v 3 \<Longrightarrow>
     \<not> bit v (Suc 0) \<Longrightarrow>
     bit v 2 \<Longrightarrow>
-    and (or 4 (and (and (case bit v 0 of True \<Rightarrow> 1 | False \<Rightarrow> 0) (- 3)) (- 5))) (- 9) \<noteq> (0::u8) \<Longrightarrow>
+    or 64 (and (and (or 4 (and (and (case bit v 0 of True \<Rightarrow> 1 | False \<Rightarrow> 0) (- 3)) (- 5))) (- 9)) (- 241)) \<noteq> 64 \<Longrightarrow>
     v = or 64 (and (and (or 4 (and (and (case bit v 0 of True \<Rightarrow> 1 | False \<Rightarrow> 0) (- 3)) (- 5))) (- 9)) (- 241)) \<and>
     k = or 192 (and (or (and 56 (or 64 (and 56 ((k >> 3) << 3)))) (and (and 7 (or (and 8 (v << 3)) (and 7 k))) (- 57))) (- 193))"
   apply (rule conjI)
@@ -136,20 +140,27 @@ lemma encode_movl_rr_4_subgoal_k : "and 15 (v >> 4) = 4 \<Longrightarrow> and 3 
     done
   done
 
+
 lemma encode_movl_rr_4: "
-    and 15 (v >> 4) = 4 \<Longrightarrow>
-    and 3 (k >> 6) = 3 \<Longrightarrow>
+    and 15 (v >> 4) = 4 \<Longrightarrow> and 15 v \<noteq> 0 \<Longrightarrow> and 3 (k >> 6) = 3 \<Longrightarrow>
     ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (k >> 3)) (and 1 (v >> 2))) = Some src \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 k) (and 1 v)) = Some dst \<Longrightarrow>
-    \<not> bit v 3 \<Longrightarrow>
-    \<not> bit v (Suc 0) \<Longrightarrow>
-    bit v 2 \<Longrightarrow>
-    bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg dst) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg src) 8 \<noteq> 0))) 0 \<noteq> 0 \<Longrightarrow>
-    v = bitfield_insert_u8 4 4 (bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg dst) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg src) 8 \<noteq> 0))) 0) 4 \<and>
+    ireg_of_u8 (bitfield_insert_u8 3 (Suc 0) (and 7 (k)) (and 1 v)) = Some dst \<Longrightarrow>
+    \<not> bit v 3 \<Longrightarrow> \<not> bit v (Suc 0) \<Longrightarrow> bit v 2 \<Longrightarrow> 
+    bitfield_insert_u8 4 4
+     (bitfield_insert_u8 3 (Suc 0)
+       (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg dst) 8 \<noteq> 0)) 0)
+         (u8_of_bool (and (u8_of_ireg src) 8 \<noteq> 0)))
+       0) 4 \<noteq>  64 \<Longrightarrow>
+    v =  bitfield_insert_u8 4 4
+           (bitfield_insert_u8 3 (Suc 0)
+             (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg dst) 8 \<noteq> 0)) 0)
+               (u8_of_bool (and (u8_of_ireg src) 8 \<noteq> 0)))
+             0) 4 \<and>
     k = bitfield_insert_u8 6 2 (bitfield_insert_u8 3 3 (and 7 (u8_of_ireg dst)) (and 7 (u8_of_ireg src))) 3"
   apply (simp add: u8_of_ireg_of_u8_iff[symmetric])
   apply (unfold bitfield_insert_u8_def u8_of_bool_def Let_def)
   apply simp
   using encode_movl_rr_4_subgoal_k by blast
+
 
 end

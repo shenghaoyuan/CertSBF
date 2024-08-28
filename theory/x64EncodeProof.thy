@@ -1,7 +1,7 @@
 theory x64EncodeProof
 imports
   Main
-  rBPFCommType rBPFSyntax
+  rBPFCommType
   x64Assembler x64Disassembler
   x64_encode_movl_rr_1 x64_encode_movl_rr_3
   x64_encode_movl_rr_4 x64_encode_movl_rr_5 x64_encode_movl_rr_6
@@ -41,11 +41,19 @@ lemma x64_decode_encode_consistency:
         done
       done
 
-      \<comment> \<open> prove False from context:
-      - rex = 0: `bitfield_insert_u8 3 (Suc 0) (bitfield_insert_u8 2 (Suc 0) (bitfield_insert_u8 (Suc 0) (Suc 0) (u8_of_bool (and (u8_of_ireg dst) 8 \<noteq> 0)) 0) (u8_of_bool (and (u8_of_ireg src) 8 \<noteq> 0))) 0 = 0`
-      - but src > 8: `and 1 (l ! pc >> 2) \<noteq> 0` \<close> 
-    subgoal
-      using encode_movl_rr_3 by blast
+    subgoal by (unfold bitfield_insert_u8_def;simp)
+
+    subgoal 
+      apply (cases l_bin, simp_all)
+      subgoal for l_bin1
+        apply (cases l_bin1, simp_all)
+        subgoal for l_bin2
+        apply (cases l_bin2, simp_all)
+        subgoal for t l_bin3
+          using encode_movl_rr_3 by blast
+        done
+      done
+    done
 
     subgoal
       apply (cases l_bin, simp_all)
@@ -60,7 +68,16 @@ lemma x64_decode_encode_consistency:
       done
 
     subgoal
-      using encode_movl_rr_5 by blast
+      apply (cases l_bin, simp_all)
+      subgoal for l_bin1
+        apply (cases l_bin1, simp_all)
+        subgoal for l_bin2
+        apply (cases l_bin2, simp_all)
+          subgoal for t l_bin3
+            using encode_movl_rr_5 by blast
+          done
+        done
+      done
 
     subgoal
       apply (cases l_bin, simp_all)
@@ -75,7 +92,7 @@ lemma x64_decode_encode_consistency:
       done
 
     done
-
+(*
   subgoal for dst src
   \<comment> \<open> Pmovq_rr \<close> 
     apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)
@@ -175,6 +192,6 @@ lemma x64_decode_encode_consistency:
 
   sorry
 
-declare if_split_asm [split del]
+declare if_split_asm [split del]*)
 
 end
