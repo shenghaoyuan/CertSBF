@@ -1,4 +1,4 @@
-session Solana_rBPF = AutoCorres2 +
+session Solana_rBPF = Main +
   options [timeout = 600]
   theories
     rBPFSyntax
