@@ -1,7 +1,7 @@
 theory x64Disassembler
 imports
   Main
-  rBPFCommType rBPFSyntax
+  rBPFCommType
   x64Syntax
 begin
 

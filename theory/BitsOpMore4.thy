@@ -1,11 +1,11 @@
-theory BitsOpMore3
+theory BitsOpMore4
 imports
   Main
   rBPFCommType 
 begin
-subsection \<open> u32_of_u8_list \<close>
+subsection \<open> u16_of_u8_list \<close>
 
-lemma ucast32_ucast8_and_255_eq [simp]: "ucast (((ucast (and v 255))::u8)) = and (v:: u32) 255"
+lemma ucast16_ucast8_and_255_eq [simp]: "ucast (((ucast (and v 255))::u8)) = and (v:: u16) 255"
   apply (simp only: ucast_eq)
 (**r 
 word_of_int (uint (word_of_int (uint (and v 255)))) is
@@ -38,7 +38,7 @@ word_of_int (uint v_u8)  :: u64
     done
   done
 
-lemma u32_shl_shr_same: "n \<le> 24 \<Longrightarrow> ((ucast (v::u8) ::u32) << n) >> n = (ucast (v::u8) ::u32)"
+lemma u16_shl_shr_same: "n \<le> 8 \<Longrightarrow> ((ucast (v::u8) ::u16) << n) >> n = (ucast (v::u8) ::u16)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   subgoal for k
@@ -60,25 +60,25 @@ lemma u32_shl_shr_same: "n \<le> 24 \<Longrightarrow> ((ucast (v::u8) ::u32) << 
     done
   done
 
-lemma u32_shl_shr_outside: "n+8 \<le> m \<Longrightarrow> ((ucast (v::u8) ::u32) << n) >> m = (0 ::u32)"
+lemma u16_shl_shr_outside: "n+8 \<le> m \<Longrightarrow> ((ucast (v::u8) ::u16) << n) >> m = (0 ::u16)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps u8_ge_8_bit_false)
   done
 
-lemma n_le_24_plus_lt_32: "(n::nat) \<le> 24 \<Longrightarrow> m \<le> n \<Longrightarrow> k < 32 \<Longrightarrow> n - m \<le> k \<Longrightarrow> k + m - n < 8 \<Longrightarrow> m + k < 32"
+lemma n_le_8_plus_lt_16: "(n::nat) \<le> 8 \<Longrightarrow> m \<le> n \<Longrightarrow> k < 16 \<Longrightarrow> n - m \<le> k \<Longrightarrow> k + m - n < 8 \<Longrightarrow> m + k < 16"
   by simp
 
-lemma u32_shl_shr_same_minus: "n \<le> 24 \<Longrightarrow> m \<le> n \<Longrightarrow>
-  ((ucast (v::u8) ::u32) << n) >> m = ((ucast (v::u8) ::u32) << (n-m))"
+lemma u16_shl_shr_same_minus: "n \<le> 8 \<Longrightarrow> m \<le> n \<Longrightarrow>
+  ((ucast (v::u8) ::u16) << n) >> m = ((ucast (v::u8) ::u16) << (n-m))"
   apply (simp add: bit_eq_iff)
-  apply (auto simp add: bit_simps u8_bit_true_ge_8 n_le_24_plus_lt_32)
+  apply (auto simp add: bit_simps u8_bit_true_ge_8 n_le_8_plus_lt_16)
   subgoal for k
     by (simp add: add.commute)
   subgoal for k
     by (metis add.commute)
   done
 
-lemma u32_and_or_255_same: "8 \<le> n \<Longrightarrow> (and (or ((v::u32) << n) k) 255) = and k 255"
+lemma u16_and_or_255_same: "8 \<le> n \<Longrightarrow> (and (or ((v::u16) << n) k) 255) = and k 255"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   subgoal for t apply (cases t, simp_all)
@@ -99,7 +99,7 @@ lemma u32_and_or_255_same: "8 \<le> n \<Longrightarrow> (and (or ((v::u32) << n)
     done
   done
 
-lemma u32_ucast_and_ucast_255_same: "(ucast (and (ucast (v::u8)) (255::u32)) ::u8) = v"
+lemma u16_ucast_and_ucast_255_same: "(ucast (and (ucast (v::u8)) (255::u16)) ::u8) = v"
   apply (simp only: ucast_eq)
   apply (simp only: uint_word_of_int_eq word_and_def word_of_int_eq_iff)
   apply simp
@@ -122,65 +122,47 @@ lemma u32_ucast_and_ucast_255_same: "(ucast (and (ucast (v::u8)) (255::u32)) ::u
   done
 
 
-lemma le_m_shr_0 : "8 \<le> m \<Longrightarrow> (ucast (v::u8) ::u32) >> m = (0 ::u32)"
+lemma le_m_shr_0 : "8 \<le> m \<Longrightarrow> (ucast (v::u8) ::u16) >> m = (0 ::u16)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps u8_ge_8_bit_false)
   done
 
-lemma list_consists_4 : "length l = 4 \<Longrightarrow>
-  l = [l ! 0, l ! Suc 0, l ! 2, l ! 3]"
-  by (smt (z3) add_2_eq_Suc' length_0_conv length_Suc_conv nth_Cons_0
-      nth_Cons_Suc numeral_2_eq_2 numeral_3_eq_3 numeral_Bit0)
+lemma list_consists_2 : "length l = 2 \<Longrightarrow> l = [l ! 0, l ! Suc 0]"
+  by (metis Cons_nth_drop_Suc Suc_leI append.simps(1) drop_eq_Nil
+      id_take_nth_drop lessI numeral_2_eq_2 take0 zero_less_Suc)
 
-lemma [simp]: "and (((v::u32) >> 24) << 24) 4278190080 = and v 4278190080"
-  apply (simp add: bit_eq_iff)
-  apply (auto simp add: bit_simps)
-  subgoal for n using bit_power_k_add_m_ge [of 24 8 n] by simp
-  subgoal for n using bit_power_k_add_m_ge [of 24 8 n] by simp
-  done
-
-lemma [simp]: "and (((v::u32) >> 16) << 16) 16711680 = and v 16711680"
-  apply (simp add: bit_eq_iff)
-  apply (auto simp add: bit_simps)
-  subgoal for n using bit_power_k_add_m_ge [of 16 8 n] by simp
-  subgoal for n using bit_power_k_add_m_ge [of 16 8 n] by simp
-  done
-
-lemma [simp]: "and (((v::u32) >> 8) << 8) 65280 = and v 65280"
+lemma [simp]: "and (((v::u16) >> 8) << 8) 65280 = and v 65280"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
   subgoal for n using bit_power_k_add_m_ge [of 8 8 n] by simp
   subgoal for n using bit_power_k_add_m_ge [of 8 8 n] by simp
   done
 
-lemma bit_255_not_lt_32 : "n < 32 \<Longrightarrow>
-  \<not> bit (4278190080::int) n \<Longrightarrow> \<not> bit (16711680::int) n \<Longrightarrow>
+lemma bit_255_not_lt_32 : "n < 16 \<Longrightarrow>
   \<not> bit (65280::int) n \<Longrightarrow> bit (255::int) n"
-  using bit_power_k_add_m_lt [of n 24 8] apply simp
-  using bit_power_k_add_m_lt [of n 16 8] apply simp
   using bit_power_k_add_m_lt [of n 8  8] apply simp
   using bit_power_k_add_m_lt [of n 0  8] apply simp
   apply blast
   done
 
-lemma u32_of_u8_list_same: "(Some v = u32_of_u8_list l) = (l = u8_list_of_u32 v)"
-  apply (unfold u32_of_u8_list_def u8_list_of_u32_def)
-  apply (cases "length l \<noteq> 4", simp_all)
+lemma u16_of_u8_list_same: "(Some v = u16_of_u8_list l) = (l = u8_list_of_u16 v)"
+  apply (unfold u16_of_u8_list_def u8_list_of_u16_def)
+  apply (cases "length l \<noteq> 2", simp_all)
   subgoal by fastforce
   subgoal
     apply (rule iffI)
     subgoal
       apply simp
-      apply (simp add: bit_eq_iff [of v])
-      apply (auto simp add: bit_simps u32_shl_shr_same u32_shl_shr_outside le_m_shr_0
-          u32_shl_shr_same_minus u32_and_or_255_same u32_ucast_and_ucast_255_same)
+      apply (simp only: bit_eq_iff [of v])
+      apply (auto simp add: bit_simps u16_shl_shr_same u16_shl_shr_outside le_m_shr_0
+          u16_shl_shr_same_minus u16_and_or_255_same u16_ucast_and_ucast_255_same)
 
-      subgoal using list_consists_4
+      subgoal using list_consists_2
         by blast
       done
 
     subgoal
-      apply (simp add: bit_eq_iff)
+      apply (simp add: bit_eq_iff [of v])
       apply (simp add: bit_or_iff)
       apply (auto simp add: bit_simps)
       subgoal for n

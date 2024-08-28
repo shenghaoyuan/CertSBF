@@ -108,8 +108,8 @@ definition u4_of_bool :: "bool \<Rightarrow> u4" where
 
 definition u8_list_of_u16 :: "u16 \<Rightarrow> u8 list" where
 "u8_list_of_u16 i =
-  [ (ucast (and  i       0xff)),
-    (ucast (and (i >> 8) 0xff))
+  [ (ucast (and (i >> 8) 0xff)),
+    (ucast (and  i       0xff))
   ]"
 
 definition u8_list_of_u32 :: "u32 \<Rightarrow> u8 list" where

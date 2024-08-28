@@ -209,22 +209,6 @@ lemma bit_255_not_lt_64 : "n < 64 \<Longrightarrow>
   apply blast
   done
 
-(*
-lemma [simp]: "(v::u64) =
-    or (and ((v >> 56) << 56) 18374686479671623680)
-     (or (and ((v >> 48) << 48) 71776119061217280)
-       (or (and ((v >> 40) << 40) 280375465082880)
-         (or (and ((v >> 32) << 32) 1095216660480) (or (and ((v >> 24) << 24) 4278190080)
-            (or (and ((v >> 16) << 16) 16711680) (or (and ((v >> 8) << 8) 65280) (and v 255)))))))"
-  apply (simp add: bit_eq_iff)
-  apply (simp add: bit_or_iff)
-  (**r 
-  apply (rule allI) *)
-  apply (auto simp add: bit_simps)
-  subgoal for n
-    using bit_255_not by blast
-  done *)
-
 lemma u64_of_u8_list_same: "(Some v = u64_of_u8_list l) = (l = u8_list_of_u64 v)"
   apply (unfold u64_of_u8_list_def u8_list_of_u64_def)
   apply (cases "length l \<noteq> 8", simp_all)

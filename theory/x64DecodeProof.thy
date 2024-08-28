@@ -1,7 +1,7 @@
 theory x64DecodeProof
 imports
   Main
-  rBPFCommType rBPFSyntax
+  rBPFCommType
   x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3
   x64DecodeProofAux
 begin
@@ -1080,8 +1080,9 @@ lemma x64_encode_decode_consistency:
       using length_u8_list_of_u32_eq_4
       apply (auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def
             Suc3_eq_add_3 add.commute)
+      done
     done
-  done
+
   subgoal 
     \<comment> \<open> Pret \<close>
     apply(unfold Let_def x64_decode_def; simp)
@@ -1097,4 +1098,6 @@ lemma x64_encode_decode_consistency:
     apply(unfold Let_def x64_decode_def; simp)
     done
   done
+
+declare if_split_asm [split del]
 end

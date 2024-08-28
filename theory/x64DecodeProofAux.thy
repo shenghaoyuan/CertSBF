@@ -1,7 +1,7 @@
 theory x64DecodeProofAux
 imports
   Main
-  rBPFCommType rBPFSyntax
+  rBPFCommType
   x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3
 begin
 
@@ -246,24 +246,24 @@ lemma u32_le_127_ge_7_False: "(ofs::u32) \<le> 127 \<Longrightarrow>
   apply (simp only: Suc7_eq_add_7)
   using bit_n_plus_le_7 [of ofs n] by simp
 
-(*
-lemma [simp]: "- (2 * 2 ^ n) \<le> v \<Longrightarrow> - (2 ^ n) \<le> (v::u32) div 2"
+
+lemma [simp]: "n < 32 \<Longrightarrow> - (2 * 2 ^ n) \<le> v \<Longrightarrow> - (2 ^ n) \<le> (v::u32) div 2"
   apply (cases "even v")
   subgoal
     apply (elim evenE)
     subgoal for b
       apply simp
 
-lemma bit_minus_n_ge: "- (2^n) \<le> (v::u32) \<Longrightarrow> bit v n"
+lemma bit_minus_n_ge: "n < 32 \<Longrightarrow> - (2^n) \<le> (v::u32) \<Longrightarrow> bit v n"
   apply (simp add: bit_iff_odd)
   apply (induction n arbitrary: v)
   subgoal for v apply simp
     using dvd_minus_iff odd_one word_order.extremum_uniqueI by blast
 
-  subgoal for n v apply simp *)
+  subgoal for n v apply simp
 
-lemma u32_ge_minus_128_ge_7_True: "-128 \<le> (ofs::u32) \<Longrightarrow>
-  bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True" sorry
+lemma u32_ge_minus_128_ge_7_True: "n < 25 \<Longrightarrow> -128 \<le> (ofs::u32) \<Longrightarrow>
+  bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True"
 
 
 lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
