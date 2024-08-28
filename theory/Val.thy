@@ -33,6 +33,13 @@ definition rol16 :: "val \<Rightarrow> val \<Rightarrow> val" where \<comment> \
  |  _ \<Rightarrow> Vundef
 )"
 
+definition add16 :: "val \<Rightarrow> val \<Rightarrow> val" where
+"add16 v1 v2 = (
+  case v1 of
+    Vshort n1 \<Rightarrow> (case v2 of Vshort n2 \<Rightarrow> Vshort (n1 + n2) | _ \<Rightarrow> Vundef) |
+    _ \<Rightarrow> Vundef
+)"
+
 subsection \<open> 32-bit Arithmetic operations \<close>
 
 

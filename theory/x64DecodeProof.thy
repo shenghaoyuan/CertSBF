@@ -2,7 +2,7 @@ theory x64DecodeProof
 imports
   Main
   rBPFCommType
-  x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3
+  x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3 BitsOpMore4
   x64DecodeProofAux
 begin
 (* It may take more than one hour to run this proof *)
@@ -535,6 +535,29 @@ lemma x64_encode_decode_consistency:
           ireg_of_u8_def Suc3_eq_add_3 add.commute)
       done
     done
+
+
+  subgoal for dst imm 
+    \<comment> \<open> Paddw_ri \<close> 
+    apply (unfold Let_def)
+    apply (cases "construct_rex_to_u8 False False False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64";
+        simp_all add:construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
+    subgoal \<comment> \<open> rex = 0x40  \<close>
+      using list_in_list_u8_list_of_u16_simp_sym [of imm " (Suc (Suc (Suc pc)))" l]
+      using length_u8_list_of_u16_eq_2
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+
+    subgoal \<comment> \<open> rex <> 0x40  \<close>
+      using list_in_list_u8_list_of_u16_simp_sym [of imm "(Suc (Suc (Suc (Suc pc))))" l]
+      using length_u8_list_of_u16_eq_2
+      apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
+          ireg_of_u8_def Suc3_eq_add_3 add.commute)
+      done
+    done
+
+
 
   subgoal for addr imm chunk
   \<comment> \<open> Paddq_mi \<close> 

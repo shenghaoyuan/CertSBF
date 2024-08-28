@@ -2,7 +2,7 @@ theory x64DecodeProofAux
 imports
   Main
   rBPFCommType
-  x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3
+  x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3 BitsOpMore4
 begin
 
 lemma [simp]: "l @ [a] = l_bin \<Longrightarrow> l_bin!(length l) = a" by fastforce
@@ -66,6 +66,21 @@ lemma [simp]: "l @ [a, b] = l_bin \<Longrightarrow> length l_bin - length l = 2"
 lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> length l_bin - length l = 3" by fastforce
 lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> length l_bin - length l = 4" by fastforce
 lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> length l_bin - length l = 5" by fastforce
+
+
+  \<comment> \<open> u16 \<close> 
+lemma list_in_list_u8_list_of_u16_simp : "list_in_list (u8_list_of_u16 imm) pc l \<Longrightarrow>
+  Some imm = u16_of_u8_list [l ! pc, l ! (pc + 1)]"
+  by (simp add: u16_of_u8_list_same u8_list_of_u16_def
+      Suc3_eq_add_3 add.commute)
+
+lemma list_in_list_u8_list_of_u16_simp_sym : "list_in_list (u8_list_of_u16 imm) pc l \<Longrightarrow>
+  u16_of_u8_list [l ! pc, l ! (pc + 1)] = Some imm"
+  using list_in_list_u8_list_of_u16_simp
+  by presburger
+
+lemma length_u8_list_of_u16_eq_2 : "length (u8_list_of_u16 imm) = 2"
+  by (simp add: u8_list_of_u16_def)
 
   \<comment> \<open> u32 \<close> 
 lemma list_in_list_u8_list_of_u32_simp : "list_in_list (u8_list_of_u32 imm) pc l \<Longrightarrow>

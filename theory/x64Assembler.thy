@@ -297,6 +297,20 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       Some ([op, rop] @ u8_list_of_u32 n) 
     else 
       Some  ([rex, op, rop] @ u8_list_of_u32 n) |
+ \<comment> \<open> P2876 `ADD imm16 to reg16` -> `0x66 0100 000B : 1000 00sw : 11 000 reg : imm16` \<close>
+  Paddw_ri rd n \<Rightarrow>
+    let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `000B` \<close>
+      False \<comment> \<open> W \<close>
+      False \<comment> \<open> R \<close>
+      False \<comment> \<open> X \<close>
+      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      ) in
+    let (op:: u8) = 0x81 in
+    let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
+    if rex = 0x40 then
+      Some ([0x66, op, rop] @ u8_list_of_u16 n) 
+    else 
+      Some  ([0x66, rex, op, rop] @ u8_list_of_u16 n) |
   \<comment> \<open> P2876 `ADD qwordregister1 to qwordregister2` -> `0100 1R0B : 0000 0001 : 11 reg1 reg2` \<close>
   Paddq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>

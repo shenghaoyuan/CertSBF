@@ -42,6 +42,18 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                   case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
                     Some (4, Prolw_ri dst imm))
                 else None
+          else if h1 = 0x81 then
+            if modrm = 0b11 then
+              case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                let i1 = l_bin!(pc+3)  in
+                let i2 = l_bin!(pc+4)  in
+                  case u16_of_u8_list [i1,i2] of None \<Rightarrow> None |
+                    Some imm \<Rightarrow> 
+                      \<comment> \<open> P2876 `ADD imm16 to reg16` -> ` 0x66 1000 00sw : 11 000 reg : imm16` \<close>
+                      if reg1 = 0b000 then
+                        Some (5, Paddw_ri dst imm)
+                      else None)
+            else None
           \<comment> \<open> R7.2 [legacy + opcode + modrm + displacement] \<close>
             else if h1 = 0x89 then 
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>
@@ -73,6 +85,18 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                         Some (5, Prolw_ri dst imm)
                       else None)
                   else None
+              else if op = 0x81 then
+                if modrm = 0b11 then
+                  case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
+                    let i1 = l_bin!(pc+4)  in
+                    let i2 = l_bin!(pc+5)  in
+                      case u16_of_u8_list [i1,i2] of None \<Rightarrow> None |
+                        Some imm \<Rightarrow> 
+                          \<comment> \<open> P2876 `ADD imm16 to reg16` -> ` 0x66 1000 00sw : 11 000 reg : imm16` \<close>
+                          if reg1 = 0b000 \<and> w = 0 \<and> r = 0 \<and> x = 0 then
+                            Some (6, Paddw_ri dst imm)
+                          else None)
+                else None
               \<comment> \<open> R7.4 [legacy + rex + opcode + modrm + displacement\<close>
               else if op = 0x89 then 
               \<comment> \<open> P2882 ` MOV: reg to memory`  ->  `66H 0100 0RXB : 1000 1001 : mod reg r/m `\<close>

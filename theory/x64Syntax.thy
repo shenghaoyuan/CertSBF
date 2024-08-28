@@ -183,6 +183,7 @@ definition cond_of_u8 :: "u8 \<Rightarrow> testcond option" where
 
 datatype instruction =
   (** Moves *)
+
     Pmovl_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovq_rr ireg ireg       (**r [mov] (integer) *)
   | Pmovl_ri ireg u32        (**imm   to reg *)
@@ -205,6 +206,7 @@ datatype instruction =
   | Paddq_rr ireg ireg
   | Paddl_rr ireg ireg
   | Paddl_ri ireg u32
+  | Paddw_ri ireg u16
   | Paddq_mi addrmode u32 memory_chunk
   | Psubl_rr ireg ireg
   | Psubq_rr ireg ireg
