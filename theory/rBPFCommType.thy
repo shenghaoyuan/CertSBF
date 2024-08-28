@@ -108,28 +108,29 @@ definition u4_of_bool :: "bool \<Rightarrow> u4" where
 
 definition u8_list_of_u16 :: "u16 \<Rightarrow> u8 list" where
 "u8_list_of_u16 i =
-  [ (ucast (and (i >> 8) 0xff)),
-    (ucast (and  i       0xff))
+  [ (ucast (and  i       0xff)),
+    (ucast (and (i >> 8) 0xff))
   ]"
 
 definition u8_list_of_u32 :: "u32 \<Rightarrow> u8 list" where
 "u8_list_of_u32 i =
-  [ (ucast (and (i >> 24) 0xff)),
-    (ucast (and (i >> 16) 0xff)),
+  [ (ucast (and  i        0xff)),
     (ucast (and (i >> 8 ) 0xff)),
-    (ucast (and  i        0xff))
+    (ucast (and (i >> 16) 0xff)),
+    (ucast (and (i >> 24) 0xff))
   ]"
 
 definition u8_list_of_u64 :: "u64 \<Rightarrow> u8 list" where
 "u8_list_of_u64 i =
-  [ (ucast (and (i >> 56) 0xff)),
-    (ucast (and (i >> 48) 0xff)), 
-    (ucast (and (i >> 40) 0xff)),
-    (ucast (and (i >> 32) 0xff)),
-    (ucast (and (i >> 24) 0xff)),
+  [ (ucast (and  i        0xff)),
+    (ucast (and (i >> 8 ) 0xff)),
     (ucast (and (i >> 16) 0xff)),
-    (ucast (and (i >> 8 ) 0xff)), 
-    (ucast (and  i        0xff))
+    (ucast (and (i >> 24) 0xff)),
+    (ucast (and (i >> 32) 0xff)),
+    (ucast (and (i >> 40) 0xff)),
+    (ucast (and (i >> 48) 0xff)),
+    (ucast (and (i >> 56) 0xff))
+    
   ]"
 
 definition u64_of_u8_list :: "u8 list \<Rightarrow> u64 option" where
@@ -138,14 +139,14 @@ definition u64_of_u8_list :: "u8 list \<Rightarrow> u64 option" where
     None
   else
     Some (
-      or ((ucast (l!(0))) << 56) (
-      or ((ucast (l!(1))) << 48) (
-      or ((ucast (l!(2))) << 40) (
-      or ((ucast (l!(3))) << 32) (
-      or ((ucast (l!(4))) << 24) (
-      or ((ucast (l!(5))) << 16) (
-      or ((ucast (l!(6))) << 8 ) (
-          (ucast (l!(7))))
+      or ((ucast (l!(7))) << 56) (
+      or ((ucast (l!(6))) << 48) (
+      or ((ucast (l!(5))) << 40) (
+      or ((ucast (l!(4))) << 32) (
+      or ((ucast (l!(3))) << 24) (
+      or ((ucast (l!(2))) << 16) (
+      or ((ucast (l!(1))) << 8 ) (
+          (ucast (l!(0))))
       )))))))
   )"
 
@@ -155,10 +156,10 @@ definition u32_of_u8_list :: "u8 list \<Rightarrow> u32 option" where
     None
   else
     Some (
-      or ((ucast (l!(0))) << 24) (
-      or ((ucast (l!(1))) << 16) (
-      or ((ucast (l!(2))) << 8 ) (
-          (ucast (l!(3))))
+      or ((ucast (l!(3))) << 24) (
+      or ((ucast (l!(2))) << 16) (
+      or ((ucast (l!(1))) << 8 ) (
+          (ucast (l!(0))))
       )))
   )"
 
@@ -168,59 +169,10 @@ definition u16_of_u8_list :: "u8 list \<Rightarrow> u16 option" where
     None
   else
     Some (
-      or ((ucast (l!(0))) << 8 ) (
-          (ucast (l!(1))
+      or ((ucast (l!(1))) << 8 ) (
+          (ucast (l!(0))
       )))
   )"
-
-(*
-fun ua_of_u8_list_aux :: "u8 list \<Rightarrow> ('a :: len word) option" where
-"ua_of_u8_list_aux [] = None" |
-"ua_of_u8_list_aux [h] = Some(ucast h)"|
-"ua_of_u8_list_aux (h#t) = (
-  case ua_of_u8_list_aux t of
-  None \<Rightarrow> None |
-  Some v \<Rightarrow> Some (or (ucast h) (v << 8))
-)"
-
-fun ua_of_u8_list_aux2 :: "u8 list \<Rightarrow> ('a :: len word) option" where
-"ua_of_u8_list_aux2 [] = None" |
-"ua_of_u8_list_aux2 [h] = Some(ucast h)"|
-"ua_of_u8_list_aux2 (h#t) = (
-  case ua_of_u8_list_aux2 t of
-  None \<Rightarrow> None |
-  Some v \<Rightarrow> Some (or ((ucast h)<<(length(t))*8) (v))
-)"
-
-definition u64_of_u8_list :: "u8 list \<Rightarrow> u64 option" where
-"u64_of_u8_list l = (if length l = 8 then ua_of_u8_list_aux (rev l) else None)"
-
-definition u64_of_u8_list2 :: "u8 list \<Rightarrow> u64 option" where
-"u64_of_u8_list2 l = (if length l = 8 then ua_of_u8_list_aux2 (l) else None)"
-
-definition u32_of_u8_list :: "u8 list \<Rightarrow> u32 option" where
-"u32_of_u8_list l = (if length l = 4 then ua_of_u8_list_aux (rev l) else None)"
-
-definition u32_of_u8_list2 :: "u8 list \<Rightarrow> u32 option" where
-"u32_of_u8_list2 l = (if length l = 4 then ua_of_u8_list_aux2 (l) else None)"
-
-definition u16_of_u8_list :: "u8 list \<Rightarrow> u16 option" where
-"u16_of_u8_list l = (if length l = 2 then ua_of_u8_list_aux (rev l) else None)"
-
-definition int_of_u8 :: "u8 \<Rightarrow> int" where
-"int_of_u8 n = uint n"
-
-definition u8_of_int :: "int \<Rightarrow> u8" where        
-"u8_of_int n = of_int n" *)
-
-
-
-(*
-value "u64_of_u8_list [0x12, 0x35, 0x55, 0x89, 0x64, 0x23, 0x65, 0x44]"
-value "u64_of_u8_list2 [0x12, 0x35, 0x55, 0x89, 0x64, 0x23, 0x65, 0x44]"
-value "a=ua_of_u8_list_aux  [0x12,0x34]"
-value "ua_of_u8_list_aux2 [0x12,0x34]"
-*)
 
 lemma [simp]: "u8_of_bool False = 0" by (unfold u8_of_bool_def, simp)
 
