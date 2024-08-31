@@ -6,22 +6,22 @@ imports
   rBPFCommType
 begin
 
-abbreviation "RAX:: u8 \<equiv> 0"
-abbreviation "RCX:: u8 \<equiv> 1"
-abbreviation "RDX:: u8 \<equiv> 2"
-abbreviation "RBX:: u8 \<equiv> 3"
-abbreviation "RSP:: u8 \<equiv> 4"
-abbreviation "RBP:: u8 \<equiv> 5"
-abbreviation "RSI:: u8 \<equiv> 6"
-abbreviation "RDI:: u8 \<equiv> 7"
-abbreviation "R8 :: u8 \<equiv> 8"
-abbreviation "R9 :: u8 \<equiv> 9"
-abbreviation "R10:: u8 \<equiv> 10"
-abbreviation "R11:: u8 \<equiv> 11"
-abbreviation "R12:: u8 \<equiv> 12"
-abbreviation "R13:: u8 \<equiv> 13"
-abbreviation "R14:: u8 \<equiv> 14"
-abbreviation "R15:: u8 \<equiv> 15"
+definition "RAX:: u8 \<equiv> 0"
+definition "RCX:: u8 \<equiv> 1"
+definition "RDX:: u8 \<equiv> 2"
+definition "RBX:: u8 \<equiv> 3"
+definition "RSP:: u8 \<equiv> 4"
+definition "RBP:: u8 \<equiv> 5"
+definition "RSI:: u8 \<equiv> 6"
+definition "RDI:: u8 \<equiv> 7"
+definition "R8 :: u8 \<equiv> 8"
+definition "R9 :: u8 \<equiv> 9"
+definition "R10:: u8 \<equiv> 10"
+definition "R11:: u8 \<equiv> 11"
+definition "R12:: u8 \<equiv> 12"
+definition "R13:: u8 \<equiv> 13"
+definition "R14:: u8 \<equiv> 14"
+definition "R15:: u8 \<equiv> 15"
 
 abbreviation "ARGUMENT_REGISTERS
   :: u8 list \<equiv> [RDI, RSI, RDX, RCX, R8, R9]"
@@ -54,15 +54,25 @@ x86_sib_scale :: u8
 x86_sib_index :: u8
 x86_sib_base  :: u8
 
-definition construct_rex_to_u8 :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> u8" where
+definition construct_rex_to_u8 :: "bool\<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow>u8" where
 "construct_rex_to_u8 w r x b =
-  or (or (or  ((u8_of_bool w) << 3)
-              ((u8_of_bool r) << 2))
-          ((u8_of_bool x) << 1))
-     (u8_of_bool b)
+   bitfield_insert_u8 4 4 
+    (bitfield_insert_u8 3 1
+      (bitfield_insert_u8 2 1
+        (bitfield_insert_u8 1 1 (u8_of_bool b)
+                                (u8_of_bool x))
+        (u8_of_bool r))
+      (u8_of_bool w))
+     0x4
 "
 
+\<comment> \<open>\\\value "construct_rex_to_u8 False False False True" \<close>
+
 definition construct_modsib_to_u8 :: "u8 \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8" where
-"construct_modsib_to_u8 op1 op2 op3 = or (or ((and 0b11 op1) << 6) ((and 0b111 op2) << 3)) (and 0b111 op3)"
+"construct_modsib_to_u8 op1 op2 op3 =
+  bitfield_insert_u8 6 2
+    (bitfield_insert_u8 3 3 (and 0b111 op3) (and 0b111 op2))
+    op1"
+
 
 end

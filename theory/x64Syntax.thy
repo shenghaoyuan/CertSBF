@@ -3,7 +3,7 @@ section \<open> x64 Syntax \<close>
 theory x64Syntax
 imports
   Main
-  rBPFCommType
+  rBPFCommType Mem
 begin
   
 subsection  \<open> x64 Syntax \<close>
@@ -39,11 +39,11 @@ fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
 "u8_of_ireg RCX = 1" |
 "u8_of_ireg RDX = 2" |
 "u8_of_ireg RBX = 3" |
-"u8_of_ireg RSP = 4" |
+"u8_of_ireg RSP = 4" | 
 "u8_of_ireg RBP = 5" |
 "u8_of_ireg RSI = 6" |
 "u8_of_ireg RDI = 7" |
-"u8_of_ireg R8  = 8" |
+"u8_of_ireg R8  = 8" |        
 "u8_of_ireg R9  = 9" |
 "u8_of_ireg R10 = 10" |
 "u8_of_ireg R11 = 11" |
@@ -94,7 +94,7 @@ text \<open> skip float registers, as Solana rBPF doesn't deal with float \<clos
 
 datatype crbit = ZF | CF | PF | SF | OF
 
-datatype preg = PC | IR ireg | CR crbit | RA
+datatype preg = PC | IR ireg | CR crbit | TSC
 
 abbreviation "RIP \<equiv> PC"  \<comment> \<open> the RIP register in x86-64 (x64) architecture is the equivalent of the program counter (PC) in many other architectures.  \<close>
   
@@ -103,7 +103,7 @@ abbreviation "SP \<equiv> RSP"
 type_synonym label = nat
 
 datatype addrmode =
-  Addrmode "ireg option" "(ireg * int) option" int
+  Addrmode "ireg option" "(ireg * u8) option" u32
 
 datatype testcond =
     Cond_e | Cond_ne
@@ -111,11 +111,56 @@ datatype testcond =
   | Cond_l | Cond_le | Cond_ge | Cond_g
   | Cond_p | Cond_np
 
+fun u8_of_cond :: "testcond \<Rightarrow> u8" where
+"u8_of_cond Cond_b  = 2" |  (* B, NAE: Below, Not above or equal *)
+"u8_of_cond Cond_ae = 3" |  (* NB, AE: Not below, Above or equal *)
+"u8_of_cond Cond_e  = 4" |  (* E, Z: Equal, Zero *)
+"u8_of_cond Cond_ne = 5" |  (* NE, NZ: Not equal, Not zero *)
+"u8_of_cond Cond_be = 6" |  (* BE, NA: Below or equal, Not above *)
+"u8_of_cond Cond_a  = 7" |  (* NBE, A: Not below or equal, Above *)
+"u8_of_cond Cond_p  = 10" | (* P, PE: Parity, Parity Even *)
+"u8_of_cond Cond_np = 11" | (* NP, PO: Not parity, Parity Odd *)
+"u8_of_cond Cond_l  = 12" | (* L, NGE: Less than, Not greater than or equal *)
+"u8_of_cond Cond_ge = 13" | (* NL, GE: Not less than, Greater than or equal to *)
+"u8_of_cond Cond_le = 14" | (* LE, NG: Less than or equal to, Not greater than *)
+"u8_of_cond Cond_g  = 15"   (* NLE, G: Not less than or equal to, Greater*)
+
+definition cond_of_u8 :: "u8 \<Rightarrow> testcond option" where
+"cond_of_u8 i = (
+  if i = 2 then
+    Some Cond_b
+  else  if i = 3 then
+    Some Cond_ae
+  else  if i = 4 then
+    Some Cond_e
+  else  if i = 5 then
+    Some Cond_ne
+  else  if i = 6 then
+    Some Cond_be
+  else  if i = 7 then
+    Some Cond_a
+  else  if i = 10 then
+    Some Cond_p
+  else  if i = 11 then
+    Some Cond_np
+  else  if i = 12 then
+    Some Cond_l
+  else  if i = 13 then
+    Some Cond_ge
+  else  if i = 14 then
+    Some Cond_le
+  else  if i = 15 then
+    Some Cond_g
+  else
+    None
+)"
+
 (** Instructions.  IA32 instructions accept many combinations of
   registers, memory references and immediate constants as arguments.
   Here, we list only the combinations that we actually use.
 
-  Naming conventions for types:
+  Naming conventions for types: Pmov_rm   rd a c  \<Rightarrow> exec_store  sz c m a rs (IR rd) [] |                 \<comment> \<open> load  mem to reg \<close>
+  Pmov_mr   a r1 c  \<Rightarrow> exec_load   sz c m a rs (IR r1) |            
 - [b]: 8 bits
 - [w]: 16 bits ("word")
 - [l]: 32 bits ("longword")
@@ -138,16 +183,94 @@ datatype testcond =
 
 datatype instruction =
   (** Moves *)
-    Pmov_rr ireg ireg       (**r [mov] (integer) *)
-  | Pmovl_ri ireg u32
-  | Pmovq_ri ireg u64
-  | Pmovl_rm ireg addrmode
-  | Pmovq_rm ireg addrmode
-  | Pmovl_mr addrmode ireg
-  | Pmovq_mr addrmode ireg
+
+    Pmovl_rr ireg ireg       (**r [mov] (integer) *)
+  | Pmovq_rr ireg ireg       (**r [mov] (integer) *)
+  | Pmovl_ri ireg u32        (**imm   to reg *)
+  | Pmovq_ri ireg u64        (**imm32 to qwordreg *)
+  | Pmov_rm ireg addrmode memory_chunk
+  | Pmov_mr addrmode ireg memory_chunk
+  | Pmov_mi addrmode u32  memory_chunk   (**imm to mem *)
+  | Pcmovl testcond ireg ireg
+  | Pcmovq testcond ireg ireg
+  | Pxchgq_rr ireg ireg
+  | Pxchgq_rm ireg addrmode memory_chunk
   (** Moves with conversion *)
-  | Pmovb_mr addrmode ireg   (**r [mov] (8-bit int) *)
-  | Pmovw_mr addrmode ireg   (**r [mov] (16-bit int) *)
+  | Pmovsq_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
+  | Pcdq 
+  | Pcqo
+  (** Integer arithmetic *)
+  | Pleaq ireg addrmode
+  | Pnegl ireg
+  | Pnegq ireg
+  | Paddq_rr ireg ireg
+  | Paddl_rr ireg ireg
+  | Paddl_ri ireg u32
+  | Paddw_ri ireg u16
+  | Paddq_mi addrmode u32 memory_chunk
+  | Psubl_rr ireg ireg
+  | Psubq_rr ireg ireg
+  | Psubl_ri ireg u32
+  | Pmull_r ireg
+  | Pmulq_r ireg
+  | Pimull_r ireg
+  | Pimulq_r ireg
+  | Pdivl_r ireg
+  | Pdivq_r ireg
+  | Pidivl_r ireg
+  | Pidivq_r ireg
+
+  | Pandl_rr ireg ireg
+  | Pandl_ri ireg u32
+  | Pandq_rr ireg ireg
+  | Porl_rr ireg ireg
+  | Porl_ri ireg u32
+  | Porq_rr ireg ireg
+  | Pxorl_rr ireg ireg
+  | Pxorq_rr ireg ireg
+  | Pxorl_ri ireg u32
+  | Pshll_ri ireg u8
+  | Pshlq_ri ireg u8
+  | Pshll_r ireg
+  | Pshlq_r ireg
+  | Pshrl_ri ireg u8
+  | Pshrq_ri ireg u8
+  | Pshrl_r ireg
+  | Pshrq_r ireg
+  | Psarl_ri ireg u8
+  | Psarq_ri ireg u8
+  | Psarl_r ireg
+  | Psarq_r ireg
+  | Prolw_ri ireg u8
+  | Prorl_ri ireg u8
+  | Prorq_ri ireg u8
+  | Pbswapl ireg
+  | Pbswapq ireg
+
+  | Ppushl_r ireg
+  | Ppushl_i u32
+  | Ppushq_m addrmode memory_chunk
+  | Ppopl  ireg
+
+  | Ptestl_rr ireg ireg
+  | Ptestq_rr ireg ireg
+  | Ptestl_ri ireg u32
+  | Ptestq_ri ireg u32
+  | Pcmpl_rr ireg ireg
+  | Pcmpq_rr ireg ireg
+  | Pcmpl_ri ireg u32
+  | Pcmpq_ri ireg u32
+
+  | Pjcc testcond u32
+  | Pjmp u32
+  | Pcall_r ireg
+  | Pcall_i u32
+  | Pret
+  | Prdtsc
+  | Pnop
+  | P
+(*
+  | Ppushq_m addrmode  memory_chunk
   | Pmovzb_rr ireg ireg     (**r [movzb] (8-bit zero-extension) *)
   | Pmovzb_rm ireg addrmode
   | Pmovsb_rr ireg ireg     (**r [movsb] (8-bit sign-extension) *)
@@ -157,18 +280,11 @@ datatype instruction =
   | Pmovsw_rr ireg ireg     (**r [movsw] (16-bit sign-extension) *)
   | Pmovsw_rm ireg addrmode
   | Pmovzl_rr ireg ireg     (**r [movzl] (32-bit zero-extension) *)
-  | Pmovsl_rr ireg ireg     (**r [movsl] (32-bit sign-extension) *)
-  | Pmovls_rr ireg                (** 64 to 32 bit conversion (pseudo) *)
-  (** Integer arithmetic *)
-  | Pleal ireg addrmode
-  | Pleaq ireg addrmode
-  | Pnegl ireg
-  | Pnegq ireg
-  | Paddq_rr ireg ireg
+  | Pmovls_rr ireg          (** 64 to 32 bit conversion (pseudo) *)
   | Paddl_ri ireg u32
   | Paddq_ri ireg u64
-  | Psubl_rr ireg ireg
-  | Psubq_rr ireg ireg (*
+  | Psubl_ri ireg u32
+  | Psubq_ri ireg u64
   | Pimull_rr ireg ireg
   | Pimulq_rr ireg ireg
   | Pimull_ri ireg u32
@@ -183,22 +299,16 @@ datatype instruction =
   | Pdivq ireg
   | Pidivl ireg
   | Pidivq ireg *)
-  | Pandl_rr ireg ireg
-  | Pandq_rr ireg ireg
+(*| Pxorl_r ireg                  (**r [xor] with self = set to zero *)
+  | Pxorq_r ireg
   | Pandl_ri ireg u32
   | Pandq_ri ireg u64
-  | Porl_rr ireg ireg
-  | Porq_rr ireg ireg
   | Porl_ri ireg u32
-  | Porq_ri ireg u64
-  | Pxorl_r ireg                  (**r [xor] with self = set to zero *)
-  | Pxorq_r ireg
-  | Pxorl_rr ireg ireg
-  | Pxorq_rr ireg ireg
+  | Porq_ri ireg u64 
   | Pxorl_ri ireg u32
   | Pxorq_ri ireg u64
   | Pnotl ireg
-  | Pnotq ireg (*
+  | Pnotq ireg 
   | Psall_rcl ireg
   | Psalq_rcl ireg
   | Psall_ri ireg u32
@@ -223,19 +333,22 @@ datatype instruction =
   | Ptestl_ri ireg u32
   | Ptestq_ri ireg u64
   | Pcmov testcond ireg ireg
-  | Psetcc testcond ireg
+  | Psetcc testcond ireg*)
   (** Branches and calls *)
-  | Pjmp_l label
+(*| Pjmp_l label
   | Pjcc testcond label
   | Pjcc2 testcond testcond label   (**r pseudo *)
   | Pjmptbl ireg "label list" (**r pseudo *)
   | Pcall_r (r: ireg)
-  | Pret
+  | Pret*)
   (** Saving and restoring registers *)
-  | Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
+(*| Pmov_rm_a ireg addrmode  (**r like [Pmov_rm], using [Many64] chunk *)
   | Pmov_mr_a addrmode ireg  (**r like [Pmov_mr], using [Many64] chunk *) *)
-  | Pnop
 
 type_synonym x64_asm = "instruction list"
 type_synonym x64_bin = "u8 list"
+
+lemma u8_of_ireg_of_u8_iff: "(u8_of_ireg r = i) = (ireg_of_u8 i = Some r)"
+  by (cases r, auto simp add: ireg_of_u8_def)
+
 end
