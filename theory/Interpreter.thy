@@ -4,6 +4,7 @@ theory Interpreter
 imports
   Main
   rBPFCommType rBPFSyntax vm_state vm Mem
+  ebpf
 begin
 
 subsubsection  \<open> Interpreter State \<close>
@@ -22,16 +23,6 @@ registers :: reg_map
 memory_mapping :: mem
 stack :: stack_state
 location :: Location
-
-consts program_vm_addr::u64 
-
-type_synonym func_key = u32
-
-type_synonym func_val = u64
-
-type_synonym func_map = "(func_key, func_val) map"
-
-consts fm::func_map
 
 definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
 "eval_reg dst rs = rs (BR dst)"
@@ -485,9 +476,6 @@ definition eval_jmp :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Ri
 
 subsection  \<open> CALL \<close>
 
-definition get_function_registry ::"func_key \<Rightarrow> func_val option" where
-"get_function_registry key = fm key"
-
 definition push_frame:: "Config \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> stack_state option \<times> reg_map" where 
 "push_frame conf rs ss is_v1 = (let pc = eval_pc rs +1; fp = eval_reg BR10 rs ;
   frame = \<lparr>frame_pointer = pc, target_pc = fp\<rparr> in 
@@ -505,7 +493,7 @@ definition eval_call_reg :: "Config \<Rightarrow> src_ty \<Rightarrow> imm_ty \<
   let x = push_frame conf rs ss is_v1 in if fst x = None then None else(
   let ss' = the (fst x); rs' = snd x in
   if target_pc < program_vm_addr then None else (
-  let next_pc = (target_pc - program_vm_addr)div INSN_SIZE in 
+  let next_pc = (target_pc - program_vm_addr)div (of_nat INSN_SIZE) in 
   if get_function_registry (ucast next_pc) = None then None 
   else Some (rs'#BPC <-- next_pc, ss')
 )))"

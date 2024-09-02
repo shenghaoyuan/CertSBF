@@ -57,10 +57,11 @@ bpf_imm :: i32
 
 type_synonym ebpf_bin = "ebpf_binary list"
 
+(*
 consts INSN_SIZE::usize
 
 definition INSN_SIZE_def :: "usize" where
-"INSN_SIZE_def = 8"
+"INSN_SIZE_def = 8" *)
 
 abbreviation bit_left_shift ::
   "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix "<<" 50)
