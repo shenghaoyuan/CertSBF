@@ -237,19 +237,21 @@ lemma bit_n_plus_le: "(v::u32) \<le> 2^n - 1 \<Longrightarrow> bit v (n+m) = Fal
   by (meson bit_n_plus_ge exp_add_not_zero_imp_left exp_eq_0_imp_not_bit one_neq_zero
       order_trans sub_wrap word_less_1)
 
-lemma Suc7_eq_add_7:"(Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = 7+n" by simp
+lemma Suc7_eq_add_7:"(Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = 7 + n" by simp
 
-lemma b:"(ofs::u32) \<le> 2^n-1 \<longleftrightarrow> - (2^n) \<le> (not ofs)"
-  apply auto
-  sorry
+lemma word_not_set_inverse:"(ofs::('a::len) word) \<le> 2^n-1 \<longleftrightarrow> - (2^n) \<le> (not ofs)"
+  by (smt (z3) add_diff_cancel_left' add_uminus_conv_diff linorder_not_le minus_diff_commute not_eq_complement sub_wrap word_le_minus_mono_left word_less_1 word_sub_le_iff)
+  
 
-lemma bit_n_plus_le_7: "(v::u32) \<le> 127 \<Longrightarrow> bit v (7+m) = False"
-  using bit_n_plus_le [of v 7 m] by simp
+lemma bit_n_plus_le_7: "(v::u32) \<le> 127 \<Longrightarrow> bit v (7 + n) = False"
+  using bit_n_plus_le [of v 7 n] by auto
               
 lemma u32_le_127_ge_7_False: "(ofs::u32) \<le> 127 \<Longrightarrow>
     bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = False"
   apply (simp only: Suc7_eq_add_7)
-  using bit_n_plus_le_7 [of ofs n] by simp
+  using bit_n_plus_le_7 [of ofs n]
+  by simp
+  
 
 value "not (-128::u32)"
 
@@ -261,15 +263,23 @@ thm bit_minus_int_iff
   apply auto
 
   sorry *)
-
+lemma len_word:
+  "m < LENGTH ('a) \<Longrightarrow> bit (k::'a::len word) m \<longleftrightarrow> \<not>(bit (not k) m)"
+  by (simp add: bit_not_iff)
+ 
 lemma bit_n_plus_gt: 
-  assumes a0:"n + m < 32" and a1:"-(2^m) \<le> (v::u32)" shows "bit v (n+m) = True"
+  assumes a0:"m + n < 32" and a1:"-(2^m) \<le> (v::u32)" shows "bit v (m + n) = True"
 proof-
-  have "(not (v::u32)) \<le> 2^m-1"
-    by (simp add: a1 b)
-  moreover then have "bit (not (v::u32)) (n+m) = False"
-    by (simp add: add.commute bit_n_plus_le)
-  ultimately show ?thesis using bit_minus_int_iff 
+  have v0:"m + n < LENGTH(32)" using a0 by auto
+  
+  have u:"\<forall>v \<le> ((2::u32)^m)-1. bit v (m + n) = False"
+    by (simp add: bit_n_plus_le)
+  then obtain v' where "bit v' (m + n) = False" and "v'\<le>((2::u32)^m)-1"
+    by auto
+  then have "not v' \<ge> -((2::u32)^m)" and "bit v' (m + n) = False"
+    by (auto simp add: word_not_set_inverse)
+  then show ?thesis using len_word[OF v0, of v']
+    by (metis a1 bit.double_compl len_word u v0 word_not_set_inverse) 
 qed
   
 
@@ -289,52 +299,10 @@ lemma bit_minus_n_ge: "n < 32 \<Longrightarrow> - (2^n) \<le> (v::u32) \<Longrig
 
   subgoal for n v apply simp *)
 declare [[show_types]]
-<<<<<<< HEAD
 lemma u32_ge_minus_128_ge_7_True: "n < 25 \<Longrightarrow> -128 \<le> (ofs::u32) \<Longrightarrow>
   bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True"
   apply (simp only: Suc7_eq_add_7)
- 
-  apply (rule bit_n_plus_gt)
-  by auto
-  
-=======
-(*lemma u32_ge_minus_128_ge_7_True: "n < 25 \<Longrightarrow> -128 \<le> (ofs::u32) \<Longrightarrow>
-  bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True" sorry *)
-
-(* lemma scast_u32_scast_u8_eq_simp_3: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow>
-   (ofs::('a::len word)) \<le> (2^(m-1)-1) \<or> (- (2^(m-1))) \<le> ofs \<Longrightarrow>
-   ofs < 0 \<Longrightarrow> p \<ge>  m  \<Longrightarrow> p \<le> n \<Longrightarrow>
-   (bit ofs p)"
-  by force
-
-lemma scast_u32_scast_u8_eq_simp_3a: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow>
-   (ofs::('a::len word)) \<le> (2^(m-1)-1) \<or> (- (2^(m-1))) \<le> ofs \<Longrightarrow>
-   ofs < 0 \<Longrightarrow> 
-   \<forall>p. p \<ge>  m  \<and> p \<le> n \<longrightarrow> (bit ofs p)"
-  using scast_u32_scast_u8_eq_simp_3 by auto
-
-lemma scast_u32_scast_u8_eq_simp_2: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow>
-   (ofs::('a::len word)) \<le> (2^(m-1)-1) \<or> (- (2^(m-1))) \<le> ofs \<Longrightarrow>
-   ofs \<ge> 0 \<Longrightarrow> p \<ge> m  \<Longrightarrow> p \<le> n  \<Longrightarrow>
-   \<not> (bit ofs p)"
-  sorry
-
-lemma scast_u32_scast_u8_eq_simp_2a: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow>
-   (ofs::('a::len word)) \<le> (2^(m-1)-1) \<or> (- (2^(m-1))) \<le> ofs \<Longrightarrow>
-   ofs \<ge> 0 \<Longrightarrow> 
-   \<forall>k. k \<ge>  m  \<and> k \<le> n \<longrightarrow> \<not> (bit ofs k)"
-  using scast_u32_scast_u8_eq_simp_2 by auto
-*)
-
-lemma scast_u32_scast_u8_eq_simp_1: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow>  \<forall>p. p \<ge>  m  \<and> p \<le> n \<longrightarrow> \<not> (bit ((ofs::('a::len word))) p) \<Longrightarrow>
-   LENGTH('b) = m \<Longrightarrow> \<forall>k. k \<le> m \<longrightarrow> bit ((scast ofs)::'b::len word) k = bit ofs k"
-  using bit_word_scast_iff nat_less_le by auto
->>>>>>> 60f6449 (partial proof of scast_ general scast inversible theorem)
+  using bit_n_plus_gt by auto
 
 (* lemma scast_u32_scast_u8_eq_simp_3: 
   "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow>
@@ -438,7 +406,7 @@ lemma scast_un_bb:
   shows "(scast v)  = ofs"
   using a0 a2 a3 a4 a5 bit_last_iff by auto
 
-lemma scast_u32_scast_u8_eq_simpa: 
+(*lemma scast_u32_scast_u8_eq_simpa: 
   assumes a0:"LENGTH('a) = m" and a1:"LENGTH('b) = n" and a2:"m \<le> n" and
    a3:"ofs \<le> (2^(m-1)-1) \<or> (- (2^(m-1))) \<le> ofs" and a4:"m\<ge>1" and
   a5:"(v::('a::len word)) = scast (ofs::('b::len word))" 
@@ -457,54 +425,11 @@ proof-
   ultimately show ?thesis
     using a3 by linarith
 qed
-  
+*)  
 
-lemma scast_u32_scast_u8_eq_simp_0a: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow> LENGTH('b) = m \<Longrightarrow>  (v::('b:: len word)) \<ge> 0 \<Longrightarrow>
-  \<forall>k. k \<ge>  m  \<and> k \<le> n \<longrightarrow> \<not> (bit ((scast v)::('a:: len word)) k)"
-proof -
-  assume a1: "len_of (TYPE('a)::'a itself) = n"
-  assume "len_of (TYPE('b)::'b itself) = m"
-  then have "n = m"
-    using a1
-    (*by (metis len_signed mult.commute mult_cancel_left phantom.size_neq) *) sorry
-  then show ?thesis
-    using a1 by (metis (no_types) diff_is_0_eq diffs0_imp_equal not_bit_length)
-qed
-
-  
-
-
-lemma scast_u32_scast_u8_eq_simp_0b: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow> LENGTH('b) = m \<Longrightarrow>  (v::('b:: len word)) < 0 \<Longrightarrow>
-  \<forall>k. k \<ge>  m  \<and> k \<le> n \<longrightarrow> (bit ((scast v)::('a:: len word)) k)"
-  by auto
-
-lemma scast_u32_scast_u8_eq_simp_0: 
-  "LENGTH('a) = n \<Longrightarrow> m \<le> n \<Longrightarrow> LENGTH('b) = m \<Longrightarrow>  
-  \<forall>k. m \<le> k \<longrightarrow> (bit ((scast v)::('a:: len word)) k) = bit (v::('b:: len word)) k"
-  by (meson bit_imp_le_length le_eq_less_or_eq scast_u32_scast_u8_eq_simp_0a scast_u32_scast_u8_eq_simp_0b verit_comp_simplify(3))
- 
-
-
-lemma scast_u32_scast_u8_eq_simp: 
-  assumes a0:"LENGTH('a) = m" and a1:"LENGTH('b) = n" and a2:"m \<le> n" and
-   a3:"ofs \<le> (2^(m-1)-1) \<or> (- (2^(m-1))) \<le> ofs" and
-  a4:"(v::('a::len word)) = scast (ofs::('b::len word))" 
-  shows "(scast v) = ofs"
-  by (smt (verit, ccfv_threshold) a0 a1 a2 a4 bit_last_iff bit_word_scast_iff 
-      decr_length_less_iff is_up.rep_eq scast_u32_scast_u8_eq_simp_0 scast_up_scast_id signed_minus_1)
-
-
-  
 lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
   (v::u8) = scast (ofs::u32) \<Longrightarrow> (scast v) = ofs"
-<<<<<<< HEAD
   apply simp                   
-=======
-  using scast_u32_scast_u8_eq_simp_0
-  apply simp
->>>>>>> 60f6449 (partial proof of scast_ general scast inversible theorem)
   apply (simp only: scast_eq)
 
   apply (simp add: bit_eq_iff)
