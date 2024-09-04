@@ -240,9 +240,9 @@ lemma bit_n_plus_le: "(v::u32) \<le> 2^n - 1 \<Longrightarrow> bit v (n+m) = Fal
 lemma Suc7_eq_add_7:"(Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = 7 + n" by simp
 
 lemma word_not_set_inverse:"(ofs::('a::len) word) \<le> 2^n-1 \<longleftrightarrow> - (2^n) \<le> (not ofs)"
-  by (smt (z3) add_diff_cancel_left' add_uminus_conv_diff linorder_not_le minus_diff_commute not_eq_complement sub_wrap word_le_minus_mono_left word_less_1 word_sub_le_iff)
+  by (smt (z3) add_diff_cancel_left' add_uminus_conv_diff linorder_not_le minus_diff_commute
+      not_eq_complement sub_wrap word_le_minus_mono_left word_less_1 word_sub_le_iff)
   
-
 lemma bit_n_plus_le_7: "(v::u32) \<le> 127 \<Longrightarrow> bit v (7 + n) = False"
   using bit_n_plus_le [of v 7 n] by auto
               
@@ -251,18 +251,7 @@ lemma u32_le_127_ge_7_False: "(ofs::u32) \<le> 127 \<Longrightarrow>
   apply (simp only: Suc7_eq_add_7)
   using bit_n_plus_le_7 [of ofs n]
   by simp
-  
 
-value "not (-128::u32)"
-
-
-thm bit_minus_int_iff
-
-(*lemma a:
- "m \<ge> 2 \<and> m < 32 \<Longrightarrow> -(2^m) \<le> (v::u32) \<Longrightarrow> (2^n-2^m) \<le> v \<and>  v \<le> 2^32 - 1"
-  apply auto
-
-  sorry *)
 lemma len_word:
   "m < LENGTH ('a) \<Longrightarrow> bit (k::'a::len word) m \<longleftrightarrow> \<not>(bit (not k) m)"
   by (simp add: bit_not_iff)
@@ -375,6 +364,7 @@ qed *)
   by (meson bit_imp_le_length le_eq_less_or_eq scast_u32_scast_u8_eq_simp_0a scast_u32_scast_u8_eq_simp_0b verit_comp_simplify(3))
  *)
 
+(*
 lemma scast_un_scast_um_1:
   assumes a1:"LENGTH('b) = n" and a2:"m \<le> n" and a3:"(ofs::('b::len word)) \<le> 2^(m-1)-1" and 
           a4:"m\<ge>1"
@@ -391,7 +381,7 @@ lemma scast_un_scast_um_0:
   assumes a1:"LENGTH('b) = n" and a2:"m \<le> n" and a3:"(- (2^(m-1))) \<le> (ofs::('b::len word))" and
           a4:"m\<ge>1"
   shows "(2^n-2^m) \<le> ofs \<and> ofs \<le> 2^n - 1"
-  sorry
+  sorry *)
  
 lemma scast_un_aa:
    assumes a0:"LENGTH('a) = m" and a1:"LENGTH('b) = n" and a2:"m \<le> n"
