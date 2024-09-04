@@ -217,7 +217,8 @@ fun assemble_one_instruction :: "bpf_instruction \<Rightarrow> ebpf_binary optio
 "assemble_one_instruction (BPF_CALL_IMM src imm) =
   insn 0x85 0 (bpf_ireg2u4 src) 0 imm" |
   
-"assemble_one_instruction BPF_EXIT = insn 0x95 0 0 0 0"
+"assemble_one_instruction BPF_EXIT = insn 0x95 0 0 0 0" |
+"assemble_one_instruction _ = None"
 
 subsection \<open> assemble a set of instructions \<close>
 

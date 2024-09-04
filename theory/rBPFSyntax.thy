@@ -44,6 +44,7 @@ datatype bpf_instruction =
   (* BPF_ST/BPF_STX class *)
   BPF_ST  memory_chunk  dst_ty snd_op off_ty |
   (* BPF_ALU class *)
+  BPF_ADD_STK imm_ty |
   BPF_ALU     binop   dst_ty snd_op |
   BPF_NEG32_REG       dst_ty        |
   BPF_LE              dst_ty imm_ty |
