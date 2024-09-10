@@ -207,24 +207,33 @@ definition check_registers :: "u8 list \<Rightarrow> bool \<Rightarrow> nat \<Ri
           False
 )"
 
-fun verifier :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> u8 list \<Rightarrow> SBPFV \<Rightarrow>
+fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> u8 list \<Rightarrow> SBPFV \<Rightarrow>
  func_map \<Rightarrow> Config \<Rightarrow> bool" where
-"verifier fuel pc len l sbpf_version fr conf = (
+"verifier_aux fuel pc len l sbpf_version fr conf = (
   case fuel of
-  0 \<Rightarrow> False |
+  0 \<Rightarrow> if pc \<noteq> (len div INSN_SIZE) then False else True |
   Suc n \<Rightarrow> (
     case bpf_find_instr pc l of
     None \<Rightarrow> False |
     Some ins \<Rightarrow>
       if verify_one ins l pc len sbpf_version fr conf then
         if check_registers l (is_store ins) pc sbpf_version then
-          verifier n (if is_lddw_imm ins then pc + 2 else pc + 1)
+          verifier_aux n (if is_lddw_imm ins then pc + 2 else pc + 1)
             len l sbpf_version fr conf
         else
           False
       else
         False
     )
+)"
+
+definition verifier :: "u8 list \<Rightarrow> SBPFV \<Rightarrow>
+ func_map \<Rightarrow> Config \<Rightarrow> bool" where
+"verifier l sbpf_version fr conf = (
+  if check_prog_len l then
+    verifier_aux (length l) 0 (length l) l sbpf_version fr conf
+  else
+    False
 )"
 
 end
