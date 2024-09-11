@@ -510,7 +510,7 @@ definition pop_frame:: "stack_state \<Rightarrow> CallFrame" where
 "pop_frame ss = (call_frames ss)!(unat (call_depth ss)) "
 
 subsection  \<open> EXIT \<close>
-
+                                       
 definition eval_exit :: "Config \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
 "eval_exit conf rs ss is_v1 = (
   if call_depth ss = 0 then None else 
@@ -647,6 +647,42 @@ proof-
   qed
   finally show ?thesis by auto
 qed
+
+
+
+value "ucast (-1::i32)::u32"
+value "-1::u32"
+value "scast(-1::u32)::i32"
+
+value "of_nat 101::nat"
+
+value "take_bit 64 (uint (1111111111111111111111111111111111111111::u32)) "
+value "take_bit 32 (uint (1111111111111111111111111111111111111111::u32))"
+value "signed_take_bit 32 3::u32"
+
+value "(ucast(-1::u32)::u64) + ucast(-2::u32)::u64"
+
+value "(ucast(-3::u32)::u64)"
+
+value "(scast(-1::i32)::i8) + scast(-2::i32)::i8"
+
+value "(scast(-3::u32)::i8)"
+
+value "(scast(-1::u32)::u64)"
+
+
+lemma cast_lemma1_1:"(uint((scast((ucast (n1::u32))::u64))::i32)) = uint((ucast (n1::u32))::u64)"
+  sorry
+
+lemma cast_lemma1:"(n3::u32)=(n1::u32) +(n2::u32)\<Longrightarrow> ((ucast n3)::u64) = ((ucast ((scast((ucast n1)::u64)::i32) +scast((ucast n2)::u64)::i32))::u64)"
+  sorry
+
+
+lemma cast_lemma2:"n3 = n1 + ucast (n2) \<Longrightarrow> ucast n3 = ucast (scast(ucast n1 )+ n2)"
+  sorry
+
+lemma cast_lemma3:"(x::u32) = (ucast(x::u32)::u32)"
+  by simp
 
 
 end
