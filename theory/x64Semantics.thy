@@ -4,6 +4,7 @@ theory x64Semantics
 imports
   Main
   rBPFCommType Val Mem x64Syntax
+  x64Disassembler
 begin
 
 text \<open> define our x64 semantics in Isabelle/HOL, following the style of CompCert x64 semantics: https://github.com/AbsInt/CompCert/blob/master/x86/Asm.v  \<close>
@@ -570,5 +571,21 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 
 
 *)
+
+fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp 0 _ _ = Stuck" |
+"interp (Suc n) l st = (
+  case st of
+  Stuck \<Rightarrow> Stuck |
+  Next rs m \<Rightarrow> (
+    case rs PC of
+    Vlong v \<Rightarrow> (
+      case x64_decode (unat v) l of
+      None \<Rightarrow> Stuck |
+      Some (sz, ins) \<Rightarrow>
+        interp n l (exec_instr ins (of_nat sz) rs m)
+      ) |
+    _ \<Rightarrow> Stuck)
+)"
 
 end

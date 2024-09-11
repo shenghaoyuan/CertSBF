@@ -1,5 +1,6 @@
 theory bpfConsistencyAux
-  imports Main Interpreter x64Semantics 
+  imports Main Interpreter x64Semantics
+  x64Assembler
 begin
 
 (*lemma "bop = BPF_ADD \<Longrightarrow> xop = Paddl_rr \<Longrightarrow> *)
@@ -12,6 +13,13 @@ definition corr_registers:: "bpf_ireg \<Rightarrow> ireg \<Rightarrow> bool" whe
 
 (*u8_of_ireg rd = ucast(bpf_ireg2u4 dst) \<Longrightarrow>
 u8_of_ireg ri = ucast(bpf_ireg2u4 src) \<Longrightarrow>*)
+
+definition bpf_to_x64_reg:: "bpf_ireg \<Rightarrow> ireg" where
+"bpf_to_x64_reg br = (
+  case br of
+  BR0 \<Rightarrow> x64Syntax.RAX |
+  _ \<Rightarrow> x64Syntax.RAX
+)"
 
 lemma addl_subgoal_rr:
       "bins = BPF_ALU BPF_ADD dst (SOReg src) \<Longrightarrow>
@@ -119,6 +127,67 @@ lemma subq_subgoal_rr:
        reg' (IR rd) = Vlong n3 \<Longrightarrow>
        memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
   apply (unfold exec_instr_def step)
+  apply simp
+  apply (unfold eval_alu64_def)
+  apply (cases BPF_SUB, simp_all)
+  apply (unfold eval_alu64_aux1_def)
+  apply (unfold Let_def)
+  apply (cases BPF_SUB, simp_all)
+  apply (unfold sub64_def)
+  apply (unfold nextinstr_nf_def nextinstr_def eval_reg_def)
+  by simp
+
+(*
+definition rel_reg :: "bpf_ireg => ireg => bool" where
+"rel_reg br ir = " *)
+
+
+(**r
+Inductive star (ge: genv): state -> trace -> state -> Prop :=
+  | star_refl: forall s,
+      star ge s E0 s
+  | star_step: forall s1 t1 s2 t2 s3 t,
+      step ge s1 t1 s2 -> star ge s2 t2 s3 -> t = t1 ** t2 ->
+      star ge s1 t s3.
+
+*)
+
+(*
+fun exec_instrs :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"exec_instrs [] st = st" |
+"exec_instrs (h#t) st = (
+  case st of
+  Stuck \<Rightarrow> Stuck |
+  Next rs m \<Rightarrow>
+  let st1 = exec_instr h 0 rs m in
+    exec_instrs t st1
+)" *)
+
+(**r 
+definition per_jit_sub_reg64 :: "bpf_ireg => bpf_ireg => x64_bin"
+
+per_jit_sub_reg64 dst src = bl \<Longrightarrow> (**r JIT + x64_encode *)
+x64decode bl = Some (sz, xins) \<Longrightarrow>
+
+*)
+
+definition per_jit_sub_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
+"per_jit_sub_reg64 dst src = (
+  let ins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
+    x64_encode ins
+)"
+
+lemma subq_subgoal_rr_generic:
+      "bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow>
+       per_jit_sub_reg64 dst src = Some bl \<Longrightarrow>
+       list_in_list bl pc l_bin \<Longrightarrow>
+       x64decode pc l_bin = Some (sz, xins) \<Longrightarrow>
+       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
+       (\<forall> r. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r))) \<Longrightarrow>
+       (\<forall> r. Vlong ((registers bstate) (BR r)) = reg' (IR (bpf_to_x64_reg r)))"
+
+  apply (unfold exec_instr_def step per_jit_sub_reg64_def)
   apply simp
   apply (unfold eval_alu64_def)
   apply (cases BPF_SUB, simp_all)
