@@ -121,17 +121,33 @@ definition rel_reg :: "bpf_ireg => ireg => bool" where
 "rel_reg br ir = " *)
 
 
-(**r
+(*
 Inductive star (ge: genv): state -> trace -> state -> Prop :=
   | star_refl: forall s,
       star ge s E0 s
   | star_step: forall s1 t1 s2 t2 s3 t,
       step ge s1 t1 s2 -> star ge s2 t2 s3 -> t = t1 ** t2 ->
-      star ge s1 t s3.
+      star ge s1 t s3.*)
 
-*)
+inductive small_step ::"instruction list * outcome \<Rightarrow> instruction list * outcome \<Rightarrow> bool"(infix "\<rightarrow>" 55)
+  where
+    Seq1:"(l#ls,Stuck)\<rightarrow>(ls,Stuck)"|
+    Seq2:"(l#ls,Next rs m)\<rightarrow>(ls,exec_instr l 0 rs m)"
 
-(*
+inductive star::"('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
+refl:"star r x x"|
+step: "r x y \<Longrightarrow> star r y z \<Longrightarrow> star r x z"
+
+abbreviation small_steps::"instruction list * outcome \<Rightarrow> instruction list * outcome \<Rightarrow> bool"(infix "\<rightarrow>*" 55)
+  where "x \<rightarrow>* y == star small_step x y "
+
+lemma "([Pmovl_rr rd r1],Stuck) \<rightarrow>* ([], Stuck) = True"
+  by (meson Seq1 star.refl star.step)
+
+lemma "([Psubq_rr rd r1], Next rs m) \<rightarrow>* ([], Stuck) = False"
+  apply (meson Seq2 star.step) using exec_instr_def
+  by (smt (verit) instruction.simps(6259) list.distinct(1) list.inject outcome.distinct(1) prod.inject small_step.simps star.simps)
+
 fun exec_instrs :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
 "exec_instrs [] st = st" |
 "exec_instrs (h#t) st = (
@@ -140,7 +156,7 @@ fun exec_instrs :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome
   Next rs m \<Rightarrow>
   let st1 = exec_instr h 0 rs m in
     exec_instrs t st1
-)" *)
+)" 
 
 (**r 
 definition per_jit_sub_reg64 :: "bpf_ireg => bpf_ireg => x64_bin"
