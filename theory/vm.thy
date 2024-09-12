@@ -12,6 +12,16 @@ max_call_depth :: usize
 \<comment> \<open> Size of a stack frame in bytes,
   must match the size specified in the LLVM BPF backend \<close>
 stack_frame_size :: usize
+\<comment> \<open> Enables gaps in VM address space between the stack frames \<close>
+enable_stack_frame_gaps :: bool
+
+(*
+record Config =
+\<comment> \<open> Maximum call depth \<close>
+max_call_depth :: usize
+\<comment> \<open> Size of a stack frame in bytes,
+  must match the size specified in the LLVM BPF backend \<close>
+stack_frame_size :: usize
 \<comment> \<open> Enables the use of MemoryMapping and MemoryRegion for address translation \<close>
 enable_address_translation :: bool
 \<comment> \<open> Enables gaps in VM address space between the stack frames \<close>
@@ -48,7 +58,7 @@ aligned_memory_mapping :: bool
 enable_sbpf_v1 :: bool
 \<comment> \<open> Allow ExecutableCapability::V2 \<close>
 enable_sbpf_v2 :: bool
-
+*)
 
 text \<open> TBC \<close>
 
