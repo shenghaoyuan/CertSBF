@@ -1,15 +1,9 @@
 theory bpfConsistencyAux
-  imports Main Interpreter x64Semantics
-  x64Assembler
+  imports Main Interpreter x64Semantics 
+  x64Assembler x64DecodeProof
 begin
 
 (*lemma "bop = BPF_ADD \<Longrightarrow> xop = Paddl_rr \<Longrightarrow> *)
-
-
-definition corr_registers:: "bpf_ireg \<Rightarrow> ireg \<Rightarrow> bool" where
-"corr_registers br ir = (let x = ucast(bpf_ireg2u4 br); y = u8_of_ireg ir in
-  (if (x,y)\<in> {(1::u8,7),(0,0),(2,6),(3,2),(4,8),(5,3),(6,13),(7,14),(8,15),(9,5)} then True
-  else False))"
 
 (*u8_of_ireg rd = ucast(bpf_ireg2u4 dst) \<Longrightarrow>
 u8_of_ireg ri = ucast(bpf_ireg2u4 src) \<Longrightarrow>*)
@@ -18,13 +12,22 @@ definition bpf_to_x64_reg:: "bpf_ireg \<Rightarrow> ireg" where
 "bpf_to_x64_reg br = (
   case br of
   BR0 \<Rightarrow> x64Syntax.RAX |
-  _ \<Rightarrow> x64Syntax.RAX
+  BR1 \<Rightarrow> x64Syntax.RDI |
+  BR2 \<Rightarrow> x64Syntax.RSI |
+  BR3 \<Rightarrow> x64Syntax.RDX |
+  BR4 \<Rightarrow> x64Syntax.RCX |
+  BR5 \<Rightarrow> x64Syntax.R8 |
+  BR6 \<Rightarrow> x64Syntax.RBX |
+  BR7 \<Rightarrow> x64Syntax.R13 |
+  BR8 \<Rightarrow> x64Syntax.R14 |
+  BR9 \<Rightarrow> x64Syntax.R15 |
+  BR10 \<Rightarrow> x64Syntax.RBP
 )"
 
 lemma addl_subgoal_rr:
       "bins = BPF_ALU BPF_ADD dst (SOReg src) \<Longrightarrow>
        xins = Paddl_rr rd ri \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        corr_registers src ri \<Longrightarrow>
@@ -33,7 +36,7 @@ lemma addl_subgoal_rr:
        ucast n1 = rs (BR dst) \<Longrightarrow>
        ucast n2  = rs (BR src) \<Longrightarrow>
        reg' (IR rd) = Vint n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
+       ucast n3 = rs'(BR dst)"
   apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu32_def)
@@ -53,14 +56,14 @@ lemma addl_subgoal_rr:
 lemma addl_subgoal_ri:
       "bins = BPF_ALU BPF_ADD dst (SOImm src) \<Longrightarrow>
        xins = Paddl_ri rd imm \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        imm = ucast (src) \<Longrightarrow>
        reg (IR rd) = Vint n1 \<Longrightarrow>
        ucast n1  = rs (BR dst) \<Longrightarrow>
        reg' (IR rd) = Vint n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
+       ucast n3 = rs'(BR dst)"
   apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu32_def)
@@ -80,7 +83,7 @@ lemma addl_subgoal_ri:
 lemma addq_subgoal_rr:
       "bins = BPF_ALU64 BPF_ADD dst (SOReg src) \<Longrightarrow>
        xins = Paddq_rr rd ri \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        corr_registers src ri \<Longrightarrow>
@@ -89,7 +92,7 @@ lemma addq_subgoal_rr:
        n1  = rs (BR dst) \<Longrightarrow>
        n2  = rs (BR src) \<Longrightarrow>
        reg' (IR rd) = Vlong n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
+       ucast n3 = rs'(BR dst)"
   apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu64_def)
@@ -101,10 +104,8 @@ lemma addq_subgoal_rr:
   apply (unfold nextinstr_nf_def nextinstr_def eval_reg_def)
   apply simp
   apply (erule conjE)
-  apply (rule conjI)
   apply (cases "is_v1", simp_all)
   apply(cases "dst = BR10")
-  apply auto[1]
   apply auto[1]
   apply (cases "is_v1", simp_all)
   apply(cases "dst = BR10", simp_all)
@@ -113,29 +114,7 @@ lemma addq_subgoal_rr:
   sorry
  
 
-lemma subq_subgoal_rr:
-      "bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow>
-       xins = Psubq_rr rd ri \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
-       Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
-       corr_registers dst rd \<Longrightarrow>
-       corr_registers src ri \<Longrightarrow>
-       reg (IR rd) = Vlong n1 \<Longrightarrow>
-       reg (IR ri) = Vlong n2 \<Longrightarrow>
-       n1  = rs (BR dst) \<Longrightarrow>
-       n2  = rs (BR src) \<Longrightarrow>
-       reg' (IR rd) = Vlong n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
-  apply (unfold exec_instr_def step)
-  apply simp
-  apply (unfold eval_alu64_def)
-  apply (cases BPF_SUB, simp_all)
-  apply (unfold eval_alu64_aux1_def)
-  apply (unfold Let_def)
-  apply (cases BPF_SUB, simp_all)
-  apply (unfold sub64_def)
-  apply (unfold nextinstr_nf_def nextinstr_def eval_reg_def)
-  by simp
+
 
 (*
 definition rel_reg :: "bpf_ireg => ireg => bool" where
@@ -171,23 +150,20 @@ x64decode bl = Some (sz, xins) \<Longrightarrow>
 
 *)
 
-definition per_jit_sub_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
-"per_jit_sub_reg64 dst src = (
-  let ins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
-    x64_encode ins
-)"
 
-lemma subq_subgoal_rr_generic:
+lemma subq_subgoal_rr_aux1:
       "bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow>
-       per_jit_sub_reg64 dst src = Some bl \<Longrightarrow>
-       list_in_list bl pc l_bin \<Longrightarrow>
-       x64decode pc l_bin = Some (sz, xins) \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       xins = Psubq_rr rd ri \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
-       (\<forall> r. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r))) \<Longrightarrow>
-       (\<forall> r. Vlong ((registers bstate) (BR r)) = reg' (IR (bpf_to_x64_reg r)))"
-
-  apply (unfold exec_instr_def step per_jit_sub_reg64_def)
+       rd = (bpf_to_x64_reg dst)\<Longrightarrow>
+       ri = (bpf_to_x64_reg src) \<Longrightarrow>
+       reg (IR rd) = Vlong n1 \<Longrightarrow>
+       reg (IR ri) = Vlong n2 \<Longrightarrow>
+       n1  = rs (BR dst) \<Longrightarrow>
+       n2  = rs (BR src) \<Longrightarrow>
+       Vlong (rs' (BR dst)) = reg' (IR (bpf_to_x64_reg dst))"
+  apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu64_def)
   apply (cases BPF_SUB, simp_all)
@@ -198,17 +174,82 @@ lemma subq_subgoal_rr_generic:
   apply (unfold nextinstr_nf_def nextinstr_def eval_reg_def)
   by simp
 
+lemma subq_subgoal_rr_aux2_1:"xins = Psubq_rr dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> \<forall> r \<noteq> dst . reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def, cases "xins", simp_all)
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def) 
+  by auto
+
+lemma subq_subgoal_rr_aux2_2:"xins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow>
+       \<forall> r \<noteq> bpf_to_x64_reg dst. reg' (IR r) = reg (IR r)"
+  using subq_subgoal_rr_aux2_1 by blast
+
+lemma subq_subgoal_rr_aux2_3:" r1 \<noteq> r2 \<longrightarrow> bpf_to_x64_reg r1 \<noteq> bpf_to_x64_reg r2 "
+  apply(unfold bpf_to_x64_reg_def)
+  apply(rule impI)
+  apply(cases r1)
+    apply(cases r2, simp_all)
+           apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+         apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+       apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+  apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+  apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+  done
+
+lemma subq_subgoal_rr_aux2:"xins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow>
+       \<forall> r \<noteq> dst. reg' (IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))"
+  using subq_subgoal_rr_aux2_3 subq_subgoal_rr_aux2_2 by metis
+
+
+lemma subq_subgoal_rr_aux3:"bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow> (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       \<forall> r \<noteq> dst. rs' (BR r) = rs (BR r)"
+  apply(cases "bins",simp_all)
+  apply(unfold eval_alu64_def,simp)
+  by (unfold eval_alu64_aux1_def, simp)
+
+
+definition per_jit_sub_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
+"per_jit_sub_reg64 dst src = (
+  let ins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
+    x64_encode ins
+)"
+
+lemma subq_subgoal_rr_generic:
+  assumes a0:"bins = BPF_ALU64 BPF_SUB dst (SOReg src)" and
+       a1:"per_jit_sub_reg64 dst src = Some bl" and
+       a2:"list_in_list bl pc l_bin" and
+       a3:"x64_decode pc l_bin = Some (length l_bin, xins)" and
+       a4:"(BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1" and
+       a5:"Next reg' m'  = exec_instr xins sz reg m" and
+       a6:"(\<forall> r. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r)))" 
+  shows "(\<forall> r. Vlong (rs' (BR r)) = reg' (IR (bpf_to_x64_reg r)))"
+proof -
+  have b0:"xins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src)" using x64_encode_decode_consistency per_jit_sub_reg64_def a1 a2 a3 by fastforce
+    moreover have b1:"Vlong (rs (BR dst)) = reg (IR (bpf_to_x64_reg dst))" using a6 spec by simp
+    moreover have b2:"Vlong (rs (BR src)) = reg (IR (bpf_to_x64_reg src))" using a6 spec by simp
+    hence b3:"Vlong (rs' (BR dst)) = reg' (IR (bpf_to_x64_reg dst))" using subq_subgoal_rr_aux1 b0 b1 b2 a0 a4 a5 by force
+    have b4:"\<forall> r \<noteq> dst. reg'(IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))" using b0 a5 subq_subgoal_rr_aux2 by simp
+    have b5:"\<forall> r \<noteq> dst. Vlong (rs'(BR r)) = Vlong (rs (BR r))" using a0 a4 subq_subgoal_rr_aux3 by simp
+    have b6:"\<forall> r \<noteq> dst. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r))" using a6 by blast
+    have b7:"(\<forall> r \<noteq> dst. Vlong (rs' (BR r)) = reg' (IR (bpf_to_x64_reg r)))" by(simp add:b4 b5 b6) 
+    thus ?thesis using b3 by fastforce
+  qed
+
 lemma subl_subgoal_ri:
       "bins = BPF_ALU BPF_SUB dst (SOImm src) \<Longrightarrow>
        xins = Psubl_ri rd imm \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        imm = ucast (src) \<Longrightarrow>
        reg (IR rd) = Vint n1 \<Longrightarrow>
        ucast n1  = rs (BR dst) \<Longrightarrow>
        reg' (IR rd) = Vint n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
+       ucast n3 = rs'(BR dst)"
   apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu32_def)
@@ -221,7 +262,6 @@ lemma subl_subgoal_ri:
   apply simp
   apply (unfold add64_def)
   apply (erule conjE)
-  apply (rule conjI)
   apply (cases "is_v1", simp_all)
   apply (cases "is_v1", simp_all)
   using cast_lemma2 
@@ -231,7 +271,7 @@ lemma subl_subgoal_ri:
 lemma movq_subgoal_rr:
       "bins = BPF_ALU64 BPF_MOV dst (SOReg src) \<Longrightarrow>
        xins = Pmovq_rr rd ri \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        corr_registers src ri \<Longrightarrow>
@@ -240,8 +280,8 @@ lemma movq_subgoal_rr:
        n1  = rs (BR dst) \<Longrightarrow>
        n2  = rs (BR src) \<Longrightarrow>
        reg' (IR rd) = Vlong n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
-(*memory_mapping bstate = m' \<and> (reg' (IR rd)) = Vlong ((registers bstate)(BR dst))"*)
+       ucast n3 = rs'(BR dst)"
+(*memory_mapping bstate = m' \<and> (reg' (IR rd)) = Vlong (rs'(BR dst))"*)
   apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu64_def)
@@ -253,21 +293,20 @@ lemma movq_subgoal_rr:
 lemma movq_subgoal_ri:
       "bins = BPF_ALU64 BPF_MOV dst (SOImm src) \<Longrightarrow>
        xins = Pmovq_ri rd imm \<Longrightarrow>
-       Some bstate = step conf bins rs m ss l is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
        Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        imm = ucast (src) \<Longrightarrow>
        reg (IR rd) = Vlong n1 \<Longrightarrow>
        ucast n1  = rs (BR dst) \<Longrightarrow>
        reg' (IR rd) = Vlong n3 \<Longrightarrow>
-       memory_mapping bstate = m' \<and> ucast n3 = (registers bstate)(BR dst)"
+       ucast n3 = rs'(BR dst)"
   apply (unfold exec_instr_def step)
   apply simp
   apply (unfold eval_alu64_def)
   apply (cases BPF_MOV, simp_all)
   apply (unfold nextinstr_def)
   apply (erule conjE)
-  apply (rule conjI)
   apply (metis (no_types, lifting) option.case_eq_if option.discI option.sel rbpf_state.select_convs(2))
   apply(unfold eval_alu64_aux1_def add64_def) 
   by simp
