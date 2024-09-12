@@ -512,7 +512,7 @@ definition disassemble_one_instruction :: "ebpf_binary \<Rightarrow> bpf_instruc
           None)
       else  None)))"
     
-fun disassemble :: "ebpf_bin \<Rightarrow> ebpf_asm option" where
+fun disassemble :: "ebpf_abin \<Rightarrow> ebpf_asm option" where
 "disassemble [] = Some []" |
 "disassemble (h#t) = (
   if bpf_opc h = 0x18 then

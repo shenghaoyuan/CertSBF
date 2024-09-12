@@ -224,7 +224,7 @@ subsection \<open> assemble a set of instructions \<close>
 
 text \<open>after each time assemble one instruction, we check if the current
 instruction is LD_IMM dst imm1 imm2, if so, we additionally encode 0 0 0 0 imm2\<close>
-fun assemble :: "ebpf_asm \<Rightarrow> ebpf_bin option" where
+fun assemble :: "ebpf_asm \<Rightarrow> ebpf_abin option" where
 "assemble [] = Some []" |
 "assemble (h#t) = (
   case (assemble_one_instruction h) of

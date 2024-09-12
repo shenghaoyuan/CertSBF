@@ -31,6 +31,6 @@ registers :: reg_map (* [u64; 12] *)
 program_result:: "u64 option" (**r ProgramResult \<rightarrow> could be refined to Ok monad type *)
 memory_mapping :: "(u64, u64) map" (**r TBC, check mem of phi-system *)
 call_frames :: "CallFrame list"
-loader :: ebpf_bin    
+loader :: bpf_bin    
 
 end

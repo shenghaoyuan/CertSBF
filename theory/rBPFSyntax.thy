@@ -66,6 +66,8 @@ datatype bpf_instruction =
   BPF_EXIT
   
 type_synonym ebpf_asm = "bpf_instruction list"
+  
+type_synonym bpf_bin = "u8 list"
 
 fun bpf_ireg2u4 :: "bpf_ireg \<Rightarrow> u4" where
 "bpf_ireg2u4 BR0 = 0" | 

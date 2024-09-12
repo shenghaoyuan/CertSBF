@@ -47,7 +47,6 @@ definition i64_MAX :: "i64" where
 definition u64_MAX :: "u64" where
 "u64_MAX = 0xFFFFFFFFFFFFFFFF"
 
-
 record ebpf_binary =
 bpf_opc :: u8
 bpf_dst :: u4
@@ -55,7 +54,7 @@ bpf_src :: u4
 bpf_off :: i16
 bpf_imm :: i32
 
-type_synonym ebpf_bin = "ebpf_binary list"
+type_synonym ebpf_abin = "ebpf_binary list"
 
 (*
 consts INSN_SIZE::usize

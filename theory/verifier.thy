@@ -26,7 +26,7 @@ datatype VerifierError =
   | InvalidRegister (*usize *)
   | InvalidFunction (*usize *) *)
 
-definition check_prog_len :: "u8 list \<Rightarrow> bool" where
+definition check_prog_len :: "bpf_bin \<Rightarrow> bool" where
 "check_prog_len prog = (
   if (length prog) mod INSN_SIZE \<noteq> 0 then
     False
@@ -51,7 +51,7 @@ definition check_jmp_offset :: "off_ty \<Rightarrow> nat \<Rightarrow> nat \<Rig
 )"
 
 
-definition check_load_dw :: "u8 list \<Rightarrow> nat \<Rightarrow> bool" where
+definition check_load_dw :: "bpf_bin \<Rightarrow> nat \<Rightarrow> bool" where
 "check_load_dw l insn_ptr = (
   if (insn_ptr+1)* INSN_SIZE \<ge> length l then
     False
@@ -59,7 +59,7 @@ definition check_load_dw :: "u8 list \<Rightarrow> nat \<Rightarrow> bool" where
     l!((insn_ptr+1)* INSN_SIZE) = 0
 )"
 
-definition verify_one :: "bpf_instruction \<Rightarrow> u8 list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> SBPFV \<Rightarrow>
+definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> SBPFV \<Rightarrow>
  func_map \<Rightarrow> Config \<Rightarrow> bool" where
 "verify_one insn l len insn_ptr sbpf_version fr conf = (
   case insn of
@@ -189,7 +189,7 @@ definition is_lddw_imm :: "bpf_instruction \<Rightarrow> bool" where
   _ \<Rightarrow> False
 )"
 
-definition check_registers :: "u8 list \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> SBPFV \<Rightarrow> bool" where
+definition check_registers :: "bpf_bin \<Rightarrow> bool \<Rightarrow> nat \<Rightarrow> SBPFV \<Rightarrow> bool" where
 "check_registers l store pc sbpf_version = (
   let op = l!(pc*INSN_SIZE) in
   let reg = l!(pc*INSN_SIZE + 1) in
@@ -207,7 +207,7 @@ definition check_registers :: "u8 list \<Rightarrow> bool \<Rightarrow> nat \<Ri
           False
 )"
 
-fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> u8 list \<Rightarrow> SBPFV \<Rightarrow>
+fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
  func_map \<Rightarrow> Config \<Rightarrow> bool" where
 "verifier_aux fuel pc len l sbpf_version fr conf = (
   case fuel of
@@ -227,7 +227,7 @@ fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> u8 li
     )
 )"
 
-definition verifier :: "u8 list \<Rightarrow> SBPFV \<Rightarrow>
+definition verifier :: "bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
  func_map \<Rightarrow> Config \<Rightarrow> bool" where
 "verifier l sbpf_version fr conf = (
   if check_prog_len l then
