@@ -29,7 +29,7 @@ definition rol16 :: "val \<Rightarrow> val \<Rightarrow> val" where \<comment> \
   Vshort v1 \<Rightarrow> (case n of Vbyte n1 \<Rightarrow>
     let n1 = n1 mod 16 in
     Vshort (Bit_Operations.or (v1 << (unat n1)) (v1 >> (unat (16 - n1))))
-  | _ \<Rightarrow> Vundef)  
+  | _ \<Rightarrow> Vundef)                                               
  |  _ \<Rightarrow> Vundef
 )"
 
@@ -130,7 +130,7 @@ definition mulhs32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 
 \<comment>\<open> ` x86 style extended division and modulusv` \<close>
 definition divmod32u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (val \<times> val) option" where
-"divmod32u v1 v2 v3 = (
+"divmod32u v1 v2 v3 = (           
   case v1 of 
     Vint nh \<Rightarrow> (case v2 of 
       Vint nl \<Rightarrow> (case v3 of 
@@ -158,7 +158,7 @@ definition bswap32 :: "val \<Rightarrow> val" where
     Vint n \<Rightarrow>( 
       let byte0 = (and n 0xFF) << 24 in
       let byte1 = (and n 0xFF00) << 8 in
-      let byte2 = (and n 0xFF0000) >> 8 in
+      let byte2 = (and n 0xFF0000) >> 8 in                       
       let byte3 = (and n 0xFF000000) >> 24 in
       Vint (or (or (or byte0 byte1) byte2) byte3)
   )
@@ -245,7 +245,7 @@ definition sar32 :: "val \<Rightarrow> val \<Rightarrow> val" where
 )"
 
 definition ror32 :: "val \<Rightarrow> val \<Rightarrow> val" where
-"ror32 v n = (
+"ror32 v n = (                                                   
   case v of                     
   Vshort v1 \<Rightarrow> (case n of Vbyte n1 \<Rightarrow>
     let  n1 = n1 mod 32 in

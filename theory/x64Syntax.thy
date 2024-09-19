@@ -53,7 +53,7 @@ fun u8_of_ireg ::"ireg \<Rightarrow> u8" where
 "u8_of_ireg R15 = 15"
 
 definition ireg_of_u8 ::"u8 \<Rightarrow> ireg option" where
-"ireg_of_u8 i = (
+"ireg_of_u8 i = (                
         if i = 0 then
     Some RAX
   else  if i = 1 then

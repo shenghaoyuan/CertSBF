@@ -14,11 +14,12 @@ max_call_depth :: usize
 stack_frame_size :: usize
 \<comment> \<open> Enables gaps in VM address space between the stack frames \<close>
 enable_stack_frame_gaps :: bool
-
+\<comment> \<open> Have the verifier reject "callx r10" \<close>
+reject_callx_r10 :: bool
 (*
 record Config =
 \<comment> \<open> Maximum call depth \<close>
-max_call_depth :: usize
+max_call_depth :: usizemax_call_depth
 \<comment> \<open> Size of a stack frame in bytes,
   must match the size specified in the LLVM BPF backend \<close>
 stack_frame_size :: usize
@@ -46,8 +47,7 @@ sanitize_user_provided_values :: bool
 \<comment> \<open> Throw ElfError::SymbolHashCollision when 
 a BPF function collides with a registered syscall \<close>
 external_internal_function_hash_collision :: bool
-\<comment> \<open> Have the verifier reject "callx r10" \<close>
-reject_callx_r10 :: bool
+
 \<comment> \<open> Avoid copying read only sections when possible \<close>
 optimize_rodata :: bool
 \<comment> \<open> Use the new ELF parser \<close>

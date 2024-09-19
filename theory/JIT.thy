@@ -34,7 +34,7 @@ definition emit_ins :: "JitCompiler \<Rightarrow> X86Instruction \<Rightarrow> J
 "
 
 definition should_sanitize_constant :: "JitCompiler \<Rightarrow> i64 \<Rightarrow> bool" where
-"should_sanitize_constant l v = (
+"should_sanitize_constant l v = (            
   if \<not> (sanitize_user_provided_values (jit_config l)) then
     False
   else if v = 0xFFFF \<or>
@@ -64,7 +64,7 @@ match value as u64 {
 )"
 
 definition emit_sanitized_alu :: "JitCompiler \<Rightarrow> OperandSize \<Rightarrow> u8 \<Rightarrow> u8 \<Rightarrow> u8
-  \<Rightarrow> i64 \<Rightarrow> JitCompiler option" where
+  \<Rightarrow> i64 \<Rightarrow> JitCompiler option" where  
 "emit_sanitized_alu l sz op ope dst imm = (
   \<comment> \<open> ignore the following, as we don't know how to model random number
 if self.should_sanitize_constant(immediate) {

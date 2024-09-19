@@ -341,12 +341,13 @@ definition eval_store :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op
 definition eval_load :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
 "eval_load chk dst sop off rs mem = (
   let sv :: u64 = eval_snd_op_u64 (SOReg sop) rs in (
-  let vm_addr :: u64 = ucast (sv + (scast off)) in (  
+  let vm_addr :: u64 = sv + (scast off) in (  
   let v = (loadv chk mem (Vlong vm_addr)) in (
      case v of None \<Rightarrow> None |
                Some Vundef \<Rightarrow>  None | 
                Some (Vlong v) \<Rightarrow>  Some (rs#(BR dst) <-- v) |
-               Some (Vint v) \<Rightarrow> Some (rs#(BR dst) <-- (ucast v))
+               Some (Vint v) \<Rightarrow> Some (rs#(BR dst) <-- (ucast v))|
+               _ \<Rightarrow> None
 ))))"
 
 (*definition store_mem::"mem_len \<Rightarrow> i64 \<Rightarrow> usize \<Rightarrow> mem \<Rightarrow> mem" where  
@@ -658,9 +659,28 @@ qed
 
 
 
-value "ucast (-1::i32)::u32"
-value "-1::u32"
-value "scast(-1::u32)::i32"
+value "ucast (-1::i8)::u8"
+value "-1::u8"
+value "-1::i8"
+value "scast(-1::u8)::i8"
+lemma "\<exists> x y. ((scast(x::u8))::i8) + ((scast(y::u8))::i8) = (scast(x+y)::i8)"
+  by (metis (no_types, lifting) of_int_add scast_nop1)
+
+lemma "\<forall> x y. ((scast(x::u8))::i8) + ((scast(y::u8))::i8) = (scast(x+y)::i8)"
+  by (metis (mono_tags, opaque_lifting) of_int_add of_int_sint scast_id scast_nop2 scast_scast_id(2))
+
+lemma "\<exists> x y. ((ucast(x::i8))::u8) + ((ucast(y::i8))::u8) = (ucast(x+y)::u8)"
+  by (metis add_0 unsigned_0)
+
+value "((ucast(-1::i8))::u64) + ((ucast(-2::i8))::u64) "
+value "(ucast(-3::i8)::u8)"
+
+
+lemma "((ucast(-1::i8))::u8) + ((ucast(-2::i8))::u8) \<noteq> (ucast(-3::i8)::u8)"
+  try
+
+lemma "\<exists> x y. ((ucast(x::i8))::u8) + ((ucast(y::i8))::u8) \<noteq> (ucast(x+y)::u8)"
+  try
 
 value "of_nat 101::nat"
 
@@ -669,8 +689,18 @@ value "take_bit 32 (uint (1111111111111111111111111111111111111111::u32))"
 value "signed_take_bit 32 3::u32"
 
 value "(ucast(-1::u32)::u64) + ucast(-2::u32)::u64"
-
 value "(ucast(-3::u32)::u64)"
+
+value "(ucast(-1::i32)::u64) + ucast(-2::i32)::u64"
+value "(ucast(-3::i32)::u64)"
+
+value "(ucast(-1::i32)::u32) + ucast(-2::i32)::u32"
+value "(ucast(-3::i32)::u32)"
+
+value "(scast(-1::u32)::i64) + scast(-2::u32)::i64"
+value "(scast(-3::u32)::i64)"
+
+
 
 value "(scast(-1::i32)::i8) + scast(-2::i32)::i8"
 
@@ -692,5 +722,15 @@ lemma cast_lemma2:"n3 = n1 + ucast (n2) \<Longrightarrow> ucast n3 = ucast (scas
 lemma cast_lemma3:"(x::u32) = (ucast(x::u32)::u32)"
   by simp
 
+lemma cast_lemma4:"ucast off = scast (ucast off)"
+  sorry
+
+
+lemma cast_lemma5:"scast const = scast (scast const)"
+  sorry
+
+
+(*lemma cast_lemma6:"Vlong  = Vint const "*)
+  
 
 end

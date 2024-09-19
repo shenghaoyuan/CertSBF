@@ -116,11 +116,11 @@ definition eval_testcond :: "testcond \<Rightarrow> regset \<Rightarrow> bool op
   Cond_p  \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 1) | _ \<Rightarrow> None) |
   Cond_np \<Rightarrow> (case rs (CR PF) of Vint n \<Rightarrow> Some (n = 0) | _ \<Rightarrow> None)
 )"
-
+                                   
 datatype outcome = Next regset mem | Stuck
 
 definition nextinstr :: "u64 \<Rightarrow> regset \<Rightarrow> regset" where
-"nextinstr sz rs = (rs#PC <- (Val.add64 (rs PC) (Vlong sz)))"
+"nextinstr sz rs = (rs#PC <- (Val.add64 (rs PC) (Vlong (sz+1))))"
 
 definition call :: "preg \<Rightarrow> regset \<Rightarrow> regset" where
 "call dst rs = (rs#PC <- (rs dst))"
@@ -318,6 +318,23 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.intoflongh  (rs TSC)))) m |
   Pnop            \<Rightarrow> Next (nextinstr sz rs) m |
   _               \<Rightarrow> Stuck
+)"
+
+
+fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp 0 _ _ = Stuck" |
+"interp (Suc n) l st = (
+  case st of
+  Stuck \<Rightarrow> Stuck |
+  Next rs m \<Rightarrow> (
+    case rs PC of
+    Vlong v \<Rightarrow> (
+      case x64_decode (unat v) l of
+      None \<Rightarrow> Stuck |
+      Some (sz, ins) \<Rightarrow>
+        interp n l (exec_instr ins (of_nat sz) rs m)
+      ) |
+    _ \<Rightarrow> Stuck)
 )"
 
 (*
@@ -572,20 +589,5 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 
 *)
 
-fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
-"interp 0 _ _ = Stuck" |
-"interp (Suc n) l st = (
-  case st of
-  Stuck \<Rightarrow> Stuck |
-  Next rs m \<Rightarrow> (
-    case rs PC of
-    Vlong v \<Rightarrow> (
-      case x64_decode (unat v) l of
-      None \<Rightarrow> Stuck |
-      Some (sz, ins) \<Rightarrow>
-        interp n l (exec_instr ins (of_nat sz) rs m)
-      ) |
-    _ \<Rightarrow> Stuck)
-)"
 
 end
