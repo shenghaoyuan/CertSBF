@@ -24,6 +24,7 @@ stack :: stack_state *)
 
 datatype bpf_state =
   BPF_OK reg_map mem stack_state SBPFV u64 u64 | (**r normal state *)
+  BPF_Success u64 |
   BPF_EFlag | (**r find bugs at runtime *)
   BPF_Err (**r bad thing *)
 
@@ -486,17 +487,14 @@ definition pop_frame:: "stack_state \<Rightarrow> CallFrame" where
 
 subsection  \<open> EXIT \<close>
                                        
-definition eval_exit :: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state) option" where
+definition eval_exit :: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (reg_map \<times> stack_state)" where
 "eval_exit rs ss is_v1 = (
-  if call_depth ss = 0 then
-    None
-  else (
     let x = call_depth ss-1 ; frame = pop_frame ss; rs'= rs#(BR BR10) <-- (frame_pointer frame) in 
     let y =  if is_v1 then (stack_pointer ss - (2 * stack_frame_size)) else stack_pointer ss; 
      z = butlast (call_frames ss) ; ss' = \<lparr>call_depth = x, stack_pointer= y, call_frames = z\<rparr> in
      let pc = target_pc frame; rs' = rs'#BPC <-- pc in 
-     Some (rs',ss')
-))"
+      (rs',ss')
+)"
 
 subsection  \<open> step \<close>
 
@@ -602,9 +600,11 @@ fun step :: "bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarro
     None \<Rightarrow> BPF_EFlag |
     Some (rs', ss') \<Rightarrow> BPF_OK (rs'#BPC <-- (1+ (rs' BPC))) m ss' sv (cur_cu+1) remain_cu) |
   BPF_EXIT \<Rightarrow> (
-    case eval_exit rs ss is_v1 of
-    None \<Rightarrow> BPF_EFlag |
-    Some (rs', ss') \<Rightarrow> BPF_OK (rs'#BPC <-- (1+ (rs' BPC))) m ss' sv cur_cu remain_cu)
+    if call_depth ss = 0 then
+      BPF_Success (rs (BR BR1))
+    else (
+      let (rs', ss') = eval_exit rs ss is_v1 in
+        BPF_OK (rs'#BPC <-- (1+ (rs' BPC))) m ss' sv cur_cu remain_cu))
 )"
 
 fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarrow> bpf_state" where
@@ -613,6 +613,7 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
   case st of
   BPF_EFlag \<Rightarrow> BPF_EFlag |
   BPF_Err \<Rightarrow> BPF_Err |
+  BPF_Success v \<Rightarrow> BPF_Success v |
   BPF_OK rs m ss sv cur_cu remain_cu \<Rightarrow> (
     if unat (rs BPC) < length prog then
       if cur_cu \<ge> remain_cu then
