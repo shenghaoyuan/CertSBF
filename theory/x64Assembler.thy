@@ -1062,4 +1062,18 @@ fun list_in_list :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarro
 "list_in_list [] _ _ = True" |
 "list_in_list (h#t) n l = (h = l!n \<and> list_in_list t (Suc n) l)"
 
+
+fun x64_encodes_aux :: "instruction list \<Rightarrow> x64_bin option" where
+"x64_encodes_aux [] = None" |
+"x64_encodes_aux (h#t) = (let ins' = x64_encode h in 
+                        (case ins' of None \<Rightarrow> None |
+                                      Some v \<Rightarrow> Some (v @ Option.the (x64_encodes_aux t))))"
+
+definition x64_encodes:: "instruction list \<Rightarrow> x64_bin option" where
+"x64_encodes xs = (case x64_encodes_aux xs of None \<Rightarrow> None | 
+                                              Some v \<Rightarrow> Some (butlast v))"
+
+value "x64_encodes_aux [Pmovq_rr src dst]"
+value "x64_encodes [Pmovq_rr src dst]"
+
 end

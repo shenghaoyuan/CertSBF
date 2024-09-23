@@ -60,8 +60,8 @@ definition check_load_dw :: "bpf_bin \<Rightarrow> nat \<Rightarrow> bool" where
 )"
 
 definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> SBPFV \<Rightarrow>
- func_map \<Rightarrow> Config \<Rightarrow> bool" where
-"verify_one insn l len insn_ptr sbpf_version fr conf = (
+ func_map \<Rightarrow> bool" where
+"verify_one insn l len insn_ptr sbpf_version fr = (
   case insn of
   BPF_LD_IMM  dst i1 i2    \<Rightarrow> (
     if sbpf_version = V1 then
@@ -167,7 +167,7 @@ definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> na
   BPF_CALL_REG src i1 \<Rightarrow> (
     let (reg::i64) = if sbpf_version \<noteq> V1 then ucast (bpf_ireg2u4 src)
                      else (scast i1) in
-      if reg < 0 \<or> 10 < reg \<or> (reg = 10 \<and> (reject_callx_r10 conf)) then
+      if reg < 0 \<or> 10 < reg \<or> (reg = 10 \<and> reject_callx_r10) then
         False
       else True
   ) |
@@ -208,18 +208,18 @@ definition check_registers :: "bpf_bin \<Rightarrow> bool \<Rightarrow> nat \<Ri
 )"
 
 fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
- func_map \<Rightarrow> Config \<Rightarrow> bool" where
-"verifier_aux fuel pc len l sbpf_version fr conf = (
+ func_map \<Rightarrow> bool" where
+"verifier_aux fuel pc len l sbpf_version fr = (
   case fuel of
   0 \<Rightarrow> if pc \<noteq> (len div INSN_SIZE) then False else True |
   Suc n \<Rightarrow> (
     case bpf_find_instr pc l of
     None \<Rightarrow> False |
     Some ins \<Rightarrow>
-      if verify_one ins l pc len sbpf_version fr conf then
+      if verify_one ins l pc len sbpf_version fr then
         if check_registers l (is_store ins) pc sbpf_version then
           verifier_aux n (if is_lddw_imm ins then pc + 2 else pc + 1)
-            len l sbpf_version fr conf
+            len l sbpf_version fr 
         else
           False
       else
@@ -228,10 +228,10 @@ fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_b
 )"
 
 definition verifier :: "bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
- func_map \<Rightarrow> Config \<Rightarrow> bool" where
-"verifier l sbpf_version fr conf = (
+ func_map \<Rightarrow> bool" where
+"verifier l sbpf_version fr = (
   if check_prog_len l then
-    verifier_aux (length l) 0 (length l) l sbpf_version fr conf
+    verifier_aux (length l) 0 (length l) l sbpf_version fr 
   else
     False
 )"

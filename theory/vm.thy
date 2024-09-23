@@ -6,6 +6,18 @@ imports
   rBPFCommType rBPFSyntax
 begin
 
+
+abbreviation "max_call_depth:: usize \<equiv> 64"
+
+abbreviation "stack_frame_size:: usize \<equiv> 4096"
+
+abbreviation "enable_stack_frame_gaps:: bool \<equiv> True"
+
+abbreviation "reject_callx_r10:: bool \<equiv> True"
+
+abbreviation "instruction_meter_checkpoint_distance:: usize \<equiv> 10000"
+
+(*
 record Config =
 \<comment> \<open> Maximum call depth \<close>
 max_call_depth :: usize
@@ -16,6 +28,12 @@ stack_frame_size :: usize
 enable_stack_frame_gaps :: bool
 \<comment> \<open> Have the verifier reject "callx r10" \<close>
 reject_callx_r10 :: bool
+\<comment> \<open> Maximal pc distance after which a new instruction meter validation
+  is emitted by the JIT \<close>
+instruction_meter_checkpoint_distance :: nat
+\<comment> \<open> Enable instruction meter and limiting \<close>
+enable_instruction_meter :: bool
+*)
 (*
 record Config =
 \<comment> \<open> Maximum call depth \<close>
@@ -27,11 +45,6 @@ stack_frame_size :: usize
 enable_address_translation :: bool
 \<comment> \<open> Enables gaps in VM address space between the stack frames \<close>
 enable_stack_frame_gaps :: bool
-\<comment> \<open> Maximal pc distance after which a new instruction meter validation
-  is emitted by the JIT \<close>
-instruction_meter_checkpoint_distance :: usize
-\<comment> \<open> Enable instruction meter and limiting \<close>
-enable_instruction_meter :: bool
 \<comment> \<open> Enable instruction tracing \<close>
 enable_instruction_tracing :: bool
 \<comment> \<open> Enable dynamic string allocation for labels \<close>
