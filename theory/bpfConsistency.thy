@@ -38,9 +38,16 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
 (*datatype binop = BPF_ADD | BPF_SUB | BPF_MUL | BPF_DIV | BPF_OR | BPF_AND |
   BPF_LSH | BPF_RSH | BPF_MOD | BPF_XOR | BPF_MOV | BPF_ARSH *)
 
-definition per_jit_ins ::" nat \<Rightarrow> u8 list \<Rightarrow> x64_bin option"where
-"per_jit_ins pc bin = (if bpf_find_instr pc bin = None then None
-                        else (let ins = (Psubq_rr x64Syntax.RAX x64Syntax.RBX) in x64_encode ins))"
+
+
+definition per_jit_ja :: "off_ty\<Rightarrow> x64_bin option" where
+"per_jit_ja off = (
+  let ins = Pjmp (ucast off) in
+    x64_encode ins
+)"
+
+
+
 (*(the ()) *)
 
 definition is_refined_state :: "bpf_state \<Rightarrow> outcome \<Rightarrow> bool" where

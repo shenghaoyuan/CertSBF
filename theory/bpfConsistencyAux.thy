@@ -1,6 +1,6 @@
 theory bpfConsistencyAux
   imports Main Interpreter x64Semantics 
-  x64Assembler x64DecodeProof Mem
+  x64Assembler x64DecodeProof Mem JITCommType
 begin
 
 (*lemma "bop = BPF_ADD \<Longrightarrow> xop = Paddl_rr \<Longrightarrow> *)
@@ -8,43 +8,12 @@ begin
 (*u8_of_ireg rd = ucast(bpf_ireg2u4 dst) \<Longrightarrow>
 u8_of_ireg ri = ucast(bpf_ireg2u4 src) \<Longrightarrow>*)
 
-definition bpf_to_x64_reg:: "bpf_ireg \<Rightarrow> ireg" where
-"bpf_to_x64_reg br = (
-  case br of
-  BR0 \<Rightarrow> x64Syntax.RAX |
-  BR1 \<Rightarrow> x64Syntax.RDI |
-  BR2 \<Rightarrow> x64Syntax.RSI |
-  BR3 \<Rightarrow> x64Syntax.RDX |
-  BR4 \<Rightarrow> x64Syntax.RCX |
-  BR5 \<Rightarrow> x64Syntax.R8 |
-  BR6 \<Rightarrow> x64Syntax.RBX |
-  BR7 \<Rightarrow> x64Syntax.R13 |
-  BR8 \<Rightarrow> x64Syntax.R14 |
-  BR9 \<Rightarrow> x64Syntax.R15 |
-  BR10 \<Rightarrow> x64Syntax.RBP
-)"
 
-lemma bpf_to_x64_reg_corr[simp]:" r1 \<noteq> r2 \<longrightarrow> bpf_to_x64_reg r1 \<noteq> bpf_to_x64_reg r2 "
-  apply(unfold bpf_to_x64_reg_def)
-  apply(rule impI)
-  apply(cases r1)
-    apply(cases r2, simp_all)
-           apply(cases r2, simp_all)
-    apply(cases r2, simp_all)
-         apply(cases r2, simp_all)
-    apply(cases r2, simp_all)
-       apply(cases r2, simp_all)
-    apply(cases r2, simp_all)
-  apply(cases r2, simp_all)
-    apply(cases r2, simp_all)
-  apply(cases r2, simp_all)
-    apply(cases r2, simp_all)
-  done
 
 lemma addl_subgoal_rr:
       "bins = BPF_ALU BPF_ADD dst (SOReg src) \<Longrightarrow>
        xins = Paddl_rr rd ri \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        corr_registers src ri \<Longrightarrow>
@@ -73,7 +42,7 @@ lemma addl_subgoal_rr:
 lemma addl_subgoal_ri:
       "bins = BPF_ALU BPF_ADD dst (SOImm src) \<Longrightarrow>
        xins = Paddl_ri rd imm \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        imm = ucast (src) \<Longrightarrow>
@@ -100,7 +69,7 @@ lemma addl_subgoal_ri:
 lemma addq_subgoal_rr:
       "bins = BPF_ALU64 BPF_ADD dst (SOReg src) \<Longrightarrow>
        xins = Paddq_rr rd ri \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        corr_registers src ri \<Longrightarrow>
@@ -118,10 +87,10 @@ lemma addq_subgoal_rr:
   apply (unfold nextinstr_nf_def nextinstr_def eval_reg_def)
   apply simp
   apply (erule conjE)
-  apply (cases "is_v1", simp_all)
+  apply (cases "is_v1 cur_cu remain_cu", simp_all)
   apply(cases "dst = BR10")
   apply auto[1]
-  apply (cases "is_v1", simp_all)
+  apply (cases "is_v1 cur_cu remain_cu", simp_all)
   apply(cases "dst = BR10", simp_all)
   apply auto[1]
     (*ADD64, stack pointer*)
@@ -189,7 +158,7 @@ lemma load_subgoal_aux1:
        reg (IR ri) = Vlong n2 \<Longrightarrow>
        n1  = rs (BR dst) \<Longrightarrow>
        n2  = rs (BR src) \<Longrightarrow>
-       (BPF_OK rs' mem' ss' conf is_v1) = step conf bins rs mem ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) = step  bins rs mem ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        m = mem \<Longrightarrow>
        m' = mem'"
@@ -202,65 +171,65 @@ lemma load_subgoal_aux1:
 
 lemma load_subgoal_aux2_1:
   assumes a0:"bins = BPF_LDX chk dst src b_off" and 
-          a1:"step conf bins rs mem ss is_v1 = result"
-        shows "result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> Some Vundef"
+          a1:"step bins rs mem ss is_v1 cur_cu remain_cu = result"
+        shows "result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> Some Vundef"
 proof (rule ccontr)
-  assume a2:"\<not> (result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> (Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> Some Vundef))"
+  assume a2:"\<not> (result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> (Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> Some Vundef))"
   let ?x = "eval_snd_op_u64 (SOReg src) rs + scast b_off"
   let ?tmp = "Mem.loadv chk mem (Vlong ?x)"
-  let ?res_ok = "(BPF_OK rs' mem' ss' conf is_v1)"
+  let ?res_ok = "(BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu)"
   have a3:"\<not> (\<not> result = ?res_ok \<or> (?tmp \<noteq> Some Vundef))" using imp_conv_disj a2 by blast
   have a4:"result = ?res_ok \<and> ?tmp = Some Vundef" using a3 by simp
    then show "False"
    proof
      have b0:"?tmp = Some Vundef" using a4 conjE by simp
      have b1:"eval_load chk dst src b_off rs mem = None"  using eval_load_def b0 by simp
-     have b2: "step conf bins rs mem ss is_v1 = BPF_EFlag"using a0 b1 eval_load_def by simp
+     have b2: "step bins rs mem ss is_v1 cur_cu remain_cu = BPF_EFlag"using a0 b1 eval_load_def by simp
      thus "False" using b2 
-       by (metis a1 a2 bpf_state.simps(3))
+       by (metis a1 a4 bpf_state.distinct(3))
    qed
  qed
 
 lemma load_subgoal_aux2_2:
   assumes a0:"bins = BPF_LDX chk dst src b_off" and 
-          a1:"step conf bins rs mem ss is_v1 = result"
-        shows "result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> None"
+          a1:"step  bins rs mem ss is_v1 cur_cu remain_cu = result"
+        shows "result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> None"
 proof (rule ccontr)
-  assume a2:"\<not> (result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> (Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> None))"
+  assume a2:"\<not> (result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> (Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<noteq> None))"
   let ?x = "eval_snd_op_u64 (SOReg src) rs + scast b_off"
   let ?tmp = "Mem.loadv chk mem (Vlong ?x)"
-  let ?res_ok = "(BPF_OK rs' mem' ss' conf is_v1)"
+  let ?res_ok = "(BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu)"
   have a3:"\<not> (\<not> result = ?res_ok \<or> (?tmp \<noteq> None))" using imp_conv_disj a2 by blast
   have a4:"result = ?res_ok \<and> ?tmp = None" using a3 by simp
    then show "False"
    proof
      have b0:"?tmp = None" using a4 conjE by simp
      have b1:"eval_load chk dst src b_off rs mem = None"  using eval_load_def b0 by simp
-     have b2: "step conf bins rs mem ss is_v1 = BPF_EFlag"using a0 b1 eval_load_def by simp
+     have b2: "step  bins rs mem ss is_v1 cur_cu remain_cu = BPF_EFlag"using a0 b1 eval_load_def by simp
      thus "False" using b2 
-       by (metis a1 a2 bpf_state.simps(3))
+       using a1 a4 by auto
    qed
  qed
 
 lemma load_subgoal_aux2_3:
   assumes a0:"bins = BPF_LDX chk dst src b_off" and 
-          a1:"step conf bins rs mem ss is_v1 = result"
-        shows "result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<notin> {None, Some Vundef} "
+          a1:"step  bins rs mem ss is_v1 cur_cu remain_cu = result"
+        shows "result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast b_off)) \<notin> {None, Some Vundef} "
   using load_subgoal_aux2_1 load_subgoal_aux2_2 a0 a1 by auto
 
 lemma load_subgoal_aux2_4:
   assumes a0:"bins = BPF_LDX chk dst src b_off" and 
-          a1:"step conf bins rs mem ss is_v1 = result"
-        shows "result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> eval_load chk dst src b_off rs mem \<noteq> None"
+          a1:"step  bins rs mem ss is_v1 cur_cu remain_cu = result"
+        shows "result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> eval_load chk dst src b_off rs mem \<noteq> None"
 proof (rule ccontr)
-  assume a2:"\<not> (result = (BPF_OK rs' mem' ss' conf is_v1) \<longrightarrow> eval_load chk dst src b_off rs mem \<noteq> None)"
-  let ?res_ok = "(BPF_OK rs' mem' ss' conf is_v1)"
+  assume a2:"\<not> (result = (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) \<longrightarrow> eval_load chk dst src b_off rs mem \<noteq> None)"
+  let ?res_ok = "(BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu)"
   have a3:"\<not> (\<not> result = ?res_ok \<or> (eval_load chk dst src b_off rs mem \<noteq> None))" using imp_conv_disj a2 by blast
   have a4:"result = ?res_ok \<and> (eval_load chk dst src b_off rs mem = None)" using a3 by simp
    then show "False"
    proof
      have b1:"eval_load chk dst src b_off rs mem = None" using a4 conjE by simp
-     have b2: "step conf bins rs mem ss is_v1 = BPF_EFlag"using a0 b1 eval_load_def by simp
+     have b2: "step  bins rs mem ss is_v1 cur_cu remain_cu = BPF_EFlag"using a0 b1 eval_load_def by simp
      thus "False" using b2 a1 a0 a2 by auto
    qed
  qed
@@ -275,7 +244,7 @@ proof (rule ccontr)
        n1  = rs (BR dst) \<Longrightarrow>
        n2  = rs (BR src) \<Longrightarrow>
        b_off = scast x_off \<Longrightarrow>
-       (BPF_OK rs' mem' ss' conf is_v1) = step conf bins rs mem ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) = step  bins rs mem ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        m = mem \<Longrightarrow>
        Mem.loadv chk mem (Vlong (eval_snd_op_u64 (SOReg src) rs + scast (scast b_off)))\<noteq> None \<Longrightarrow>
@@ -305,7 +274,7 @@ lemma load_subgoal_rr_aux2:
        a6:"n1 = rs (BR dst)" and
        a7:"n2 = rs (BR src)" and
        a8:"x_off = ucast b_off " and
-       a9:"(BPF_OK rs' mem' ss conf is_v1) = step conf bins rs mem ss is_v1" and
+       a9:"(BPF_OK rs' mem' ss  is_v1 cur_cu remain_cu) = step  bins rs mem ss is_v1 cur_cu remain_cu" and
        a10:"Next reg' m' = exec_instr xins sz reg m" and
        a11:"m = mem" 
        shows "Vlong (rs' (BR dst)) = reg' (IR (bpf_to_x64_reg dst))"
@@ -315,7 +284,7 @@ proof-
     using a1 a3 by fastforce
   let ?x = "eval_snd_op_u64 (SOReg src) rs + scast b_off"
   let ?tmp = "Mem.loadv chk mem (Vlong ?x)"
-  have b0:"step conf bins rs mem ss is_v1 = (BPF_OK rs' mem' ss conf is_v1) \<longrightarrow> ?tmp \<noteq> None" 
+  have b0:"step  bins rs mem ss is_v1 cur_cu remain_cu = (BPF_OK rs' mem' ss  is_v1 cur_cu remain_cu) \<longrightarrow> ?tmp \<noteq> None" 
     using load_subgoal_aux2_2 using a0 a11 by blast
   have b1:"?tmp \<noteq> None" using b0 a9 by simp
   have b2:"Next reg' m' = exec_load sz chk m ?t reg (IR (bpf_to_x64_reg dst))" using exec_instr_def a1 apply (cases "xins") 
@@ -377,7 +346,7 @@ proof-
            then show ?thesis using c0 d1 by simp
        qed
      qed
-  have c2:" (BPF_OK rs' mem' ss conf is_v1) = (BPF_OK ((Option.the(?rss'))#BPC <-- (1+ (Option.the(?rss') BPC))) mem ss conf is_v1) " 
+  have c2:" (BPF_OK rs' mem' ss  is_v1 cur_cu remain_cu) = (BPF_OK ((Option.the(?rss'))#BPC <-- (1+ (Option.the(?rss') BPC))) mem ss  is_v1 cur_cu remain_cu) " 
     using c0 Let_def a9 a0 by auto
   have c3:"Option.the(?rss')(BR dst) = rs' (BR dst)" using the_def c2 by simp
   have c4:"Vlong (rs' (BR dst)) = Option.the(?tmp)" using c3 c1 by simp
@@ -410,7 +379,7 @@ lemma loadq_subgoal_rr_aux3:
         shows " \<forall> r \<noteq> dst. reg' (IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))"
  using cast_lemma6 a0 by (metis a1 bpf_to_x64_reg_corr load_subgoal_rr_aux3_1)
 
-lemma loadq_subgoal_rr_aux4:"bins = BPF_LDX chk dst src b_off \<Longrightarrow> (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+lemma loadq_subgoal_rr_aux4:"bins = BPF_LDX chk dst src b_off \<Longrightarrow> (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        \<forall> r \<noteq> dst. rs' (BR r) = rs (BR r)"
   apply(cases "bins",simp_all)
   apply(unfold eval_load_def,simp)
@@ -419,18 +388,14 @@ lemma loadq_subgoal_rr_aux4:"bins = BPF_LDX chk dst src b_off \<Longrightarrow> 
   by simp_all
   done
 
-definition per_jit_load_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> memory_chunk \<Rightarrow> off_ty \<Rightarrow>x64_bin option" where
-"per_jit_load_reg64 dst src chk off = (
-  let ins = Pmov_mr (Addrmode (Some (bpf_to_x64_reg src)) None (ucast (off))) (bpf_to_x64_reg dst) chk in
-    x64_encode ins
-)"
+
 
 lemma loadq_subgoal_rr_generic:
   assumes a0:"bins = BPF_LDX chk dst src b_off" and
        a1:"per_jit_load_reg64 dst src chk b_off = Some bl" and
        a2:"list_in_list bl pc l_bin" and
        a3:"x64_decode pc l_bin = Some (length l_bin, xins)" and
-       a4:"(BPF_OK rs' mem' ss' conf is_v1) = step conf bins rs mem ss is_v1" and
+       a4:"(BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) = step  bins rs mem ss is_v1 cur_cu remain_cu" and
        a5:"Next reg' m'  = exec_instr xins sz reg m" and
        a6:"(\<forall> r. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r)))" and
        a7:"m = mem"
@@ -456,7 +421,7 @@ proof -
        reg (IR ri) = Vlong n2 \<Longrightarrow>
        n1  = rs (BR dst) \<Longrightarrow>
        n2  = rs (BR src) \<Longrightarrow>
-       (BPF_OK rs' mem' ss' conf is_v1) = step conf bins rs mem ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) = step  bins rs mem ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        m = mem \<Longrightarrow>
        scast x_off = scast (scast x_off) \<Longrightarrow>
@@ -477,7 +442,7 @@ lemma store_subgoal_aux1:
        reg (IR ri) = Vlong n2 \<Longrightarrow>
        n1  = rs (BR dst) \<Longrightarrow>
        n2  = rs (BR src) \<Longrightarrow>
-       (BPF_OK rs' mem' ss' conf is_v1) = step conf bins rs mem ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' mem' ss'  is_v1 cur_cu remain_cu) = step  bins rs mem ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        m = mem \<Longrightarrow>
        scast x_off = scast (scast x_off) \<Longrightarrow>
@@ -492,7 +457,7 @@ lemma store_subgoal_aux1:
 lemma subq_subgoal_rr_aux1:
      "bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow>
      xins = Psubq_rr rd ri \<Longrightarrow>
-     (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+     (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
      Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow>
      rd = (bpf_to_x64_reg dst) \<Longrightarrow>
      ri = (bpf_to_x64_reg src) \<Longrightarrow>
@@ -526,25 +491,20 @@ lemma subq_subgoal_rr_aux2:"xins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg
   using bpf_to_x64_reg_corr subq_subgoal_rr_aux2_2 by metis
 
 
-lemma subq_subgoal_rr_aux3:"bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow> (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+lemma subq_subgoal_rr_aux3:"bins = BPF_ALU64 BPF_SUB dst (SOReg src) \<Longrightarrow> (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        \<forall> r \<noteq> dst. rs' (BR r) = rs (BR r)"
   apply(cases "bins",simp_all)
   apply(unfold eval_alu64_def,simp)
   by (unfold eval_alu64_aux1_def, simp)
 
 
-definition per_jit_sub_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
-"per_jit_sub_reg64 dst src = (
-  let ins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
-    x64_encode ins
-)"
 
 lemma subq_subgoal_rr_generic:
   assumes a0:"bins = BPF_ALU64 BPF_SUB dst (SOReg src)" and
        a1:"per_jit_sub_reg64 dst src = Some bl" and
        a2:"list_in_list bl pc l_bin" and
        a3:"x64_decode pc l_bin = Some (length l_bin, xins)" and
-       a4:"(BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1" and
+       a4:"(BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu" and
        a5:"Next reg' m'  = exec_instr xins sz reg m" and
        a6:"(\<forall> r. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r)))" 
   shows "(\<forall> r. Vlong (rs' (BR r)) = reg' (IR (bpf_to_x64_reg r)))"
@@ -564,7 +524,7 @@ lemma ja_subgoal_aux1:
       "bins = BPF_JA off \<Longrightarrow>
        xins = Pjmp d \<Longrightarrow>
        Vlong (rs (BPC)) = reg PC \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        d = ucast(off::i16)\<Longrightarrow>
       Vlong (rs' (BPC))= reg' PC"
@@ -576,11 +536,6 @@ lemma ja_subgoal_aux1:
   apply(cases "reg RIP", simp_all)
   using cast_lemma4 by auto
 
-definition per_jit_ja :: "off_ty\<Rightarrow> x64_bin option" where
-"per_jit_ja off = (
-  let ins = Pjmp (ucast off) in
-    x64_encode ins
-)"
 
 lemma ja_subgoal_aux2:"xins = Pjmp d \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow>
        \<forall> r. reg' (IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))"
@@ -588,7 +543,7 @@ lemma ja_subgoal_aux2:"xins = Pjmp d \<Longrightarrow> Next reg' m' = exec_instr
   apply(unfold nextinstr_nf_def nextinstr_def add64_def) 
   by auto
 
-lemma ja_subgoal_aux3:"bins = BPF_JA off \<Longrightarrow> (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+lemma ja_subgoal_aux3:"bins = BPF_JA off \<Longrightarrow> (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        \<forall> r. rs' (BR r) = rs (BR r)"
   by(cases "bins",simp_all)
 
@@ -597,7 +552,7 @@ lemma ja_subgoal_generic:
        a1:" per_jit_ja (ucast off) = Some bl" and
        a2:"list_in_list bl pc l_bin" and
        a3:"x64_decode pc l_bin = Some (length l_bin, xins)" and
-       a4:"(BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1" and
+       a4:"(BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu" and
        a5:"Next reg' m' = exec_instr xins sz reg m" and
        a6:"(\<forall> r. Vlong (rs (BR r)) = reg (IR (bpf_to_x64_reg r))) \<and> Vlong (rs (BPC)) = reg PC" 
   shows "(\<forall> r. Vlong (rs' (BR r)) = reg' (IR (bpf_to_x64_reg r))) \<and> Vlong (rs' (BPC))= reg' PC"
@@ -617,7 +572,7 @@ proof -
 lemma subl_subgoal_ri:
       "bins = BPF_ALU BPF_SUB dst (SOImm src) \<Longrightarrow>
        xins = Psubl_ri rd imm \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        imm = ucast (src) \<Longrightarrow>
@@ -637,8 +592,8 @@ lemma subl_subgoal_ri:
   apply simp
   apply (unfold add64_def)
   apply (erule conjE)
-  apply (cases "is_v1", simp_all)
-  apply (cases "is_v1", simp_all)
+  apply (cases "is_v1 cur_cu remain_cu", simp_all)
+  apply (cases "is_v1 cur_cu remain_cu", simp_all)
   using cast_lemma2 
   sorry
 
@@ -646,7 +601,7 @@ lemma subl_subgoal_ri:
 lemma movq_subgoal_rr:
       "bins = BPF_ALU64 BPF_MOV dst (SOReg src) \<Longrightarrow>
        xins = Pmovq_rr rd ri \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m'  = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        corr_registers src ri \<Longrightarrow>
@@ -668,7 +623,7 @@ lemma movq_subgoal_rr:
 lemma movq_subgoal_ri:
       "bins = BPF_ALU64 BPF_MOV dst (SOImm src) \<Longrightarrow>
        xins = Pmovq_ri rd imm \<Longrightarrow>
-       (BPF_OK rs' m' ss' conf is_v1) = step conf bins rs m ss is_v1 \<Longrightarrow>
+       (BPF_OK rs' m' ss'  is_v1 cur_cu remain_cu) = step  bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
        Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
        corr_registers dst rd \<Longrightarrow>
        imm = ucast (src) \<Longrightarrow>

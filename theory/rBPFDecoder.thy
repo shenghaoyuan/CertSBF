@@ -296,4 +296,7 @@ definition bpf_find_instr :: "nat \<Rightarrow> u8 list \<Rightarrow> bpf_instru
     )
 )"
 
+
+value "bpf_find_instr 0 [0x07::u8,0x0B,0x00,0x00,0x01,0x02,0x03,0x04] "
+
 end

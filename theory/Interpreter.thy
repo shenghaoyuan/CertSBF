@@ -26,7 +26,7 @@ datatype bpf_state =
   BPF_OK reg_map mem stack_state SBPFV u64 u64 | (**r normal state *)
   BPF_Success u64 |
   BPF_EFlag | (**r find bugs at runtime *)
-  BPF_Err (**r bad thing *)
+  BPF_Err  (**r bad thing *)
 
 datatype 'a option2 =
   NOK |
@@ -732,7 +732,7 @@ lemma cast_lemma4:"ucast off = scast (ucast off)"
   sorry
 
 
-lemma cast_lemma5:"scast const = scast (scast const)"
+lemma cast_lemma6:" const = scast const"
   sorry
 
 
