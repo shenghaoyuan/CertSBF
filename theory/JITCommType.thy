@@ -183,7 +183,7 @@ definition per_jit_mul_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x
 definition per_jit_shift_reg64 :: "nat \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_shift_reg64 n dst src = (
   let opcode = (if n = 4 then Pshlq_r else if n = 5 then Pshrq_r else Psarl_r) in
-  let cond1 = ((bpf_to_x64_reg dst) = x64Syntax.RCX); cond2 = ((bpf_to_x64_reg src) = x64Syntax.RCX); 
+  let cond1 = ((bpf_to_x64_reg dst) = x64Syntax.RCX);
       ins_prefix = if cond1 then [Ppushl_r (bpf_to_x64_reg src), Pxchgq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src)]
                    else [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)] ;
       ins = if cond1 then  [opcode (bpf_to_x64_reg src)] else [opcode (bpf_to_x64_reg dst)];
@@ -221,7 +221,7 @@ definition per_jit_load_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> 
 )"
 
 datatype jit_state =
-  JIT_OK JitProgram reg_map | (**r normal state *) (*reg_map mem stack_state Config SBPFV*)
+  JIT_OK JitProgram reg_map SBPFV | (**r normal state *) (*reg_map mem stack_state Config SBPFV*)
   JIT_Success |
   JIT_EFlag | (**r find bugs at runtime *)
   JIT_Err (**r bad thing *)
@@ -238,38 +238,43 @@ definition emit_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightar
 "emit_profile_instruction_count t_pc pc im = im + (t_pc -(pc+1))"
 
 definition emit_validate_and_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> (last_pc \<times> insn_meter) option"where
-"emit_validate_and_profile_instruction_count t_pc pc im = (let l_pc = emit_validate_instruction_count pc im in if l_pc = None then None else
-                                                           let meter = emit_profile_instruction_count t_pc pc im in 
-                                                           Some (Option.the(l_pc), meter))"
+"emit_validate_and_profile_instruction_count t_pc pc im = (
+  case emit_validate_instruction_count pc im of
+  None \<Rightarrow> None |
+  Some l_pc \<Rightarrow>
+    let meter = emit_profile_instruction_count t_pc pc im in 
+    Some (l_pc, meter))"
 
 
 fun per_jit_ins ::" bpf_instruction \<Rightarrow> reg_map \<Rightarrow> x64_bin option"where
-"per_jit_ins bins rs = ( case bins of BPF_ALU64 BPF_ADD dst (SOReg src) \<Rightarrow> (per_jit_add_reg64_1 dst src) |
-                                   BPF_ALU64 BPF_SUB dst (SOReg src) \<Rightarrow> (per_jit_sub_reg64 dst src) |
-                                   BPF_ALU64 BPF_MUL dst (SOReg src) \<Rightarrow> (per_jit_mul_reg64 dst src) |
-                                   BPF_ALU64 BPF_LSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 4 dst src) |
-                                   BPF_ALU64 BPF_RSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 5 dst src) |
-                                   BPF_ALU64 BPF_ARSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 7 dst src) |
-                                   BPF_LDX chk dst src off  \<Rightarrow> (per_jit_load_reg64 dst src chk off )|
-                                   BPF_JA off \<Rightarrow> per_jit_ja off |
-                                   _ \<Rightarrow> None
+"per_jit_ins bins rs = (
+  case bins of
+  BPF_ALU64 BPF_ADD dst (SOReg src) \<Rightarrow> (per_jit_add_reg64_1 dst src) |
+  BPF_ALU64 BPF_SUB dst (SOReg src) \<Rightarrow> (per_jit_sub_reg64 dst src) |
+  BPF_ALU64 BPF_MUL dst (SOReg src) \<Rightarrow> (per_jit_mul_reg64 dst src) |
+  BPF_ALU64 BPF_LSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 4 dst src) |
+  BPF_ALU64 BPF_RSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 5 dst src) |
+  BPF_ALU64 BPF_ARSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 7 dst src) |
+  BPF_LDX chk dst src off  \<Rightarrow> (per_jit_load_reg64 dst src chk off )|
+  BPF_JA off \<Rightarrow> per_jit_ja off |
+  _ \<Rightarrow> None
 )"
 
-definition jit_compile_aux::"bpf_instruction \<Rightarrow> reg_map \<Rightarrow> JitProgram \<Rightarrow> jit_state" where
-"jit_compile_aux bins rs jprog = (let xins = per_jit_ins bins rs in 
+definition jit_compile_aux::"bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> JitProgram  \<Rightarrow> jit_state" where
+"jit_compile_aux bins rs sv jprog = (let xins = per_jit_ins bins rs in 
    (case xins of None \<Rightarrow> JIT_Err |
-                 Some v \<Rightarrow> let ts' = (text_section jprog @ v) in JIT_OK (jprog \<lparr>text_section:=ts'\<rparr>) rs))"
+                 Some v \<Rightarrow> let ts' = (text_section jprog @ v) in JIT_OK (jprog \<lparr>text_section:=ts'\<rparr>) rs sv))"
 
-fun jit_compile :: "nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
-"jit_compile 0 _ _ _ _ st =  st " |
-"jit_compile (Suc rev_pc) n l_pc prog rs st = (
+fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
+"jit_compile 0 _ _ _ _ _ st =  st " |
+"jit_compile (Suc fuel) cur_pc n l_pc prog rs st = (
   case st of 
   JIT_Err \<Rightarrow> JIT_Err |
   JIT_Success \<Rightarrow> JIT_Success |
   JIT_EFlag \<Rightarrow> JIT_EFlag |
-  JIT_OK jprog rs \<Rightarrow> (
-    let cur_pc = (length prog - (rev_pc +1)); w_cur_pc = word_of_nat cur_pc in
-      if (instruction_meter_checkpoint_distance + l_pc \<le> w_cur_pc) \<and> (emit_validate_instruction_count w_cur_pc n = None) then
+  JIT_OK jprog rs sv \<Rightarrow> (
+    let w_cur_pc = word_of_nat cur_pc in
+      if (instruction_meter_checkpoint_distance + l_pc \<le> w_cur_pc) \<and> w_cur_pc + 1 > n then
         JIT_EFlag
       else
         let l_pc' = if instruction_meter_checkpoint_distance + l_pc \<le> w_cur_pc then w_cur_pc else l_pc in (
@@ -278,11 +283,11 @@ fun jit_compile :: "nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightar
           Some ins \<Rightarrow> (
             let n' = (
               case ins of
-              BPF_JA off_ty \<Rightarrow>
-                let t_pc = of_nat (length prog - cur_pc)+ ucast off_ty+1 in
+              BPF_JA ofs \<Rightarrow>
+                let t_pc :: u64 = w_cur_pc + scast ofs + 1 in
                   emit_validate_and_profile_instruction_count t_pc w_cur_pc n |
-              BPF_JUMP cond bpf_ireg snd_op off_ty \<Rightarrow>
-                let t_pc = of_nat (length prog - cur_pc)+ ucast off_ty+1 in 
+              BPF_JUMP cond bpf_ireg snd_op ofs \<Rightarrow>
+                let t_pc = w_cur_pc + scast ofs + 1 in 
                   emit_validate_and_profile_instruction_count t_pc w_cur_pc n |
               BPF_LD_IMM dst imm1 imm2 \<Rightarrow>
                 emit_validate_and_profile_instruction_count (w_cur_pc+2) w_cur_pc n |
@@ -290,7 +295,10 @@ fun jit_compile :: "nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightar
                 case get_function_registry (ucast imm) of
                 None \<Rightarrow> None |
                 Some t_pc \<Rightarrow> emit_validate_and_profile_instruction_count t_pc w_cur_pc n) |
-              BPF_CALL_REG src imm \<Rightarrow> 
+              BPF_CALL_REG src imm \<Rightarrow>
+                \<comment>\<open> let v = 3  case sv of
+                V1 \<Rightarrow> imm
+                V2 \<Rightarrow>  in \<close>
                 emit_validate_and_profile_instruction_count (rs (BR src)) w_cur_pc n |
               BPF_EXIT \<Rightarrow> emit_validate_and_profile_instruction_count 0 w_cur_pc n |
               _ \<Rightarrow> Some(l_pc,n)) in (
@@ -299,12 +307,13 @@ fun jit_compile :: "nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightar
               else
                 let meter' = (snd (Option.the n')) in
                 let l_pc' = fst (Option.the n') in
-                  jit_compile rev_pc meter' l_pc' prog rs (jit_compile_aux ins rs jprog )
+                  jit_compile fuel cur_pc meter' l_pc' prog rs (jit_compile_aux ins rs sv jprog )
               )
           )
         )
   ))"
 
+(*
 lemma 
   assumes a0:"jstate = jit_compile (length bprog) remain_cu 0 prog rs (JIT_OK jprog rs)" and
           a1:"bstate = bpf_interp (length bprog+1) bprog (BPF_OK rs m ss sv 0 remain_cu) " and
@@ -317,7 +326,7 @@ lemma
           a1:"bstate = bpf_interp (length bprog+1) bprog (BPF_OK rs m ss sv 0 remain_cu) " and
           a2:"bstate = BPF_OK rs m ss sv cur_cu remain_cu "
   shows "jstate = JIT_OK jprog rs"
-  sorry
+  sorry *)
 
 
 end

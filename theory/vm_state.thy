@@ -17,7 +17,7 @@ record CallFrame = (*  /// The caller saved registers
 frame_pointer :: u64
 target_pc :: u64
 
-type_synonym reg_map = "bpf_preg \<Rightarrow> u64"
+type_synonym reg_map = "bpf_ireg \<Rightarrow> u64"
 
 record EbpfVmState =
 host_stack_pointer :: u64 (**r  *mut u64 *)
