@@ -35,8 +35,8 @@ datatype bpf_state =
 definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
-definition init_bpf_state :: "bpf_state" where
-"init_bpf_state = BPF_OK 0 init_reg_map init_mem init_stack_state V2 init_func_map 0 0"
+definition init_bpf_state :: "mem \<Rightarrow> bpf_state" where
+"init_bpf_state m = BPF_OK 0 init_reg_map m init_stack_state V2 init_func_map 0 0"
 
 datatype 'a option2 =
   NOK |
@@ -594,10 +594,14 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
 definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
 "int_to_u8_list lp = (map (\<lambda>i. of_int i) lp)"
 
+definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
+"u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
+
 definition bpf_interp_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
 "bpf_interp_test lp lm lc fuel res = (
-  case bpf_interp fuel (int_to_u8_list lp) init_bpf_state True 0x100000000 of
+  case bpf_interp fuel (int_to_u8_list lp)
+    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) )) True 0x100000000 of
   BPF_Success v \<Rightarrow> uint v = res |
   _ \<Rightarrow> False
 )"

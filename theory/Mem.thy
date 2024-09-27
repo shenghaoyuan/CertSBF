@@ -6,7 +6,7 @@ imports
   rBPFCommType Val
 begin
 
-type_synonym mem = "(u64, u8 option) map"
+type_synonym mem = "(u64, u8) map"
 
 definition init_mem :: "mem" where
 "init_mem = (\<lambda> _. None)"
