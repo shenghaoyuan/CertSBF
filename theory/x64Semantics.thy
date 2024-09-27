@@ -46,6 +46,7 @@ fun undef_regs :: "preg list \<Rightarrow> regset \<Rightarrow> regset" where
 "undef_regs (r#l') rs = undef_regs l' (rs#r <- Vundef)"
 
 (**r igore it, as currently we only consider 64 architecture *)
+(*
 definition eval_addrmode32 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" where
 "eval_addrmode32 a rs = (
   case a of Addrmode base ofs const \<Rightarrow>
@@ -56,10 +57,11 @@ definition eval_addrmode32 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" 
         )
         (Vint const)
       )
-)"
+)" *)
 
-definition eval_addrmode64 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" where
-"eval_addrmode64 a rs = (
+
+definition eval_addrmode64_val :: "addrmode \<Rightarrow> regset \<Rightarrow> val" where
+"eval_addrmode64_val a rs = (
   case a of Addrmode base ofs const \<Rightarrow>
     Val.add64 (case base of None \<Rightarrow> (Vlong 0) | Some r \<Rightarrow> (rs (IR r)) )
       (Val.add64 (
@@ -68,6 +70,13 @@ definition eval_addrmode64 :: "addrmode \<Rightarrow> regset \<Rightarrow> val" 
         )
         (Vlong (scast const))
       )
+)"
+
+definition eval_addrmode64 :: "addrmode \<Rightarrow> regset \<Rightarrow> u64 option" where
+"eval_addrmode64 a rs = (
+  case eval_addrmode64_val a rs of
+  Vlong v \<Rightarrow> Some v |
+  _ \<Rightarrow> None
 )"
 
 definition compare_ints :: "val \<Rightarrow> val \<Rightarrow> regset \<Rightarrow> regset" where
@@ -130,52 +139,76 @@ definition nextinstr_nf :: "u64 \<Rightarrow> regset \<Rightarrow> regset" where
 
 definition exec_load :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
 "exec_load sz chunk m a rs rd = (
-  case Mem.loadv chunk m (eval_addrmode64 a rs) of
-    None \<Rightarrow> Stuck | 
-    Some v \<Rightarrow> Next (nextinstr_nf sz (rs#rd <- v)) m
+  case eval_addrmode64 a rs of
+  None \<Rightarrow> Stuck |
+  Some addr \<Rightarrow> (
+    case Mem.loadv chunk m addr of
+      None \<Rightarrow> Stuck | 
+      Some v \<Rightarrow> Next (nextinstr_nf sz (rs#rd <- v)) m
+  )
 )"
 
 definition exec_store :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> addrmode \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> preg list \<Rightarrow> outcome" where
 "exec_store sz chunk m a rs r1 destroyed = (
-  case Mem.storev chunk m (eval_addrmode64 a rs) (rs r1) of
-    None \<Rightarrow> Stuck |
-    Some m' \<Rightarrow> Next (nextinstr_nf sz (undef_regs destroyed rs)) m'
+  case eval_addrmode64 a rs of
+  None \<Rightarrow> Stuck |
+  Some addr \<Rightarrow> (
+    case Mem.storev chunk m addr (rs r1) of
+      None \<Rightarrow> Stuck |
+      Some m' \<Rightarrow> Next (nextinstr_nf sz (undef_regs destroyed rs)) m'
+  )
 )"
 
 definition exec_pop :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> preg \<Rightarrow> outcome" where
 "exec_pop sz chunk m rs rd = (
   let nsp = Val.add64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
-    case Mem.loadv chunk m (rs (IR SP)) of
-      None \<Rightarrow> Stuck |
-      Some v => let rs1 = rs#rd <- v in
-        Next (nextinstr_nf sz (rs1#(IR SP) <- nsp)) m
+    case (rs (IR SP)) of
+    Vlong addr \<Rightarrow> (
+      case Mem.loadv chunk m addr of
+        None \<Rightarrow> Stuck |
+        Some v => let rs1 = rs#rd <- v in
+          Next (nextinstr_nf sz (rs1#(IR SP) <- nsp)) m
+    ) |
+    _ \<Rightarrow> Stuck
 )"
 
 definition exec_push :: "u64 \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> outcome" where
 "exec_push sz chunk m rs v = (
   let nsp = Val.sub64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
-    case Mem.storev chunk m nsp v of
-      None \<Rightarrow> Stuck |
-      Some m' => Next (nextinstr_nf sz (rs#(IR SP) <- nsp)) m'
+    case nsp of
+    Vlong addr \<Rightarrow> (
+      case Mem.storev chunk m addr v of
+        None \<Rightarrow> Stuck |
+        Some m' => Next (nextinstr_nf sz (rs#(IR SP) <- nsp)) m'
+    ) |
+    _ \<Rightarrow> Stuck
 )"
   \<comment> \<open> near call \<close>
 definition exec_call :: "u64  \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> outcome" where
 "exec_call sz chunk m rs v = (
   let nsp = Val.sub64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
-    case Mem.storev M64 m nsp v of
-      None \<Rightarrow> Stuck |
-      Some m' \<Rightarrow> let rs1 = rs#(IR SP) <- nsp in
-                Next (rs1#PC <- v) m'
+    case nsp of
+    Vlong addr \<Rightarrow> (
+      case Mem.storev M64 m addr v of
+        None \<Rightarrow> Stuck |
+        Some m' \<Rightarrow> let rs1 = rs#(IR SP) <- nsp in
+                  Next (rs1#PC <- v) m'
+    ) |
+    _ \<Rightarrow> Stuck
 )"
 
   \<comment> \<open> near ret \<close>
 definition exec_ret :: "u64  \<Rightarrow> memory_chunk \<Rightarrow> mem \<Rightarrow> regset \<Rightarrow> outcome" where
 "exec_ret sz chunk m rs = (
   let nsp = Val.add64 (rs (IR SP)) (vlong_of_memory_chunk chunk) in
-    case Mem.loadv M64 m nsp  of
-      None \<Rightarrow> Stuck |
-      Some ra \<Rightarrow> let rs1 = rs#(IR SP) <- nsp in
-                Next ((rs1#PC <- ra)) m
+    case nsp of
+    Vlong addr \<Rightarrow> (
+      case Mem.loadv M64 m addr of
+        None \<Rightarrow> Stuck |
+        Some ra \<Rightarrow> let rs1 = rs#(IR SP) <- nsp in
+                  Next ((rs1#PC <- ra)) m
+    ) |
+    _ \<Rightarrow> Stuck
 )"
     
 definition testVal32 :: "testcond \<Rightarrow> regset \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val" where
@@ -219,25 +252,28 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
   Pxchgq_rr rd r1 \<Rightarrow> let tmp = rs (IR rd) in
                      let rs1 = (rs#(IR rd)<- (rs (IR r1))) in
                        Next (nextinstr_nf sz (rs1#(IR r1)<- tmp)) m |
-  Pxchgq_rm r1 a c\<Rightarrow> (case Mem.loadv M64 m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
-                     (let tmp = (rs (IR r1)) in 
-                       case Mem.storev M64 m (eval_addrmode64 a rs) tmp of None \<Rightarrow> Stuck |
-                        Some m' \<Rightarrow> Next (nextinstr_nf sz  (rs#(IR r1) <- v)) m'))| 
-  Pmov_mi   a n c \<Rightarrow> (case Mem.storev c m (eval_addrmode64 a rs) (Vint n) of
+  Pxchgq_rm r1 a c\<Rightarrow> ((case eval_addrmode64 a rs of None \<Rightarrow> Stuck | Some addr \<Rightarrow> (
+                        case Mem.loadv M64 m addr of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
+                         (let tmp = (rs (IR r1)) in 
+                           case Mem.storev M64 m addr tmp of None \<Rightarrow> Stuck |
+                            Some m' \<Rightarrow> Next (nextinstr_nf sz  (rs#(IR r1) <- v)) m')))) | 
+  Pmov_mi   a n c \<Rightarrow> ((case eval_addrmode64 a rs of None \<Rightarrow> Stuck | Some addr \<Rightarrow> (
+                        case Mem.storev c m addr (Vint n) of
                         None \<Rightarrow> Stuck| 
-                        Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m') |  \<comment> \<open>store imm32 to mem32/64 \<close>
+                        Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m'))) |  \<comment> \<open>store imm32 to mem32/64 \<close>
   \<comment> \<open> Moves with conversion \<close>
   Pmovsq_rr rd r1 \<Rightarrow> Next (nextinstr    sz (rs#(IR rd) <- (Val.longofintu(rs (IR r1))))) m |
   Pcdq            \<Rightarrow> Next (nextinstr    sz (rs#(IR RDX)<- (Val.signex32(rs (IR RAX))))) m | \<comment> \<open>sign_extend_eax_edx \<close>
   Pcqo            \<Rightarrow> Next (nextinstr    sz (rs#(IR RDX)<- (Val.signex64(rs (IR RAX))))) m | \<comment> \<open>sign_extend_rax_rdx \<close>
   \<comment> \<open> Integer arithmetic \<close>
-  Pleaq     rd a \<Rightarrow>  Next (nextinstr_nf sz (rs#(IR rd) <- (eval_addrmode64 a rs))) m |
+  Pleaq     rd a  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (eval_addrmode64_val a rs))) m |
   Pnegq     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg64 (rs (IR rd))))) m |
   Pnegl     rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.neg32 (rs (IR rd))))) m |
   Paddq_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add64 (rs (IR rd)) (rs (IR r1))))) m |
-  Paddq_mi  a n c \<Rightarrow> (case Mem.loadv  c m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
-                      (case Mem.storev c m (eval_addrmode64 a rs) (Val.add64 v (Vlong (scast n))) of None \<Rightarrow> Stuck |
-                         Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m'))| 
+  Paddq_mi  a n c \<Rightarrow> ((case eval_addrmode64 a rs of None \<Rightarrow> Stuck | Some addr \<Rightarrow> (
+                        case Mem.loadv c m addr of None \<Rightarrow> Stuck | Some v \<Rightarrow> 
+                        (case Mem.storev c m addr (Val.add64 v (Vlong (scast n))) of None \<Rightarrow> Stuck |
+                         Some m' \<Rightarrow> Next (nextinstr_nf sz rs) m')))) | 
   Paddl_rr  rd r1 \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (rs (IR r1))))) m |
   Paddl_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add32 (rs (IR rd)) (Vint n)))) m |
   Paddw_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.add16 (rs (IR rd)) (Vshort n)))) m |
@@ -293,8 +329,9 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 
   Ppushl_r  r1    \<Rightarrow> exec_push sz M32 m rs (rs (IR r1)) |
   Ppushl_i  n     \<Rightarrow> exec_push sz M32 m rs (Vint (ucast n)) |
-  Ppushq_m  a c   \<Rightarrow> (case Mem.loadv M64 m (eval_addrmode64 a rs) of None \<Rightarrow> Stuck | Some v \<Rightarrow>(
-                     exec_push sz M64 m rs v))|
+  Ppushq_m  a c   \<Rightarrow> ((case eval_addrmode64 a rs of None \<Rightarrow> Stuck | Some addr \<Rightarrow> (
+                        case Mem.loadv M64 m addr of None \<Rightarrow> Stuck | Some v \<Rightarrow>(
+                          exec_push sz M64 m rs v)))) |
   Ppopl     rd    \<Rightarrow> exec_pop  sz M32 m rs (IR rd) |
 
   Ptestl_rr r1 r2 \<Rightarrow> Next (nextinstr sz (compare_ints  (Val.and32 (rs (IR r1)) (rs (IR r2))) (Vint 0) rs)) m |

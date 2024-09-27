@@ -17,6 +17,9 @@ call_depth :: u64
 stack_pointer :: u64
 call_frames :: "CallFrame list"
 
+definition init_stack_state :: "stack_state" where
+"init_stack_state = \<lparr> call_depth = 0, stack_pointer = 1024, call_frames = [] \<rparr>"
+
 (*
 record rbpf_state =
 registers :: reg_map
@@ -24,10 +27,16 @@ memory_mapping :: mem
 stack :: stack_state *)
 
 datatype bpf_state =
-  BPF_OK u64 reg_map mem stack_state SBPFV u64 u64 | (**r normal state *)
+  BPF_OK u64 reg_map mem stack_state SBPFV func_map u64 u64 | (**r normal state *)
   BPF_Success u64 |
   BPF_EFlag | (**r find bugs at runtime *)
   BPF_Err  (**r bad thing *)
+
+definition init_reg_map :: "reg_map" where
+"init_reg_map = (\<lambda> _. 0)"
+
+definition init_bpf_state :: "bpf_state" where
+"init_bpf_state = BPF_OK 0 init_reg_map init_mem init_stack_state V2 init_func_map 0 0"
 
 datatype 'a option2 =
   NOK |
@@ -336,7 +345,7 @@ definition eval_store :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op
   let dv :: i64 = scast (eval_reg dst rs) in (
   let vm_addr :: u64 = ucast (dv + (scast off)) in (  
   let sv :: u64 = eval_snd_op_u64 sop rs in ( \<comment> \<open> TODO: sv is signed for imm and unsigned for src reg? \<close>
-  (storev chk mem (Vlong vm_addr) (Vlong sv))
+  (storev chk mem vm_addr (Vlong sv))
 ))))"
 
 
@@ -344,7 +353,7 @@ definition eval_load :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty 
 "eval_load chk dst sop off rs mem = (
   let sv :: u64 = eval_snd_op_u64 (SOReg sop) rs in (
   let vm_addr :: u64 = sv + (scast off) in (  
-  let v = (loadv chk mem (Vlong vm_addr)) in (
+  let v = loadv chk mem vm_addr in (
      case v of None \<Rightarrow> None |
                Some Vundef \<Rightarrow>  None | 
                Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
@@ -357,7 +366,7 @@ definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<
   let sv1 :: i64 = eval_snd_op_i64 (SOImm imm1) rs in (
   let sv2 :: i64 = eval_snd_op_i64 (SOImm imm2) rs in (
   let vm_addr :: u64 = ucast (sv1+sv2) in (
-  let v = (loadv M64 mem (Vlong vm_addr)) in (
+  let v = loadv M64 mem vm_addr in (
      case v of None \<Rightarrow> None |
                Some Vundef \<Rightarrow>  None | 
                Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
@@ -389,8 +398,8 @@ definition eval_jmp :: "condition \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Ri
 
 subsection  \<open> CALL \<close>
 
-definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> stack_state option \<times> reg_map" where 
-"push_frame rs ss is_v1 pc = (
+definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> bool \<Rightarrow> stack_state option \<times> reg_map" where 
+"push_frame rs ss is_v1 pc enable_stack_frame_gaps = (
   let pc = pc +1; fp = eval_reg BR10 rs;
     frame = \<lparr>frame_pointer = pc, target_pc = fp\<rparr> in 
   let update1 = call_depth ss +1 in (if update1 = max_call_depth then (None, rs) else (
@@ -401,30 +410,31 @@ definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<
   reg = rs#BR10 <-- update2 in (stack, reg)
 )))"
 
-definition eval_call_reg :: "src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> (u64 \<times> reg_map \<times> stack_state) option" where
-"eval_call_reg src imm rs ss is_v1 pc = (
+definition eval_call_reg :: "src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow>
+  func_map \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> (u64 \<times> reg_map \<times> stack_state) option" where
+"eval_call_reg src imm rs ss is_v1 pc fm enable_stack_frame_gaps program_vm_addr = (
   case u4_to_bpf_ireg (ucast imm) of
   None \<Rightarrow> None |
   Some iv \<Rightarrow> (
     let pc1 = if is_v1 then eval_reg iv rs else eval_reg src rs in  
-    let (x, rs') = push_frame rs ss is_v1 pc1 in
+    let (x, rs') = push_frame rs ss is_v1 pc1 enable_stack_frame_gaps in
       case x of
       None \<Rightarrow> None |
       Some ss' \<Rightarrow> 
         if pc1 < program_vm_addr then None else (
           let next_pc = (pc1 - program_vm_addr)div (of_nat INSN_SIZE) in 
-            case get_function_registry (ucast next_pc) of
+            case get_function_registry (ucast next_pc) fm of
             None \<Rightarrow> None | 
             Some _ => Some (next_pc, rs', ss')
           ))
 )"
 
-definition eval_call_imm :: "imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (u64 \<times> reg_map \<times> stack_state) option" where
-"eval_call_imm imm rs ss is_v1 = (
-  case get_function_registry (ucast imm) of
+definition eval_call_imm :: "imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> func_map \<Rightarrow> bool \<Rightarrow> (u64 \<times> reg_map \<times> stack_state) option" where
+"eval_call_imm imm rs ss is_v1 fm enable_stack_frame_gaps = (
+  case get_function_registry (ucast imm) fm of
   None \<Rightarrow> None |
   Some pc \<Rightarrow> (
-    let (x, rs') = push_frame rs ss is_v1 pc in (
+    let (x, rs') = push_frame rs ss is_v1 pc enable_stack_frame_gaps in (
       case x of
       None \<Rightarrow> None |
       Some ss' \<Rightarrow> Some (pc, rs', ss')
@@ -447,107 +457,109 @@ definition eval_exit :: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<
 
 subsection  \<open> step \<close>
 
-fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> bpf_state" where
-"step pc ins rs m ss sv cur_cu remain_cu = ( let is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) in
+fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow>
+  func_map \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> bpf_state" where
+"step pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr cur_cu remain_cu = (
+  let is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) in
   case ins of
   BPF_ALU bop d sop \<Rightarrow> (
     case eval_alu32 bop d sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_ALU64 bop d sop \<Rightarrow> (
     case eval_alu64 bop d sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_ADD_STK i \<Rightarrow> (
     case eval_add64_imm_R10 i ss is_v1 of
     None \<Rightarrow> BPF_Err |
-    Some ss' \<Rightarrow> BPF_OK (pc+1) rs m ss' sv cur_cu remain_cu) |
+    Some ss' \<Rightarrow> BPF_OK (pc+1) rs m ss' sv fm cur_cu remain_cu) |
 
   BPF_LE dst imm \<Rightarrow> (
     case eval_le dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_BE dst imm \<Rightarrow> (
     case eval_be dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_NEG32_REG dst \<Rightarrow> (
     case eval_neg32 dst rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_NEG64_REG dst \<Rightarrow> (
     case eval_neg64 dst rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_LDX chk dst sop off \<Rightarrow> (
     case eval_load chk dst sop off rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_ST chk dst sop off \<Rightarrow> (
     case eval_store chk dst sop off rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv cur_cu remain_cu) |
+    Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv fm cur_cu remain_cu) |
 
   BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
     case eval_load_imm dst imm1 imm2 rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_PQR64 pop dst sop \<Rightarrow> (
     case eval_pqr64 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_PQR2 pop dst sop \<Rightarrow> (
     case eval_pqr64_2 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_HOR64_IMM dst imm \<Rightarrow> (
     case eval_hor64 dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_JA off  \<Rightarrow>
-    BPF_OK (pc + scast off + 1) rs m ss sv cur_cu remain_cu |
+    BPF_OK (pc + scast off + 1) rs m ss sv fm cur_cu remain_cu |
 
   BPF_JUMP cond bpf_ireg snd_op off  \<Rightarrow> (
     if eval_jmp cond bpf_ireg snd_op rs  then
-      BPF_OK (pc + scast off + 1) rs m ss sv cur_cu remain_cu
+      BPF_OK (pc + scast off + 1) rs m ss sv fm cur_cu remain_cu
     else
-      BPF_OK (pc + 1) rs m ss sv cur_cu remain_cu) |
+      BPF_OK (pc + 1) rs m ss sv fm cur_cu remain_cu) |
 
   BPF_CALL_IMM src imm \<Rightarrow> (
-    case eval_call_imm imm rs ss is_v1  of
+    case eval_call_imm imm rs ss is_v1 fm enable_stack_frame_gaps of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc, rs', ss') \<Rightarrow> BPF_OK pc rs' m ss' sv cur_cu remain_cu) |
+    Some (pc, rs', ss') \<Rightarrow> BPF_OK pc rs' m ss' sv fm cur_cu remain_cu) |
 
   BPF_CALL_REG src imm \<Rightarrow> (
-    case eval_call_reg src imm rs ss is_v1 pc of
+    case eval_call_reg src imm rs ss is_v1 pc fm enable_stack_frame_gaps program_vm_addr of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv (cur_cu+1) remain_cu) |
+    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu) |
   BPF_EXIT \<Rightarrow> (
     if call_depth ss = 0 then
       if cur_cu > remain_cu then
@@ -556,26 +568,39 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
         BPF_Success (rs BR1)
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
-        BPF_OK pc' rs' m ss' sv cur_cu remain_cu))
+        BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu))
 )"
 
-fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarrow> bpf_state" where
-"bpf_interp 0 _ _ = BPF_EFlag" | 
-"bpf_interp (Suc n) prog st = (
+fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> bpf_state" where
+"bpf_interp 0 _ _ _ _ = BPF_EFlag" | 
+"bpf_interp (Suc n) prog st enable_stack_frame_gaps program_vm_addr = (
   case st of
   BPF_EFlag \<Rightarrow> BPF_EFlag |
   BPF_Err \<Rightarrow> BPF_Err |
   BPF_Success v \<Rightarrow> BPF_Success v |
-  BPF_OK pc rs m ss sv cur_cu remain_cu \<Rightarrow> (
+  BPF_OK pc rs m ss sv fm cur_cu remain_cu \<Rightarrow> (
     if unat pc < length prog then
       if cur_cu \<ge> remain_cu then
         BPF_EFlag
       else
         case bpf_find_instr (unat pc) prog of
-        None \<Rightarrow> BPF_Err |
-        Some ins \<Rightarrow> bpf_interp n prog (step pc ins rs m ss sv (cur_cu+1) remain_cu)
-    else BPF_Err))"
+        None \<Rightarrow> BPF_EFlag |
+        Some ins \<Rightarrow>
+          bpf_interp n prog
+            (step pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr (cur_cu+1) remain_cu)
+            enable_stack_frame_gaps program_vm_addr
+    else BPF_EFlag))"
 
+definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
+"int_to_u8_list lp = (map (\<lambda>i. of_int i) lp)"
+
+definition bpf_interp_test ::
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
+"bpf_interp_test lp lm lc fuel res = (
+  case bpf_interp fuel (int_to_u8_list lp) init_bpf_state True 0x100000000 of
+  BPF_Success v \<Rightarrow> uint v = res |
+  _ \<Rightarrow> False
+)"
 
 lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
 proof-

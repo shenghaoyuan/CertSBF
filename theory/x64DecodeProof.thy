@@ -8,56 +8,13 @@ begin
 (* It may take more than one hour to run this proof *)
 declare if_split_asm [split]
 
-(*fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
-"x64_encode ins = (
-  case ins of
-  \<comment> \<open> P518 `Operand-size override prefix is encoded using 66H` \<close> 
-  \<comment> \<open> P2887 `ROL : register by immediate count` -> `0x66 1100 000w : 11 000 reg : imm8` \<close>
-  Prolw_ri rd n \<Rightarrow>
-    let (prefix:: u8) = 0x66 in
-    let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
-        False \<comment> \<open> W \<close>
-        False \<comment> \<open> R \<close>
-        False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
-        ) in
-    let (op:: u8) = 0xc1 in
-    let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
-    let (imm::u8) = ucast n in
-    if rex = 0x40 then
-      Some [prefix, op, rop, imm]
-    else*)
-
-(*definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruction) option" where
-"x64_decode pc l_bin = (
-  let h = l_bin!pc in
-    \<comment> \<open> R1 [opcode] \<close>
-    if h = 0x90 then 
-      \<comment> \<open> P2884 `NOP – No Operation` -> `1001 0000` \<close> 
-      Some (1, Pnop)
-    else if h = 0x99 then
-      Some (1, Pcdq)
-    else if h = 0xc3 then
-      \<comment> \<open> P2887 ` RET near` -> ` 1100 0011` \<close>
-      Some (1, Pret)
-    else if h = 0x99 then
-      Some (1, Pcdq)
-    \<comment> \<open> R7 legacy \<close>
-    else if h = 0x66 then  \<comment> \<open> 16*)
-
-(*lemma "ins = Pmov_mr (Addrmode (Some dst) None dis) src M8 \<Longrightarrow> x64_decode x (the (x64_encode ins )) = Some (y,ins)"
-  apply (cases ins; simp_all)
-  apply(unfold x64_decode_def Let_def)
-  apply(simp add: construct_rex_to_u8_def construct_modsib_to_u8_def)
-  apply(simp split del:if_split)
-*)
-
-
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
     x64_decode pc l = Some (length l_bin, ins)"
   sorry
- (* apply (cases ins; simp_all)
+
+(*
+  apply (cases ins; simp_all)
 
   subgoal for dst src
   \<comment> \<open> Pmovl_rr \<close> 
@@ -573,7 +530,7 @@ lemma x64_encode_decode_consistency:
       apply (cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def
           ireg_of_u8_def Suc3_eq_add_3 add.commute)
       done
-e
+
     subgoal \<comment> \<open> rex <> 0x40  \<close>
       using list_in_list_u8_list_of_u32_simp_sym [of imm "(pc+3)" l]
       using length_u8_list_of_u32_eq_4

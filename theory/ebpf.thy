@@ -13,8 +13,8 @@ definition SCRATCH_REGS :: nat where
 definition INSN_SIZE :: nat where 
 "INSN_SIZE = 8"
 
-
-consts program_vm_addr::u64 
+(*
+consts program_vm_addr::u64 *)
 
 type_synonym func_key = u32
 
@@ -22,9 +22,13 @@ type_synonym func_val = u64
 
 type_synonym func_map = "(func_key, func_val) map"
 
-consts fm::func_map
+definition init_func_map :: "func_map" where
+"init_func_map = (\<lambda> _. None)"
 
-definition get_function_registry ::"func_key \<Rightarrow> func_val option" where
-"get_function_registry key = fm key"
+(*
+consts fm::func_map *)
+
+definition get_function_registry ::"func_key \<Rightarrow> func_map \<Rightarrow> func_val option" where
+"get_function_registry key fm = fm key"
 
 end

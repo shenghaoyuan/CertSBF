@@ -60,8 +60,8 @@ definition check_load_dw :: "bpf_bin \<Rightarrow> nat \<Rightarrow> bool" where
 )"
 
 definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> SBPFV \<Rightarrow>
- func_map \<Rightarrow> bool" where
-"verify_one insn l len insn_ptr sbpf_version fr = (
+ func_map \<Rightarrow> bool \<Rightarrow> bool" where
+"verify_one insn l len insn_ptr sbpf_version fr reject_callx_r10 = (
   case insn of
   BPF_LD_IMM  dst i1 i2    \<Rightarrow> (
     if sbpf_version = V1 then
@@ -208,18 +208,18 @@ definition check_registers :: "bpf_bin \<Rightarrow> bool \<Rightarrow> nat \<Ri
 )"
 
 fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
- func_map \<Rightarrow> bool" where
-"verifier_aux fuel pc len l sbpf_version fr = (
+ func_map \<Rightarrow> bool \<Rightarrow> bool" where
+"verifier_aux fuel pc len l sbpf_version fr reject_callx_r10 = (
   case fuel of
   0 \<Rightarrow> if pc \<noteq> (len div INSN_SIZE) then False else True |
   Suc n \<Rightarrow> (
     case bpf_find_instr pc l of
     None \<Rightarrow> False |
     Some ins \<Rightarrow>
-      if verify_one ins l pc len sbpf_version fr then
+      if verify_one ins l pc len sbpf_version fr reject_callx_r10 then
         if check_registers l (is_store ins) pc sbpf_version then
           verifier_aux n (if is_lddw_imm ins then pc + 2 else pc + 1)
-            len l sbpf_version fr 
+            len l sbpf_version fr reject_callx_r10
         else
           False
       else
@@ -227,11 +227,10 @@ fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_b
     )
 )"
 
-definition verifier :: "bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
- func_map \<Rightarrow> bool" where
-"verifier l sbpf_version fr = (
+definition verifier :: "bpf_bin \<Rightarrow> SBPFV \<Rightarrow> func_map \<Rightarrow> bool \<Rightarrow> bool" where
+"verifier l sbpf_version fr reject_callx_r10 = (
   if check_prog_len l then
-    verifier_aux (length l) 0 (length l) l sbpf_version fr 
+    verifier_aux (length l) 0 (length l) l sbpf_version fr reject_callx_r10
   else
     False
 )"

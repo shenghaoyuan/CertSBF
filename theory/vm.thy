@@ -10,13 +10,14 @@ abbreviation "max_call_depth:: usize \<equiv> 64"
 
 abbreviation "stack_frame_size:: usize \<equiv> 4096"
 
+abbreviation "instruction_meter_checkpoint_distance:: usize \<equiv> 10000"
+
+(*
 abbreviation "enable_stack_frame_gaps:: bool \<equiv> True"
 
 abbreviation "reject_callx_r10:: bool \<equiv> True"
 
-abbreviation "instruction_meter_checkpoint_distance:: usize \<equiv> 10000"
-
-abbreviation "enable_instruction_meter:: bool \<equiv> True"
+abbreviation "enable_instruction_meter:: bool \<equiv> True" *)
 (*
 record Config =
 \<comment> \<open> Maximum call depth \<close>
