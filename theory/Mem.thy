@@ -26,7 +26,7 @@ definition option_u64_of_u8_2 :: "u8 option \<Rightarrow> u8 option \<Rightarrow
   case v0 of None \<Rightarrow> None |
   Some n0 \<Rightarrow> (
     case v1 of None \<Rightarrow> None |
-    Some n1 \<Rightarrow> Some (or ((ucast n0) << 8) (ucast n1))
+    Some n1 \<Rightarrow> Some (or ((ucast n1) << 8) (ucast n0))
   )
 )"
 
@@ -40,9 +40,9 @@ definition option_u64_of_u8_4 :: "u8 option \<Rightarrow> u8 option \<Rightarrow
       Some n2 \<Rightarrow> (
         case v3 of None \<Rightarrow> None |
         Some n3 \<Rightarrow>
-          Some (or ((ucast n0) << 24)
-                    (or ((ucast n1) << 16)
-                        (or ((ucast n2) << 8) (ucast n3) ) ))))
+          Some (or ((ucast n3) << 24)
+                    (or ((ucast n2) << 16)
+                        (or ((ucast n1) << 8) (ucast n0) ) ))))
   )
 )"
 
@@ -65,13 +65,13 @@ definition option_u64_of_u8_8 :: "u8 option \<Rightarrow> u8 option \<Rightarrow
               Some n6 \<Rightarrow> (
                 case v7 of None \<Rightarrow> None |
                 Some n7 \<Rightarrow>
-                  Some (or ((ucast n0) << 56)
-                            (or ((ucast n1) << 48)
-                              (or ((ucast n2) << 40)
-                                  (or ((ucast n3) << 32)
-                                      (or ((ucast n4) << 24)
-                                          (or ((ucast n5) << 16)
-                                              (or ((ucast n6) << 8) (ucast n7) ) ))))))))))))
+                  Some (or ((ucast n7) << 56)
+                            (or ((ucast n6) << 48)
+                              (or ((ucast n5) << 40)
+                                  (or ((ucast n4) << 32)
+                                      (or ((ucast n3) << 24)
+                                          (or ((ucast n2) << 16)
+                                              (or ((ucast n1) << 8) (ucast n0) ) ))))))))))))
   )
 )"
 

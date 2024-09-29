@@ -606,6 +606,16 @@ definition bpf_interp_test ::
   _ \<Rightarrow> False
 )"
 
+(*
+value "loadv M16 (u8_list_to_mem (int_to_u8_list [0x11, 0x22, 0x33])) 1"
+(**r return 0x3322 = 13090 *)
+value "(u16_of_u8_list (rev (u8_list_of_u16 (ucast (0x3322::u64)))))"
+(**r return 0x2233 = 8755 *)
+value "case storev M16 init_mem 0 (Vshort 0x1122) of None \<Rightarrow> None | Some m \<Rightarrow> loadv M16 m 0"
+(**r return 0x1122 =4386 *)
+*)
+
+
 lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
 proof-
 
