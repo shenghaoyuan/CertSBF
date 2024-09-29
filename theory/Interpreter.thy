@@ -35,8 +35,8 @@ datatype bpf_state =
 definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
-definition init_bpf_state :: "mem \<Rightarrow> bpf_state" where
-"init_bpf_state m = BPF_OK 0 init_reg_map m init_stack_state V2 init_func_map 0 0"
+definition init_bpf_state :: "mem \<Rightarrow> u64 \<Rightarrow> bpf_state" where
+"init_bpf_state m n = BPF_OK 0 init_reg_map m init_stack_state V2 init_func_map 0 n"
 
 datatype 'a option2 =
   NOK |
@@ -401,7 +401,7 @@ subsection  \<open> CALL \<close>
 definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> bool \<Rightarrow> stack_state option \<times> reg_map" where 
 "push_frame rs ss is_v1 pc enable_stack_frame_gaps = (
   let pc = pc +1; fp = eval_reg BR10 rs;
-    frame = \<lparr>frame_pointer = pc, target_pc = fp\<rparr> in 
+    frame = \<lparr>frame_pointer = fp, target_pc = pc\<rparr> in 
   let update1 = call_depth ss +1 in (if update1 = max_call_depth then (None, rs) else (
   let update2 = if is_v1 then (if enable_stack_frame_gaps then stack_pointer ss + stack_frame_size *2
   else stack_pointer ss + stack_frame_size) else stack_pointer ss;  
@@ -565,7 +565,7 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
       if cur_cu > remain_cu then
         BPF_EFlag
       else
-        BPF_Success (rs BR1)
+        BPF_Success (rs BR0)
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
         BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu))
@@ -579,15 +579,15 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
   BPF_Err \<Rightarrow> BPF_Err |
   BPF_Success v \<Rightarrow> BPF_Success v |
   BPF_OK pc rs m ss sv fm cur_cu remain_cu \<Rightarrow> (
-    if unat pc < length prog then
+    if unat pc*8 < length prog then
       if cur_cu \<ge> remain_cu then
         BPF_EFlag
       else
         case bpf_find_instr (unat pc) prog of
         None \<Rightarrow> BPF_EFlag |
         Some ins \<Rightarrow>
-          bpf_interp n prog
-            (step pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr (cur_cu+1) remain_cu)
+          let st1 = step pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr (cur_cu+1) remain_cu in 
+          bpf_interp n prog st1
             enable_stack_frame_gaps program_vm_addr
     else BPF_EFlag))"
 
@@ -601,8 +601,8 @@ definition bpf_interp_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
 "bpf_interp_test lp lm lc fuel res = (
   case bpf_interp fuel (int_to_u8_list lp)
-    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) )) True 0x100000000 of
-  BPF_Success v \<Rightarrow> uint v = res |
+    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_nat (fuel+1))) True 0x100000000 of
+  BPF_Success v \<Rightarrow> uint v = res |                           
   _ \<Rightarrow> False
 )"
 
