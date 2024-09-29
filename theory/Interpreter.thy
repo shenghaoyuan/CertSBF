@@ -20,6 +20,9 @@ call_frames :: "CallFrame list"
 definition init_stack_state :: "stack_state" where
 "init_stack_state = \<lparr> call_depth = 0, stack_pointer = 1024, call_frames = [] \<rparr>"
 
+abbreviation "MM_INPUT_START :: u64 \<equiv> 0x400000000"
+
+
 (*
 record rbpf_state =
 registers :: reg_map
@@ -594,6 +597,8 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
 definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
 "int_to_u8_list lp = (map (\<lambda>i. of_int i) lp)"
 
+
+(**r the initial state of R1 should be MM_INPUT_START, so here should be (MM_INPUT_START + i), we set MM_INPUT_START = 0 in this model *)
 definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
 "u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
