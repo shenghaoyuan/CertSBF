@@ -2284,6 +2284,35 @@ let rec eval_pqr64_2
                                        (len_bit0 (len_bit0 len_num1)))))))
                              dv_i sv_i)))))));;
 
+let rec memory_chunk_value_of_u64
+  mc v =
+    (match mc
+      with M8 ->
+        Vbyte (cast (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (len_bit0 (len_bit0 (len_bit0 len_num1))) v)
+      | M16 ->
+        Vshort
+          (cast (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+            (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))) v)
+      | M32 ->
+        Vint (cast (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+               v)
+      | M64 ->
+        Vlong (cast (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                v));;
+
 let rec eval_store
   chk dst sop off rs mem =
     (let dv =
@@ -2316,7 +2345,7 @@ let rec eval_store
                 off))
        in
      let sv = eval_snd_op_u64 sop rs in
-      storev chk mem vm_addr (Vlong sv));;
+      storev chk mem vm_addr (memory_chunk_value_of_u64 chk sv));;
 
 let rec modulo_word _A
   a b = of_int _A (modulo_inta (the_int _A a) (the_int _A b));;
@@ -4882,17 +4911,6 @@ let rec nat_of_int (n: int64) =
 let int_list_of_standard_int_list lst =
   List.map int_of_standard_int lst
 
-(*let print_regmap rs =
-  let reg_list = [("R0", BR0); ("R1", BR1); ("R2", BR2); ("R3", BR3);
-                  ("R4", BR4); ("R5", BR5); ("R6", BR6); ("R7", BR7);
-                  ("R8", BR8); ("R9", BR9); ("R10", BR10)] in
-  List.iter (fun (name, reg) ->
-    print_endline (name ^ ": " ^ Int64.to_string (myint_to_int (the_int
-    (len_bit0
-      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-        (rs reg))))
-  ) reg_list*)
-
 let print_regmap rs =
   let reg_list = [("R0", BR0); ("R1", BR1); ("R2", BR2); ("R3", BR3);
                   ("R4", BR4); ("R5", BR5); ("R6", BR6); ("R7", BR7);
@@ -4956,13 +4974,12 @@ let rec bpf_interp
   (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                     remain_cu
                                   in
-                                  let _ = print_bpf_state st1 in
+                                  (*let _ = print_bpf_state st1 in*)
                                   bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in  BPF_EFlag) 
           | BPF_Success a -> BPF_Success a | BPF_EFlag -> let _ = print_endline ("hello 3") in BPF_EFlag
           | BPF_Err -> let _ = print_endline ("hello 4") in BPF_Err);;
-                  
 
 let rec init_reg_map
   x = (fun _ ->
@@ -5017,7 +5034,7 @@ let rec u8_list_to_mem
           else None));;
 
 let rec bpf_interp_test
-  lp lm lc v fuel res = 
+  lp lm lc v fuel res =
     (match
       bpf_interp (plus_nat fuel one_nat) (int_to_u8_list lp)
         (init_bpf_state (u8_list_to_mem (int_to_u8_list lm))
