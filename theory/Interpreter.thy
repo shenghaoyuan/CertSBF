@@ -38,8 +38,8 @@ datatype bpf_state =
 definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
-definition init_bpf_state :: "mem \<Rightarrow> u64 \<Rightarrow> bpf_state" where
-"init_bpf_state m n = BPF_OK 0 init_reg_map m init_stack_state V2 init_func_map 0 n"
+definition init_bpf_state :: "mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
+"init_bpf_state m n v = BPF_OK 0 init_reg_map m init_stack_state v init_func_map 0 n"
 
 datatype 'a option2 =
   NOK |
@@ -99,17 +99,17 @@ definition eval_alu32_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
   BPF_XOR \<Rightarrow> OKS (rs#dst <-- (ucast (xor dv sv))) |
   BPF_MOV \<Rightarrow> OKS (rs#dst <-- (ucast sv)) |
-  BPF_LSH \<Rightarrow> OKS (rs#dst <-- (ucast (dv << unat sv))) |
-  BPF_RSH \<Rightarrow> OKS (rs#dst <-- (ucast (dv >> unat sv))) |
+  BPF_LSH \<Rightarrow> OKS (rs#dst <-- (ucast (dv << unat (and sv 31)))) |
+  BPF_RSH \<Rightarrow> OKS (rs#dst <-- (ucast (dv >> unat (and sv 31)))) |
   _ \<Rightarrow> OKN
 )))"
 
 definition eval_alu32_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_alu32_aux3 bop dst sop rs  = (
   let dv :: i32 = scast (eval_reg dst rs) in (
-  let sv :: u32 = eval_snd_op_u32 sop rs in (
+  let sv :: u32 = and (eval_snd_op_u32 sop rs) 31 in (
   case bop of
-  BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (and (ucast (dv << unat sv)::u64) (ucast u32_MAX)) ) | 
+  BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (and (ucast (dv >> unat sv)::u64) (ucast u32_MAX)) ) | 
   _ \<Rightarrow> OKN
 )))"
 
@@ -155,7 +155,7 @@ definition eval_alu64_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
 definition eval_alu64_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_alu64_aux2 bop dst sop rs = (
   let dv :: u64 = eval_reg dst rs in (
-  let sv :: u32 = eval_snd_op_u32 sop rs in (
+  let sv :: u32 = and (eval_snd_op_u32 sop rs) 63 in (
   case bop of
   BPF_LSH \<Rightarrow> OKS (rs#dst <-- (dv << unat sv)) |  \<comment> \<open> to unat \<close>
   BPF_RSH \<Rightarrow> OKS (rs#dst <-- (dv >> unat sv)) |  \<comment> \<open> to unat \<close>
@@ -165,7 +165,7 @@ definition eval_alu64_aux2 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
 definition eval_alu64_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_alu64_aux3 bop dst sop rs = (
   let dv :: i64 = scast (eval_reg dst rs) in (
-  let sv :: u32 = eval_snd_op_u32 sop rs in (
+  let sv :: u32 = and (eval_snd_op_u32 sop rs) 63 in (
   case bop of
   BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (ucast (dv >> unat sv)::u64)) |
   _ \<Rightarrow> OKN
@@ -251,10 +251,10 @@ definition eval_be :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Right
 
 definition eval_hor64 :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where
 "eval_hor64 dst imm rs is_v1 = (
-  if is_v1 then (
+  if is_v1 then OKN
+  else (
     let dv::u64 = eval_reg dst rs; dv2 = or dv (((ucast imm)::u64) << 32) in 
       OKS (rs#dst <-- dv2))
-  else OKN
 )"
 
 subsection  \<open> PQR \<close>
@@ -603,11 +603,11 @@ definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
 "u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
 definition bpf_interp_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
-"bpf_interp_test lp lm lc fuel res = (
-  case bpf_interp fuel (int_to_u8_list lp)
-    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_nat (fuel+1))) True 0x100000000 of
-  BPF_Success v \<Rightarrow> uint v = res |                           
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
+"bpf_interp_test lp lm lc v fuel res = (
+  case bpf_interp (fuel+1) (int_to_u8_list lp)
+    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_nat (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
+  BPF_Success v \<Rightarrow> uint v = res |
   _ \<Rightarrow> False
 )"
 

@@ -7,6 +7,8 @@ begin
 export_code  eval_reg  in OCaml
   module_name Test file_prefix test
 
+(*code_printing type_constructor int \<rightharpoonup> (OCaml) "myint"*)
+
 export_code bpf_interp_test in OCaml
   module_name Interp_test2 file_prefix interp_test2
 
