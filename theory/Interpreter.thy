@@ -594,8 +594,8 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
             enable_stack_frame_gaps program_vm_addr
     else BPF_EFlag))"
 
-definition int_to_u8_list :: "nat list \<Rightarrow> u8 list" where
-"int_to_u8_list lp = (map (\<lambda>i. of_nat i) lp)"
+definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
+"int_to_u8_list lp = (map (\<lambda>i. of_int i) lp)"
 
 
 (**r the initial state of R1 should be MM_INPUT_START, so here should be (MM_INPUT_START + i), we set MM_INPUT_START = 0 in this model *)
@@ -603,13 +603,15 @@ definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
 "u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
 definition bpf_interp_test ::
-  "nat list \<Rightarrow> nat list \<Rightarrow> nat list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
 "bpf_interp_test lp lm lc v fuel res = (
   case bpf_interp (fuel+1) (int_to_u8_list lp)
     (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_nat (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
-  BPF_Success v \<Rightarrow> unat v = res |
+  BPF_Success v \<Rightarrow> v = of_int res |
   _ \<Rightarrow> False
 )"
+
+value "(of_int (-8613303245920329199::int)::u64)"
 
 (*
 value "loadv M16 (u8_list_to_mem (int_to_u8_list [0x11, 0x22, 0x33])) 1"

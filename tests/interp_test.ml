@@ -4872,8 +4872,8 @@ let rec num_of_int (n: int64) =
 
 let int_of_standard_int (n: int64) =
   if n = 0L then Zero_int
-  else if n > 0L then  Pos (num_of_int (Int64.of_int (Int64.to_int n)))
-  else Neg (num_of_int (Int64.of_int (Int64.to_int (Int64.sub 0L n))))
+  else if n > 0L then  Pos (num_of_int (n))
+  else Neg (num_of_int (Int64.sub 0L n))
 
 let rec nat_of_int (n: int64) =
   if n <= 0L then Zero_nat
@@ -5037,12 +5037,14 @@ let rec bpf_interp_test
  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))))))))))))))))))))))
       with BPF_OK (_, _, _, _, _, _, _, _) -> false
       | BPF_Success va ->
-        equal_int
-          (the_signed_int
-            (len_bit0
-              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-            va)
-          res
+        equal_word
+          (len_bit0
+            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+          va (of_int
+               (len_bit0
+                 (len_bit0
+                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+               res)
       | BPF_EFlag -> false | BPF_Err -> false);;
 
 end;; (*struct Interp_test*)
