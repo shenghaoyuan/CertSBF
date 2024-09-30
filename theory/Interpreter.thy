@@ -607,7 +607,7 @@ definition bpf_interp_test ::
 "bpf_interp_test lp lm lc v fuel res = (
   case bpf_interp (fuel+1) (int_to_u8_list lp)
     (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_nat (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
-  BPF_Success v \<Rightarrow> uint v = res |
+  BPF_Success v \<Rightarrow> sint v = res |
   _ \<Rightarrow> False
 )"
 
