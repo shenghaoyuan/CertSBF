@@ -304,7 +304,8 @@ definition eval_pqr64_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   BPF_UDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
                         else OKS (rs#dst <-- (ucast (dv div sv))) | 
   BPF_UREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv mod sv)))  
+                        else OKS (rs#dst <-- (ucast (dv mod sv)))  |
+  _ \<Rightarrow> OKN   
 )))"
 
 definition eval_pqr64_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
@@ -315,7 +316,8 @@ definition eval_pqr64_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   BPF_SDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
                         else OKS (rs#dst <-- (ucast (dv div sv))) | 
   BPF_SREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv mod sv)))   
+                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
+  _ \<Rightarrow> OKN  
 )))"
 
 definition eval_pqr64 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where
@@ -326,7 +328,7 @@ definition eval_pqr64 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
   BPF_UDIV \<Rightarrow> eval_pqr64_aux1 pop dst sop rs | 
   BPF_UREM \<Rightarrow> eval_pqr64_aux1 pop dst sop rs | 
   BPF_SDIV \<Rightarrow> eval_pqr64_aux2 pop dst sop rs | 
-  BPF_SREM \<Rightarrow> eval_pqr64_aux2 pop dst sop rs   
+  BPF_SREM \<Rightarrow> eval_pqr64_aux2 pop dst sop rs
 ))"
 
 definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where
@@ -343,15 +345,6 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
 
 subsection  \<open> MEM \<close>
 
-definition memory_chunk_value_of_u64 :: "memory_chunk \<Rightarrow> u64 \<Rightarrow> val" where
-"memory_chunk_value_of_u64 mc v = (
-  case mc of
-  M8 \<Rightarrow> Vbyte (ucast v) |
-  M16 \<Rightarrow> Vshort (ucast v) |
-  M32 \<Rightarrow> Vint (ucast v) |
-  M64 \<Rightarrow> Vlong (ucast v)
-)"
-
 definition eval_store :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> mem option" where
 "eval_store chk dst sop off rs mem = (
   let dv :: i64 = scast (eval_reg dst rs) in (
@@ -366,11 +359,13 @@ definition eval_load :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty 
   let sv :: u64 = eval_snd_op_u64 (SOReg sop) rs in (
   let vm_addr :: u64 = sv + (scast off) in (  
   let v = loadv chk mem vm_addr in (
-     case v of None \<Rightarrow> None |
-               Some Vundef \<Rightarrow>  None | 
-               Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
-               Some (Vint v) \<Rightarrow> Some (rs#dst <-- (ucast v))|
-               _ \<Rightarrow> None
+    case v of 
+    None \<Rightarrow> None |
+    Some Vundef \<Rightarrow>  None | 
+    Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
+    Some (Vint v) \<Rightarrow> Some (rs#dst <-- (ucast v)) |
+    Some (Vshort v) \<Rightarrow> Some (rs#dst <-- (ucast v)) |
+    Some (Vbyte v) \<Rightarrow> Some (rs#dst <-- (ucast v))
 ))))"
 
 definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
@@ -379,10 +374,9 @@ definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<
   let sv2 :: i64 = eval_snd_op_i64 (SOImm imm2) rs in (
   let vm_addr :: u64 = ucast (sv1+sv2) in (
   let v = loadv M64 mem vm_addr in (
-     case v of None \<Rightarrow> None |
-               Some Vundef \<Rightarrow>  None | 
-               Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
-               Some (Vint v) \<Rightarrow> Some (rs#dst <-- (ucast v))
+    case v of
+    Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
+    _  \<Rightarrow>  None
 )))))"
 
 
@@ -528,7 +522,7 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
   BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
     case eval_load_imm dst imm1 imm2 rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
+    Some rs' \<Rightarrow> BPF_OK (pc+2) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
@@ -628,6 +622,28 @@ value "bpf_interp_test
   [0xff, 0xff]
   []
   2 4 0x1234" *)
+
+value "(and (4::u32) 63)"
+value "(2::u64) << (unat (and (4::u32) 63))"
+
+value "bpf_interp_test
+  [191, 16, 0, 0, 0, 0, 0, 0, 113, 9, 0, 0, 0, 0, 0, 0, 103, 9, 0, 0, 0, 0, 
+   0, 0, 113, 8, 1, 0, 0, 0, 0, 0, 103, 8, 0, 0, 4, 0, 0, 0, 113, 7, 2, 0, 0, 
+   0, 0, 0, 103, 7, 0, 0, 8, 0, 0, 0, 113, 6, 3, 0, 0, 0, 0, 0, 103, 6, 0, 0,
+   12, 0, 0, 0, 113, 5, 4, 0, 0, 0, 0, 0, 103, 5, 0, 0, 16, 0, 0, 0, 113, 4,
+   5, 0, 0, 0, 0, 0, 103, 4, 0, 0, 20, 0, 0, 0, 113, 3, 6, 0, 0, 0, 0, 0,
+   103, 3, 0, 0, 24, 0, 0, 0, 113, 2, 7, 0, 0, 0, 0, 0, 103, 2, 0, 0, 28, 0,
+   0, 0, 113, 1, 8, 0, 0, 0, 0, 0, 103, 1, 0, 0, 32, 0, 0, 0, 113, 0, 9, 0,
+   0, 0, 0, 0, 103, 0, 0, 0, 36, 0, 0, 0, 79, 16, 0, 0, 0, 0, 0, 0, 79, 32,
+   0, 0, 0, 0, 0, 0, 79, 48, 0, 0, 0, 0, 0, 0, 79, 64, 0, 0, 0, 0, 0, 0, 79,
+   80, 0, 0, 0, 0, 0, 0, 79, 96, 0, 0, 0, 0, 0, 0, 79, 112, 0, 0, 0, 0, 0, 0,
+   79, 128, 0, 0, 0, 0, 0, 0, 79, 144, 0, 0, 0, 0, 0, 0, 149, 0, 0, 0, 0, 0, 0, 0]
+  [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]
+  []
+  21 31 0x9876543210"
+
+(*
+value "loadv M8 (u8_list_to_mem (int_to_u8_list [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09])) 2" *)
 
 (*
 value "loadv M16 (u8_list_to_mem (int_to_u8_list [0x11, 0x22, 0x33])) 1"

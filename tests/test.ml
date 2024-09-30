@@ -547,7 +547,7 @@ let test_cases = [
   {
     dis = "test_ldxb_all";
     lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 113L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 113L; 8L; 1L; 0L; 0L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 4L; 0L; 0L; 0L; 113L; 7L; 2L; 0L; 0L; 0L; 0L; 0L; 103L; 7L; 0L; 0L; 8L; 0L; 0L; 0L; 113L; 6L; 3L; 0L; 0L; 0L; 0L; 0L; 103L; 6L; 0L; 0L; 12L; 0L; 0L; 0L; 113L; 5L; 4L; 0L; 0L; 0L; 0L; 0L; 103L; 5L; 0L; 0L; 16L; 0L; 0L; 0L; 113L; 4L; 5L; 0L; 0L; 0L; 0L; 0L; 103L; 4L; 0L; 0L; 20L; 0L; 0L; 0L; 113L; 3L; 6L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 24L; 0L; 0L; 0L; 113L; 2L; 7L; 0L; 0L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 28L; 0L; 0L; 0L; 113L; 1L; 8L; 0L; 0L; 0L; 0L; 0L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 113L; 0L; 9L; 0L; 0L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 36L; 0L; 0L; 0L; 79L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 80L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 96L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
-    lm_std = [0x01L; 0x02L; 0x03L; 0x04L; 0x05L; 0x06L; 0x07L; 0x08L; 0x09L];
+    lm_std = [0x00L; 0x01L; 0x02L; 0x03L; 0x04L; 0x05L; 0x06L; 0x07L; 0x08L; 0x09L];
     lc_std = [];
     v = 2L;
     fuel = 31L;

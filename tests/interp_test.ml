@@ -1307,12 +1307,43 @@ let rec option_u64_of_u8_1
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                   v));;
 
+let rec memory_chunk_value_of_u64
+  mc v =
+    (match mc
+      with M8 ->
+        Vbyte (cast (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (len_bit0 (len_bit0 (len_bit0 len_num1))) v)
+      | M16 ->
+        Vshort
+          (cast (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+            (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))) v)
+      | M32 ->
+        Vint (cast (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+               v)
+      | M64 ->
+        Vlong (cast (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                v));;
+
 let rec option_val_of_u64
-  v = (match v with None -> None | Some v1 -> Some (Vlong v1));;
+  mc v =
+    (match v with None -> None
+      | Some v1 -> Some (memory_chunk_value_of_u64 mc v1));;
 
 let rec loadv
   mc m addr =
-    option_val_of_u64
+    option_val_of_u64 mc
       (match mc with M8 -> option_u64_of_u8_1 (m addr)
         | M16 ->
           option_u64_of_u8_2 (m addr)
@@ -1930,6 +1961,20 @@ let rec eval_load_imm
            sv1 sv2)
        in
       (match loadv M64 mem vm_addr with None -> None | Some Vundef -> None
+        | Some (Vbyte v) ->
+          Some (fun_upd equal_bpf_ireg rs dst
+                 (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   v))
+        | Some (Vshort v) ->
+          Some (fun_upd equal_bpf_ireg rs dst
+                 (cast (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   v))
         | Some (Vint v) ->
           Some (fun_upd equal_bpf_ireg rs dst
                  (cast (len_bit0
@@ -2362,8 +2407,8 @@ let rec eval_pqr64_aux2
          (eval_reg dst rs)
        in
      let sv = eval_snd_op_i64 sop rs in
-      (match pop
-        with BPF_SDIV ->
+      (match pop with BPF_LMUL -> OKN | BPF_UDIV -> OKN | BPF_UREM -> OKN
+        | BPF_SDIV ->
           (if equal_word
                 (len_signed
                   (len_bit0
@@ -2493,8 +2538,9 @@ let rec eval_pqr64_aux1
                              (len_bit0
                                (len_bit0
                                  (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           dv sv))))));;
-
+                           dv sv))))
+        | BPF_SDIV -> OKN | BPF_SREM -> OKN));;
+        
 let rec eval_pqr64
   pop dst sop rs is_v1 =
     (if is_v1 then OKN
@@ -3389,7 +3435,20 @@ let rec eval_load
               off)
        in
       (match loadv chk mem vm_addr with None -> None | Some Vundef -> None
-        | Some (Vbyte _) -> None | Some (Vshort _) -> None
+        | Some (Vbyte v) ->
+          Some (fun_upd equal_bpf_ireg rs dst
+                 (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   v))
+        | Some (Vshort v) ->
+          Some (fun_upd equal_bpf_ireg rs dst
+                 (cast (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   v))
         | Some (Vint v) ->
           Some (fun_upd equal_bpf_ireg rs dst
                  (cast (len_bit0
@@ -3908,9 +3967,9 @@ let rec eval_be
 
 let rec step
   pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr cur_cu remain_cu
-    = (let is_v1 = (match sv with V1 -> true | V2 -> false) in
+    = (let is_v1 = (match sv with V1 -> true | V2 -> false) in let _ = print_endline ("step") in
         (match ins
-          with BPF_LD_IMM (dst, imm1, imm2) ->
+          with BPF_LD_IMM (dst, imm1, imm2) -> let _ = print_endline ("BPF_LD_IMM ") in
             (match eval_load_imm dst imm1 imm2 rs m with None -> BPF_EFlag
               | Some rsa ->
                 BPF_OK
@@ -3924,7 +3983,7 @@ let rec step
                               (len_bit0
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu))
-          | BPF_LDX (chk, dst, sop, off) ->
+          | BPF_LDX (chk, dst, sop, off) -> let _ = print_endline ("BPF_LDX ") in
             (match eval_load chk dst sop off rs m with None -> BPF_EFlag
               | Some rsa ->
                 BPF_OK
@@ -3938,7 +3997,7 @@ let rec step
                               (len_bit0
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu))
-          | BPF_ST (chk, dst, sop, off) ->
+          | BPF_ST (chk, dst, sop, off) -> let _ = print_endline ("BPF_ST ") in
             (match eval_store chk dst sop off rs m with None -> BPF_EFlag
               | Some ma ->
                 BPF_OK
@@ -3952,7 +4011,7 @@ let rec step
                               (len_bit0
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rs, ma, ss, sv, fm, cur_cu, remain_cu))
-          | BPF_ADD_STK i ->
+          | BPF_ADD_STK i -> let _ = print_endline ("BPF_ADD_STK ") in
             (match eval_add64_imm_R10 i ss is_v1 with None -> BPF_Err
               | Some ssa ->
                 BPF_OK
@@ -3966,7 +4025,7 @@ let rec step
                               (len_bit0
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rs, m, ssa, sv, fm, cur_cu, remain_cu))
-          | BPF_ALU (bop, d, sop) ->
+          | BPF_ALU (bop, d, sop) ->  let _ = print_endline ("step BPF_ALU") in
             (match eval_alu32 bop d sop rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -3981,7 +4040,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_NEG32_REG dst ->
+          | BPF_NEG32_REG dst -> let _ = print_endline ("BPF_NEG32_REG ") in
             (match eval_neg32 dst rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -3996,7 +4055,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_LE (dst, imm) ->
+          | BPF_LE (dst, imm) -> let _ = print_endline ("BPF_LE ") in
             (match eval_le dst imm rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4011,7 +4070,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_BE (dst, imm) ->
+          | BPF_BE (dst, imm) -> let _ = print_endline ("BPF_BE ") in
             (match eval_be dst imm rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4026,7 +4085,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_ALU64 (bop, d, sop) ->
+          | BPF_ALU64 (bop, d, sop) ->   let _ = print_endline ("step BPF_ALU64") in
             (match eval_alu64 bop d sop rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4041,7 +4100,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_NEG64_REG dst ->
+          | BPF_NEG64_REG dst -> let _ = print_endline ("BPF_NEG64_REG ") in
             (match eval_neg64 dst rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4056,7 +4115,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_HOR64_IMM (dst, imm) ->
+          | BPF_HOR64_IMM (dst, imm) -> let _ = print_endline ("BPF_HOR64_IMM ") in
             (match eval_hor64 dst imm rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4071,7 +4130,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_PQR (pop, dst, sop) ->
+          | BPF_PQR (pop, dst, sop) -> let _ = print_endline ("BPF_PQR ") in
             (match eval_pqr32 pop dst sop rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4086,7 +4145,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_PQR64 (pop, dst, sop) ->
+          | BPF_PQR64 (pop, dst, sop) -> let _ = print_endline ("BPF_PQR64 ") in
             (match eval_pqr64 pop dst sop rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4101,7 +4160,7 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_PQR2 (pop, dst, sop) ->
+          | BPF_PQR2 (pop, dst, sop) -> let _ = print_endline ("BPF_PQR2 ") in
             (match eval_pqr64_2 pop dst sop rs is_v1 with NOK -> BPF_Err
               | OKS rsa ->
                 BPF_OK
@@ -4923,8 +4982,15 @@ let print_regmap rs =
   ) reg_list
 
 let print_bpf_state st =
-  match st with BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) -> 
-    print_regmap rs | _ -> print_endline("error")
+  match st with
+    BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) -> 
+    let _ = print_regmap rs in
+      Printf.printf "PC: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        pc))
+  | BPF_Success _ -> print_endline("success")
+  | _ -> print_endline("error")
 
 
 let rec bpf_interp
@@ -4974,7 +5040,7 @@ let rec bpf_interp
   (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                     remain_cu
                                   in
-                                  (*let _ = print_bpf_state st1 in*)
+                                  let _ = print_bpf_state st1 in
                                   bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in  BPF_EFlag) 

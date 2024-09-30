@@ -75,15 +75,25 @@ definition option_u64_of_u8_8 :: "u8 option \<Rightarrow> u8 option \<Rightarrow
   )
 )"
 
-definition option_val_of_u64 :: "u64 option \<Rightarrow> val option" where
-"option_val_of_u64 v = (
+
+definition memory_chunk_value_of_u64 :: "memory_chunk \<Rightarrow> u64 \<Rightarrow> val" where
+"memory_chunk_value_of_u64 mc v = (
+  case mc of
+  M8 \<Rightarrow> Vbyte (ucast v) |
+  M16 \<Rightarrow> Vshort (ucast v) |
+  M32 \<Rightarrow> Vint (ucast v) |
+  M64 \<Rightarrow> Vlong (ucast v)
+)"
+
+definition option_val_of_u64 :: "memory_chunk \<Rightarrow> u64 option \<Rightarrow> val option" where
+"option_val_of_u64 mc v = (
   case v of
   None \<Rightarrow> None |
-  Some v1 \<Rightarrow> Some (Vlong v1)
+  Some v1 \<Rightarrow> Some (memory_chunk_value_of_u64 mc v1)
 )"
 
 definition loadv :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val option" where
-"loadv mc m addr = ( option_val_of_u64 (
+"loadv mc m addr = ( option_val_of_u64 mc (
   case mc of
   M8  \<Rightarrow> option_u64_of_u8_1 (m addr) |
   M16 \<Rightarrow> option_u64_of_u8_2 (m addr) (m (addr+1))|
