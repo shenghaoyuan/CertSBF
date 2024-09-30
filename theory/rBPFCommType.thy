@@ -70,6 +70,12 @@ abbreviation bit_right_shift ::
   "'a :: len word \<Rightarrow> nat \<Rightarrow> 'a :: len word" (infix ">>" 50)
   where "x >> n \<equiv> drop_bit n x"
 
+definition arsh32 :: "i32 \<Rightarrow> nat \<Rightarrow> i32" where
+"arsh32 x n = (if bit x 31 then or (drop_bit n x) (((2^n) -1) << 32-n) else drop_bit n x)"
+
+definition arsh64 :: "i64 \<Rightarrow> nat \<Rightarrow> i64" where
+"arsh64 x n = (if bit x 63 then or (drop_bit n x) (((2^n) -1) << 64-n) else drop_bit n x)"
+
 fun unsigned_bitfield_extract_u8 :: "nat \<Rightarrow> nat \<Rightarrow> u8 \<Rightarrow> u8" where
 "unsigned_bitfield_extract_u8 pos width n = and ((2 ^ width) - 1) (n >> pos)"
 

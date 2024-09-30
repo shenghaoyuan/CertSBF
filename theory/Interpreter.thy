@@ -109,7 +109,7 @@ definition eval_alu32_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   let dv :: i32 = scast (eval_reg dst rs) in (
   let sv :: u32 = and (eval_snd_op_u32 sop rs) 31 in (
   case bop of
-  BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (and (ucast (dv >> unat sv)::u64) (ucast u32_MAX)) ) | 
+  BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (and (ucast (arsh32 dv (unat sv))::u64) (ucast u32_MAX)) ) | 
   _ \<Rightarrow> OKN
 )))"
 
@@ -167,7 +167,7 @@ definition eval_alu64_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   let dv :: i64 = scast (eval_reg dst rs) in (
   let sv :: u32 = and (eval_snd_op_u32 sop rs) 63 in (
   case bop of
-  BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (ucast (dv >> unat sv)::u64)) |
+  BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (ucast (arsh64 dv (unat sv))::u64)) |
   _ \<Rightarrow> OKN
 )))"
 
