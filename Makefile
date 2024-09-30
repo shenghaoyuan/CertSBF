@@ -1,5 +1,3 @@
-include Makefile.config
-
 .open:
 
 .PHONY: open
