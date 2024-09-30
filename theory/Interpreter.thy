@@ -343,12 +343,21 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
 
 subsection  \<open> MEM \<close>
 
+definition memory_chunk_value_of_u64 :: "memory_chunk \<Rightarrow> u64 \<Rightarrow> val" where
+"memory_chunk_value_of_u64 mc v = (
+  case mc of
+  M8 \<Rightarrow> Vbyte (ucast v) |
+  M16 \<Rightarrow> Vshort (ucast v) |
+  M32 \<Rightarrow> Vint (ucast v) |
+  M64 \<Rightarrow> Vlong (ucast v)
+)"
+
 definition eval_store :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> off_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> mem option" where
 "eval_store chk dst sop off rs mem = (
   let dv :: i64 = scast (eval_reg dst rs) in (
   let vm_addr :: u64 = ucast (dv + (scast off)) in (  
   let sv :: u64 = eval_snd_op_u64 sop rs in ( \<comment> \<open> TODO: sv is signed for imm and unsigned for src reg? \<close>
-  (storev chk mem vm_addr (Vlong sv))
+  (storev chk mem vm_addr (memory_chunk_value_of_u64 chk sv))
 ))))"
 
 
@@ -611,7 +620,14 @@ definition bpf_interp_test ::
   _ \<Rightarrow> False
 )"
 
+(*
 value "(of_int (-8613303245920329199::int)::u64)"
+
+value "bpf_interp_test
+  [191, 16, 0, 0, 0, 0, 0, 0, 106, 0, 0, 0, 52, 18, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 149, 0, 0, 0, 0, 0, 0, 0]
+  [0xff, 0xff]
+  []
+  2 4 0x1234" *)
 
 (*
 value "loadv M16 (u8_list_to_mem (int_to_u8_list [0x11, 0x22, 0x33])) 1"

@@ -31,13 +31,13 @@ let test_cases = [
     ldxdw r0, [r1+2]
     exit*)
   {
-    dis = "test_lldxdw";
-    lp_std = [121L; 16L; 2L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
-    lm_std = [0xaaL; 0xbbL; 0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L; 0xccL; 0xddL];
+    dis = "test_ldxh_same_reg";
+    lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 106L; 0L; 0L; 0L; 52L; 18L; 0L; 0L; 105L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0xffL; 0xffL];
     lc_std = [];
     v = 2L;
-    fuel = 2L;
-    result_expected = 0x8877665544332211L;     
+    fuel = 4L;
+    result_expected = 0x1234L;      
   };
 ]
 

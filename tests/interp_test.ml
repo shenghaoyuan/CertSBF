@@ -4956,7 +4956,7 @@ let rec bpf_interp
   (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                     remain_cu
                                   in
-                                  (*let _ = print_bpf_state st1 in*)
+                                  let _ = print_bpf_state st1 in
                                   bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in  BPF_EFlag) 
