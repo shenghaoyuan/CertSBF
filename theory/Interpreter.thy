@@ -24,10 +24,11 @@ memory_mapping :: mem
 stack :: stack_state *)
 
 datatype bpf_state =
-  BPF_OK u64 reg_map mem stack_state SBPFV u64 u64 | (**r normal state *)
+  BPF_OK u64 reg_map mem stack_state SBPFV u64 u64 |  (*u64*) (**r normal state *)
   BPF_Success u64 |
   BPF_EFlag | (**r find bugs at runtime *)
-  BPF_Err  (**r bad thing *)
+  BPF_Err | (**r bad thing *)
+  BPF_CU 
 
 datatype 'a option2 =
   NOK |
@@ -392,7 +393,7 @@ subsection  \<open> CALL \<close>
 definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> stack_state option \<times> reg_map" where 
 "push_frame rs ss is_v1 pc = (
   let pc = pc +1; fp = eval_reg BR10 rs;
-    frame = \<lparr>frame_pointer = pc, target_pc = fp\<rparr> in 
+    frame = \<lparr>frame_pointer = fp, target_pc = pc\<rparr> in 
   let update1 = call_depth ss +1 in (if update1 = max_call_depth then (None, rs) else (
   let update2 = if is_v1 then (if enable_stack_frame_gaps then stack_pointer ss + stack_frame_size *2
   else stack_pointer ss + stack_frame_size) else stack_pointer ss;  
@@ -454,126 +455,127 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
     case eval_alu32 bop d sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_ALU64 bop d sop \<Rightarrow> (
     case eval_alu64 bop d sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_ADD_STK i \<Rightarrow> (
     case eval_add64_imm_R10 i ss is_v1 of
     None \<Rightarrow> BPF_Err |
-    Some ss' \<Rightarrow> BPF_OK (pc+1) rs m ss' sv cur_cu remain_cu) |
+    Some ss' \<Rightarrow> BPF_OK (pc+1) rs m ss' sv (cur_cu+1) remain_cu ) |
 
   BPF_LE dst imm \<Rightarrow> (
     case eval_le dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_BE dst imm \<Rightarrow> (
     case eval_be dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_NEG32_REG dst \<Rightarrow> (
     case eval_neg32 dst rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_NEG64_REG dst \<Rightarrow> (
     case eval_neg64 dst rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_LDX chk dst sop off \<Rightarrow> (
     case eval_load chk dst sop off rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_ST chk dst sop off \<Rightarrow> (
     case eval_store chk dst sop off rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv cur_cu remain_cu) |
+    Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv (cur_cu+1) remain_cu ) |
 
   BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
     case eval_load_imm dst imm1 imm2 rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_PQR64 pop dst sop \<Rightarrow> (
     case eval_pqr64 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_PQR2 pop dst sop \<Rightarrow> (
     case eval_pqr64_2 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_HOR64_IMM dst imm \<Rightarrow> (
     case eval_hor64 dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_JA off  \<Rightarrow>
-    BPF_OK (pc + scast off + 1) rs m ss sv cur_cu remain_cu |
+    BPF_OK (pc + scast off + 1) rs m ss sv (cur_cu+1) remain_cu  |
 
   BPF_JUMP cond bpf_ireg snd_op off  \<Rightarrow> (
     if eval_jmp cond bpf_ireg snd_op rs  then
-      BPF_OK (pc + scast off + 1) rs m ss sv cur_cu remain_cu
+      BPF_OK (pc + scast off + 1) rs m ss sv (cur_cu+1) remain_cu 
     else
-      BPF_OK (pc + 1) rs m ss sv cur_cu remain_cu) |
+      BPF_OK (pc + 1) rs m ss sv (cur_cu+1) remain_cu ) |
 
   BPF_CALL_IMM src imm \<Rightarrow> (
     case eval_call_imm imm rs ss is_v1  of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc, rs', ss') \<Rightarrow> BPF_OK pc rs' m ss' sv cur_cu remain_cu) |
+    Some (pc, rs', ss') \<Rightarrow> BPF_OK pc rs' m ss' sv (cur_cu+1) remain_cu ) |
 
   BPF_CALL_REG src imm \<Rightarrow> (
     case eval_call_reg src imm rs ss is_v1 pc of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv (cur_cu+1) remain_cu) |
+    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv (cur_cu+1) remain_cu ) |
   BPF_EXIT \<Rightarrow> (
     if call_depth ss = 0 then
-      if cur_cu > remain_cu then
+      if cur_cu >  remain_cu then
         BPF_EFlag
       else
         BPF_Success (rs BR1)
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
-        BPF_OK pc' rs' m ss' sv cur_cu remain_cu))
+        BPF_OK pc' rs' m ss' sv (cur_cu+1) remain_cu ))
 )"
 
 fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarrow> bpf_state" where
-"bpf_interp 0 _ _ = BPF_EFlag" | 
-"bpf_interp (Suc n) prog st = (
+"bpf_interp 0 _ _ =  BPF_EFlag" | 
+"bpf_interp (Suc n) prog st  = (
   case st of
   BPF_EFlag \<Rightarrow> BPF_EFlag |
   BPF_Err \<Rightarrow> BPF_Err |
+  BPF_CU \<Rightarrow> BPF_CU |
   BPF_Success v \<Rightarrow> BPF_Success v |
   BPF_OK pc rs m ss sv cur_cu remain_cu \<Rightarrow> (
-    if unat pc < length prog then
+    if INSN_SIZE*unat pc < length prog then
       if cur_cu \<ge> remain_cu then
-        BPF_EFlag
+        BPF_CU
       else
         case bpf_find_instr (unat pc) prog of
         None \<Rightarrow> BPF_Err |
-        Some ins \<Rightarrow> bpf_interp n prog (step pc ins rs m ss sv (cur_cu+1) remain_cu)
+        Some ins \<Rightarrow> bpf_interp n prog (step pc ins rs m ss sv cur_cu remain_cu) 
     else BPF_Err))"
 
 

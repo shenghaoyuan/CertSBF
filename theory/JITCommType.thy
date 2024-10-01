@@ -68,24 +68,6 @@ runtime_environment_key :: i32 (*
     diversification_rng: SmallRng,
     stopwatch_is_active: bool, *)
 
-
-
-(*
-fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarrow> bpf_state" where
-"bpf_interp 0 _ _ = BPF_EFlag" | 
-"bpf_interp (Suc n) prog st = (
-  case st of
-  BPF_EFlag \<Rightarrow> BPF_EFlag |
-  BPF_Err \<Rightarrow> BPF_Err |
-  BPF_OK rs m ss conf sv \<Rightarrow> (
-    if unat (rs BPC) < length prog then
-      case bpf_find_instr (unat (rs BPC)) prog of
-      None \<Rightarrow> BPF_Err |
-      Some ins \<Rightarrow> bpf_interp n prog (step conf ins rs m ss sv)
-    else BPF_Err))"
-*)
-
-
 definition jit_emit :: "JitCompiler \<Rightarrow> u8 list  \<Rightarrow> JitCompiler" where
 "jit_emit l n = l
  \<lparr>
@@ -108,8 +90,10 @@ definition jit_emit_variable_length ::
   S64 \<Rightarrow> jit_emit l (u8_list_of_u64 (ucast data))
 )"
 
+abbreviation "REG_SCRATCH::ireg \<equiv> x64Syntax.R11"  
+
 definition bpf_to_x64_reg:: "bpf_ireg \<Rightarrow> ireg" where
-"bpf_to_x64_reg br = (
+  "bpf_to_x64_reg br = (
   case br of
   BR0 \<Rightarrow> x64Syntax.RAX |
   BR1 \<Rightarrow> x64Syntax.RDI |
@@ -159,12 +143,26 @@ definition per_jit_xor_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x
     x64_encode ins
 )"
 
-definition per_jit_neg_reg64 :: "bpf_ireg \<Rightarrow> x64_bin option" where
-"per_jit_neg_reg64 dst = (
-  let ins = Pnegq (bpf_to_x64_reg dst) in
+definition per_jit_neg_reg64 :: "bpf_ireg \<Rightarrow> SBPFV \<Rightarrow> x64_bin option" where
+"per_jit_neg_reg64 dst sv = (
+  case sv of V1 \<Rightarrow> None | V2 \<Rightarrow>  
+    let ins = Pnegq (bpf_to_x64_reg dst) in
     x64_encode ins
 )"
 
+definition per_jit_and_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg  \<Rightarrow> x64_bin option" where
+"per_jit_and_reg64 dst src = (
+    let ins = Pandq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg dst) in
+    x64_encode ins
+)"
+
+definition per_jit_mov_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
+"per_jit_mov_reg64 dst src  = (
+    let ins = Pmovq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg dst) in
+    x64_encode ins
+)"
+
+(*no addq_ri?*)
 definition per_jit_add_reg64_1 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_add_reg64_1 dst src = (
   let ins = Paddq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
@@ -174,40 +172,43 @@ definition per_jit_add_reg64_1 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow>
 definition per_jit_mul_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_mul_reg64 dst src = (
   let cond1 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RAX); cond2 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RDX);
-      ins_prefix = if cond1 then [Pmovq_rr (bpf_to_x64_reg dst) (x64Syntax.RAX)] else [];
+      ins_prefix = if cond1 then [Ppushl_r x64Syntax.RAX, Pmovq_rr (bpf_to_x64_reg dst) (x64Syntax.RAX)] else [];
       ins = [Pmulq_r (bpf_to_x64_reg src)];
-      ins_suffix = if cond1 then [Pmovq_rr (x64Syntax.RAX) (bpf_to_x64_reg dst)] else [] in 
+      ins_suffix = if cond1 then [Pmovq_rr (x64Syntax.RAX) (bpf_to_x64_reg dst),Ppopl x64Syntax.RAX] 
+                   else [Ppopl x64Syntax.RAX] in 
     x64_encodes (ins_prefix@ins@ins_suffix)
 )"
 
+ (** 32 bit shift may use REG_SCRACH **)
 definition per_jit_shift_reg64 :: "nat \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_shift_reg64 n dst src = (
   let opcode = (if n = 4 then Pshlq_r else if n = 5 then Pshrq_r else Psarl_r) in
   let cond1 = ((bpf_to_x64_reg dst) = x64Syntax.RCX);
       ins_prefix = if cond1 then [Ppushl_r (bpf_to_x64_reg src), Pxchgq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src)]
-                   else [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)] ;
+                   else [Ppushl_r x64Syntax.RCX, Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)] ;
       ins = if cond1 then  [opcode (bpf_to_x64_reg src)] else [opcode (bpf_to_x64_reg dst)];
-      ins_suffix = if cond1 then [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX), Ppopl (bpf_to_x64_reg src)] else [] in 
+      ins_suffix = if cond1 then [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX), Ppopl (bpf_to_x64_reg src)] else [Ppopl x64Syntax.RCX] in 
     x64_encodes (ins_prefix@ins@ins_suffix)
 )"
+
 
 (*TODO: transfer offset*)
 definition get_relative_offset ::"u32 \<Rightarrow> u32" where
 "get_relative_offset off = off"
 
-definition per_jit_ja :: "off_ty\<Rightarrow> x64_bin option" where
+definition per_jit_ja :: "off_ty \<Rightarrow> x64_bin option" where
 "per_jit_ja off = (
   let ins = Pjmp (get_relative_offset (ucast off)) in
     x64_encode ins
 )"
 
-definition per_jit_conditional_jump_reg64 :: "condition \<Rightarrow> reg_map \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> off_ty \<Rightarrow> x64_bin option" where
-"per_jit_conditional_jump_reg64 cond rs dst src off = (
+definition per_jit_conditional_jump_reg64 :: "u64 \<Rightarrow> condition \<Rightarrow> reg_map \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> off_ty \<Rightarrow> x64_bin option" where
+"per_jit_conditional_jump_reg64 pc cond rs dst src off = (
   let tcond = (case cond of Eq \<Rightarrow> Some Cond_e | Ne \<Rightarrow> Some Cond_ne
   | Lt \<Rightarrow> Some Cond_b | Le \<Rightarrow> Some Cond_be | Ge \<Rightarrow> Some Cond_ae | Gt \<Rightarrow> Some Cond_a
   | SLt \<Rightarrow> Some Cond_l | SLe \<Rightarrow> Some Cond_le | SGe \<Rightarrow> Some Cond_ge | SGt \<Rightarrow> Some Cond_g
   | _ \<Rightarrow> None ) in
-  let t_pc = ucast (rs BPC) + ucast(off); t_pc' = get_relative_offset t_pc; 
+  let t_pc = ucast pc + ucast off; t_pc' = get_relative_offset t_pc; 
       ins_prefix = if tcond \<noteq> None then [Pcmpq_rr (bpf_to_x64_reg src) (bpf_to_x64_reg dst)]
                    else [Ptestq_rr (bpf_to_x64_reg src) (bpf_to_x64_reg dst)] ;
       ins = if tcond \<noteq> None then  [Pjcc (Option.the tcond) t_pc' ] else [Pjcc Cond_e t_pc']
@@ -226,6 +227,46 @@ datatype jit_state =
   JIT_EFlag | (**r find bugs at runtime *)
   JIT_Err (**r bad thing *)
 
+fun per_jit_ins ::" u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> x64_bin option"where
+"per_jit_ins pc bins rs sv = (
+  case bins of
+  BPF_ALU64 BPF_ADD dst (SOReg src) \<Rightarrow> (per_jit_add_reg64_1 dst src) |
+  BPF_ALU64 BPF_SUB dst (SOReg src) \<Rightarrow> (per_jit_sub_reg64 dst src) |
+  BPF_ALU64 BPF_AND dst (SOReg src) \<Rightarrow> (per_jit_and_reg64 dst src) |
+  BPF_ALU64 BPF_MOV dst (SOReg src) \<Rightarrow> (per_jit_mov_reg64 dst src) |
+  BPF_NEG64_REG dst \<Rightarrow> (per_jit_neg_reg64 dst sv) |
+  BPF_ALU64 BPF_MUL dst (SOReg src) \<Rightarrow> (per_jit_mul_reg64 dst src) |
+  BPF_ALU64 BPF_LSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 4 dst src) |
+  BPF_ALU64 BPF_RSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 5 dst src) |
+  BPF_ALU64 BPF_ARSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 7 dst src) |
+  BPF_LDX chk dst src off  \<Rightarrow> (per_jit_load_reg64 dst src chk off )|
+  BPF_JA off \<Rightarrow> per_jit_ja off |
+  BPF_JUMP cond dst (SOReg src) ofs \<Rightarrow> per_jit_conditional_jump_reg64 pc cond rs dst src ofs |
+  _ \<Rightarrow> None
+)"
+
+definition jit_compile_aux::"u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> JitProgram  \<Rightarrow> jit_state" where
+"jit_compile_aux pc bins rs sv jprog = (let xins = per_jit_ins pc bins rs sv in 
+   (case xins of None \<Rightarrow> JIT_Err |
+                 Some v \<Rightarrow> let ts' = (text_section jprog @ v) in JIT_OK (jprog \<lparr>text_section:=ts'\<rparr>) rs sv))"
+
+fun jit_compile :: "nat \<Rightarrow> u64 \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
+"jit_compile 0 _ _ _ st =  JIT_EFlag " |
+"jit_compile (Suc fuel) pc prog rs st = (
+  case st of 
+  JIT_Err \<Rightarrow> JIT_Err |
+  JIT_Success \<Rightarrow> JIT_Success |
+  JIT_EFlag \<Rightarrow> JIT_EFlag |
+  JIT_OK jprog rs sv \<Rightarrow> (
+    if unat pc < length prog then
+        case bpf_find_instr (unat pc) prog of 
+          None \<Rightarrow> JIT_Err |
+          Some ins \<Rightarrow> jit_compile fuel (pc+1) prog rs (jit_compile_aux pc ins rs sv jprog)      
+    else JIT_Err))"
+
+
+(**jit compiler with CU algorithm**)
+(*
 type_synonym target_pc ="usize"
 type_synonym pc = "usize"
 type_synonym insn_meter = "usize"
@@ -245,25 +286,6 @@ definition emit_validate_and_profile_instruction_count::"target_pc \<Rightarrow>
     let meter = emit_profile_instruction_count t_pc pc im in 
     Some (l_pc, meter))"
 
-
-fun per_jit_ins ::" bpf_instruction \<Rightarrow> reg_map \<Rightarrow> x64_bin option"where
-"per_jit_ins bins rs = (
-  case bins of
-  BPF_ALU64 BPF_ADD dst (SOReg src) \<Rightarrow> (per_jit_add_reg64_1 dst src) |
-  BPF_ALU64 BPF_SUB dst (SOReg src) \<Rightarrow> (per_jit_sub_reg64 dst src) |
-  BPF_ALU64 BPF_MUL dst (SOReg src) \<Rightarrow> (per_jit_mul_reg64 dst src) |
-  BPF_ALU64 BPF_LSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 4 dst src) |
-  BPF_ALU64 BPF_RSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 5 dst src) |
-  BPF_ALU64 BPF_ARSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 7 dst src) |
-  BPF_LDX chk dst src off  \<Rightarrow> (per_jit_load_reg64 dst src chk off )|
-  BPF_JA off \<Rightarrow> per_jit_ja off |
-  _ \<Rightarrow> None
-)"
-
-definition jit_compile_aux::"bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> JitProgram  \<Rightarrow> jit_state" where
-"jit_compile_aux bins rs sv jprog = (let xins = per_jit_ins bins rs in 
-   (case xins of None \<Rightarrow> JIT_Err |
-                 Some v \<Rightarrow> let ts' = (text_section jprog @ v) in JIT_OK (jprog \<lparr>text_section:=ts'\<rparr>) rs sv))"
 
 fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
 "jit_compile 0 _ _ _ _ _ st =  st " |
@@ -296,10 +318,10 @@ fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow>
                 None \<Rightarrow> None |
                 Some t_pc \<Rightarrow> emit_validate_and_profile_instruction_count t_pc w_cur_pc n) |
               BPF_CALL_REG src imm \<Rightarrow>
-                \<comment>\<open> let v = 3  case sv of
-                V1 \<Rightarrow> imm
-                V2 \<Rightarrow>  in \<close>
-                emit_validate_and_profile_instruction_count (rs (BR src)) w_cur_pc n |
+                let v = case sv of
+                V1 \<Rightarrow> Option.the (u4_to_bpf_ireg (scast imm)) |
+                V2 \<Rightarrow> src in 
+                emit_validate_and_profile_instruction_count (rs v) w_cur_pc n |
               BPF_EXIT \<Rightarrow> emit_validate_and_profile_instruction_count 0 w_cur_pc n |
               _ \<Rightarrow> Some(l_pc,n)) in (
               if n' = None then
@@ -312,6 +334,7 @@ fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow>
           )
         )
   ))"
+*)
 
 (*
 lemma 

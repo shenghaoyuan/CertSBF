@@ -1062,7 +1062,6 @@ fun list_in_list :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarro
 "list_in_list [] _ _ = True" |
 "list_in_list (h#t) n l = (h = l!n \<and> list_in_list t (Suc n) l)"
 
-
 fun x64_encodes_aux :: "instruction list \<Rightarrow> x64_bin option" where
 "x64_encodes_aux [] = None" |
 "x64_encodes_aux (h#t) = (let ins' = x64_encode h in 
