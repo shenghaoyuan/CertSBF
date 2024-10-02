@@ -2160,7 +2160,7 @@ let rec eval_call_imm
 let rec eval_snd_op_u64
   x0 uu = match x0, uu with
     SOImm i, uu ->
-      cast (len_signed
+      signed_cast (len_signed
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
         (len_bit0
           (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -4923,8 +4923,15 @@ let print_regmap rs =
   ) reg_list
 
 let print_bpf_state st =
-  match st with BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) -> 
-    print_regmap rs | _ -> print_endline("error")
+  match st with
+    BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) -> 
+    let _ = print_regmap rs in
+      Printf.printf "PC: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        pc))
+  | BPF_Success _ -> print_endline("success")
+  | _ -> print_endline("error")
 
 
 let rec bpf_interp
@@ -4974,7 +4981,7 @@ let rec bpf_interp
   (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                     remain_cu
                                   in
-                                  (*let _ = print_bpf_state st1 in*)
+                                  let _ = print_bpf_state st1 in
                                   bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in  BPF_EFlag) 
