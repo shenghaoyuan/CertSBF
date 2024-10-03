@@ -10,8 +10,7 @@ module Interp_test : sig
   type 'a stack_state_ext
   type bpf_state
   val bpf_interp_test :
-    myint list -> myint list -> myint list -> myint -> nat -> myint -> bool
-  val nat_of_int : int64 -> nat
+    myint list -> myint list -> myint list -> myint -> myint -> myint -> bool
   val int_of_standard_int : int64 -> myint
   val int_list_of_standard_int_list : int64 list -> myint list
 end = struct
@@ -1307,12 +1306,43 @@ let rec option_u64_of_u8_1
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                   v));;
 
+let rec memory_chunk_value_of_u64
+  mc v =
+    (match mc
+      with M8 ->
+        Vbyte (cast (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (len_bit0 (len_bit0 (len_bit0 len_num1))) v)
+      | M16 ->
+        Vshort
+          (cast (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+            (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))) v)
+      | M32 ->
+        Vint (cast (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+               v)
+      | M64 ->
+        Vlong (cast (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                v));;
+
 let rec option_val_of_u64
-  v = (match v with None -> None | Some v1 -> Some (Vlong v1));;
+  mc v =
+    (match v with None -> None
+      | Some v1 -> Some (memory_chunk_value_of_u64 mc v1));;
 
 let rec loadv
   mc m addr =
-    option_val_of_u64
+    option_val_of_u64 mc
       (match mc with M8 -> option_u64_of_u8_1 (m addr)
         | M16 ->
           option_u64_of_u8_2 (m addr)
@@ -1930,14 +1960,8 @@ let rec eval_load_imm
            sv1 sv2)
        in
       (match loadv M64 mem vm_addr with None -> None | Some Vundef -> None
-        | Some (Vint v) ->
-          Some (fun_upd equal_bpf_ireg rs dst
-                 (cast (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
-                   (len_bit0
-                     (len_bit0
-                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   v))
+        | Some (Vbyte _) -> None | Some (Vshort _) -> None
+        | Some (Vint _) -> None
         | Some (Vlong v) -> Some (fun_upd equal_bpf_ireg rs dst v)));;
 
 let rec divide_word _A
@@ -2160,8 +2184,9 @@ let rec eval_call_imm
 let rec eval_snd_op_u64
   x0 uu = match x0, uu with
     SOImm i, uu ->
-      signed_cast (len_signed
-             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+      signed_cast
+        (len_signed
+          (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
         (len_bit0
           (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
         i
@@ -2284,35 +2309,6 @@ let rec eval_pqr64_2
                                        (len_bit0 (len_bit0 len_num1)))))))
                              dv_i sv_i)))))));;
 
-let rec memory_chunk_value_of_u64
-  mc v =
-    (match mc
-      with M8 ->
-        Vbyte (cast (len_bit0
-                      (len_bit0
-                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                (len_bit0 (len_bit0 (len_bit0 len_num1))) v)
-      | M16 ->
-        Vshort
-          (cast (len_bit0
-                  (len_bit0
-                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-            (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))) v)
-      | M32 ->
-        Vint (cast (len_bit0
-                     (len_bit0
-                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
-               v)
-      | M64 ->
-        Vlong (cast (len_bit0
-                      (len_bit0
-                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                (len_bit0
-                  (len_bit0
-                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                v));;
-
 let rec eval_store
   chk dst sop off rs mem =
     (let dv =
@@ -2362,8 +2358,8 @@ let rec eval_pqr64_aux2
          (eval_reg dst rs)
        in
      let sv = eval_snd_op_i64 sop rs in
-      (match pop
-        with BPF_SDIV ->
+      (match pop with BPF_LMUL -> OKN | BPF_UDIV -> OKN | BPF_UREM -> OKN
+        | BPF_SDIV ->
           (if equal_word
                 (len_signed
                   (len_bit0
@@ -2493,7 +2489,8 @@ let rec eval_pqr64_aux1
                              (len_bit0
                                (len_bit0
                                  (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           dv sv))))));;
+                           dv sv))))
+        | BPF_SDIV -> OKN | BPF_SREM -> OKN));;
 
 let rec eval_pqr64
   pop dst sop rs is_v1 =
@@ -3389,7 +3386,20 @@ let rec eval_load
               off)
        in
       (match loadv chk mem vm_addr with None -> None | Some Vundef -> None
-        | Some (Vbyte _) -> None | Some (Vshort _) -> None
+        | Some (Vbyte v) ->
+          Some (fun_upd equal_bpf_ireg rs dst
+                 (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   v))
+        | Some (Vshort v) ->
+          Some (fun_upd equal_bpf_ireg rs dst
+                 (cast (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   v))
         | Some (Vint v) ->
           Some (fun_upd equal_bpf_ireg rs dst
                  (cast (len_bit0
@@ -3918,11 +3928,12 @@ let rec step
                      (len_bit0
                        (len_bit0
                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                     pc (one_worda
+                     pc (of_int
                           (len_bit0
                             (len_bit0
                               (len_bit0
-                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
+                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                          (Pos (Bit0 One))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu))
           | BPF_LDX (chk, dst, sop, off) ->
             (match eval_load chk dst sop off rs m with None -> BPF_EFlag
@@ -4923,16 +4934,8 @@ let print_regmap rs =
   ) reg_list
 
 let print_bpf_state st =
-  match st with
-    BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) -> 
-    let _ = print_regmap rs in
-      Printf.printf "PC: %Lx\n" (myint_to_int (the_int
-    (len_bit0
-      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-        pc))
-  | BPF_Success _ -> print_endline("success")
-  | _ -> print_endline("error")
-
+  match st with BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) -> 
+    print_regmap rs | _ -> print_endline("error")
 
 let rec bpf_interp
   x0 uu uv uw ux = match x0, uu, uv, uw, ux with
@@ -4950,13 +4953,13 @@ let rec bpf_interp
                     (nat_of_num (Bit0 (Bit0 (Bit0 One)))))
                   (size_list prog)
               then (if less_eq_word
-                          (len_bit0
-                            (len_bit0
-                              (len_bit0
-                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                          remain_cu cur_cu
-                      then let _ = print_endline ("hello 6") in BPF_EFlag
-                      else (match
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0
+                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                         remain_cu cur_cu
+                     then let _ = print_endline ("hello 6") in BPF_EFlag
+                     else (match
                             bpf_find_instr
                               (the_nat
                                 (len_bit0
@@ -4969,23 +4972,23 @@ let rec bpf_interp
                             with None -> let _ = print_endline ("hello 7") in BPF_EFlag
                             | Some ins ->
                               (let st1 =
-                                  step pc ins rs m ss sv fm
-                                    enable_stack_frame_gaps program_vm_addr
-                                    (plus_word
-                                      (len_bit0
-                                        (len_bit0
-  (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                                      cur_cu
-                                      (one_worda
-                                        (len_bit0
-  (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
-                                    remain_cu
-                                  in
-                                  let _ = print_bpf_state st1 in
-                                  bpf_interp n prog st1 enable_stack_frame_gaps
+                                 step pc ins rs m ss sv fm
+                                   enable_stack_frame_gaps program_vm_addr
+                                   (plus_word
+                                     (len_bit0
+                                       (len_bit0
+ (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                                     cur_cu
+                                     (one_worda
+                                       (len_bit0
+ (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+                                   remain_cu
+                                 in
+                                  (*let _ = print_bpf_state st1 in*)
+                                bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
-              else let _ = print_endline ("hello 8") in  BPF_EFlag) 
-          | BPF_Success a -> BPF_Success a | BPF_EFlag -> let _ = print_endline ("hello 3") in BPF_EFlag
+              else let _ = print_endline ("hello 8") in BPF_EFlag)
+          | BPF_Success a -> BPF_Success a | BPF_EFlag -> let _ = print_endline ("hello 9") in BPF_EFlag
           | BPF_Err -> let _ = print_endline ("hello 4") in BPF_Err);;
 
 let rec init_reg_map
@@ -5013,7 +5016,33 @@ let rec init_bpf_state
       (zero_word
          (len_bit0
            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))),
-        init_reg_map, m, init_stack_state, v, init_func_map,
+        fun_upd equal_bpf_ireg init_reg_map BR10
+          (plus_word
+            (len_bit0
+              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+            (of_int
+              (len_bit0
+                (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+              (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))))))))))))))))))))))))))))))
+            (times_worda
+              (len_bit0
+                (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+              (of_int
+                (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (Pos (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))
+              (of_int
+                (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))))),
+        m, init_stack_state, v, init_func_map,
         zero_word
           (len_bit0
             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))),
@@ -5043,12 +5072,12 @@ let rec u8_list_to_mem
 let rec bpf_interp_test
   lp lm lc v fuel res =
     (match
-      bpf_interp (plus_nat fuel one_nat) (int_to_u8_list lp)
+      bpf_interp (nat (plus_inta fuel one_inta)) (int_to_u8_list lp)
         (init_bpf_state (u8_list_to_mem (int_to_u8_list lm))
-          (of_nat
+          (of_int
             (len_bit0
               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-            (plus_nat fuel one_nat))
+            (plus_inta fuel one_inta))
           (if equal_int v one_inta then V1 else V2))
         true
         (of_int
@@ -5071,4 +5100,4 @@ let rec bpf_interp_test
                res)
       | BPF_EFlag -> false | BPF_Err -> false);;
 
-end;; (*struct Interp_test*)
+end;; (*struct Interp_test2*)

@@ -17,7 +17,7 @@ let n = ref 0
 
 let run_test_case test_case =
   let v = Interp_test.int_of_standard_int test_case.v in
-  let fuel = Interp_test.nat_of_int test_case.fuel in
+  let fuel = Interp_test.int_of_standard_int test_case.fuel in
   let res = Interp_test.int_of_standard_int test_case.result_expected in
   let lp = Interp_test.int_list_of_standard_int_list test_case.lp_std in
   let lm = Interp_test.int_list_of_standard_int_list test_case.lm_std in
@@ -1492,12 +1492,397 @@ exit
   {
     dis = "test_subnet";
     lp_std = [0xb7L; 0x02L; 0x00L; 0x00L; 0x0eL; 0x00L; 0x00L; 0x00L; 0x69L; 0x13L; 0x0cL; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x55L; 0x03L; 0x02L; 0x00L; 0x81L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0x12L; 0x00L; 0x00L; 0x00L; 0x69L; 0x13L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x57L; 0x03L; 0x00L; 0x00L; 0xffL; 0xffL; 0x00L; 0x00L; 0x55L; 0x03L; 0x05L; 0x00L; 0x08L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x21L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x61L; 0x11L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x57L; 0x01L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0x00L; 0x15L; 0x01L; 0x01L; 0x00L; 0xc0L; 0xa8L; 0x01L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
-    lm_std = [0x0L; 0x0L; 0xc0L; 0x9fL; 0xa0L; 0x97L; 0x0L; 0xa0L; 0xccL; 0x3bL; 0xbfL; 0xfaL; 0x8L; 0x0L; 0x45L; 0x10L; 0x3cL; 0x46L; 0x3cL; 0x40L; 0x0L; 0x40L; 0x6L; 0x1cL; 0xc0L; 0xa8L; 0x1L; 0x2L; 0xc0L; 0xa8L; 0x1L; 0x6L; 0xeL; 0x0L; 0x17L; 0x99L; 0xc5L; 0xecL; 0x0L; 0x0L; 0x0L; 0x0L; 0xa0L; 0x2L; 0x78L; 0xe0L; 0xa3L; 0x0L; 0x0L; 0x2L; 0x4L; 0xb4L; 0x4L; 0x2L; 0x8L; 0xaL; 0x0L; 0x9cL; 0x24L; 0x0L; 0x0L; 0x0L; 0x0L; 0x1L; 0x3L; 0x0L];
+    lm_std = [0x0L; 0x0L; 0xc0L; 0x9fL; 0xa0L; 0x97L; 0x0L; 0xa0L; 0xccL; 0x3bL; 0xbfL; 0xfaL; 0x8L; 0x0L; 0x45L; 0x10L; 0x0L; 0x3cL; 0x46L; 0x3cL; 0x40L; 0x0L; 0x40L; 0x6L; 0x73L; 0x1cL; 0xc0L; 0xa8L; 0x1L; 0x2L; 0xc0L; 0xa8L; 0x1L; 0x1L; 0x6L; 0xeL; 0x0L; 0x17L; 0x99L; 0xc5L; 0xa0L; 0xecL; 0x0L; 0x0L; 0x0L; 0x0L; 0xa0L; 0x2L; 0x7dL; 0x78L; 0xe0L; 0xa3L; 0x0L; 0x0L; 0x2L; 0x4L; 0x5L; 0xb4L; 0x4L; 0x2L; 0x8L; 0xaL; 0x0L; 0x9cL; 0x27L; 0x24L; 0x0L; 0x0L; 0x0L; 0x0L; 0x1L; 0x3L; 0x3L; 0x0L];
     lc_std = [];
     v = 2L;
     fuel = 11L;
     result_expected = 0x1L;
   };
+(*  
+    lddw r0, 0x1122334455667788
+    exit
+*)
+  {
+    dis = "test_lddw1";
+    lp_std = [24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 2L;
+    result_expected = 0x1122334455667788L;
+  };
+(*  
+    lddw r0, 0x0000000080000000
+    exit
+*)
+  {
+    dis = "test_lddw2";
+    lp_std = [24L; 0L; 0L; 0L; 0L; 0L; 0L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 2L;
+    result_expected = 0x80000000L;
+  };
+(*
+    mov r0, 0
+    mov r1, 0
+    mov r2, 0
+    lddw r0, 0x1
+    ja +2
+    lddw r1, 0x1
+    lddw r2, 0x1
+    add r1, r2
+    add r0, r1
+    exit
+*)
+  {
+    dis = "test_lddw3";
+    lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 5L; 0L; 2L; 0L; 0L; 0L; 0L; 0L; 24L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 2L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 9L;
+    result_expected = 0x2L;
+  };
+(*  
+    ldxh r0, [r1]
+    le16 r0
+    exit
+*)
+  {
+    dis = "test_le16_1";
+    lp_std = [24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0x22L; 0x11L];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x1122L;
+  };
+(*  
+    ldxdw r0, [r1]
+    le16 r0
+    exit
+*)
+  {
+    dis = "test_le16_2";
+    lp_std = [24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x2211L;
+  }; 
+(*
+    ldxw r0, [r1]
+    le32 r0
+    exit
+*)
+  {
+    dis = "test_le_1";
+    lp_std = [0x61L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xd4L; 0x00L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [0x44L; 0x33L; 0x22L; 0x11L];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x11223344L;
+  };
+(*
+    ldxdw r0, [r1]
+    le32 r0
+    exit
+*)
+  {
+    dis = "test_le_2";
+    lp_std = [0x79L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xd4L; 0x00L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x44332211L;
+  };
+(*
+    ldxdw r0, [r1]
+    le64 r0
+    exit
+*)
+  {
+    dis = "test_le64";
+    lp_std = [0x79L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xd4L; 0x00L; 0x00L; 0x00L; 0x40L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [0x88L; 0x77L; 0x66L; 0x55L; 0x44L; 0x33L; 0x22L; 0x11L];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x1122334455667788L;
+  };
+(*
+    mov32 r0, 2
+    neg32 r0
+    exit
+*)
+  {
+    dis = "test_neg_1";
+    lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x84L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0xfffffffeL;
+  };
+(*
+    mov r0, 2
+    neg r0
+    exit
+*)
+  {
+    dis = "test_neg_2";
+    lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x87L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0xfffffffffffffffeL;
+  };
+(*
+    mov32 r0, 3
+    sub32 r0, 1
+    exit
+*)
+  {
+    dis = "test_neg_3";
+    lp_std = [180L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 20L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x2L;
+  };
+(*
+    mov r0, 3
+    sub r0, 1
+    exit
+*)
+  {
+    dis = "test_neg_4";
+    lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 23L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x2L;
+  };
+(*  
+    mov r0, 3
+    mul32 r0, 4
+    exit
+*)
+{
+  dis = "test_mul_1";
+  lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 36L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+  lm_std = [];
+  lc_std = [];
+  v = 1L;
+  fuel = 3L;
+  result_expected = 0xcL;
+}; 
+(*  
+    mov r0, 3
+    mov r1, 4
+    mul32 r0, r1
+    exit
+*)
+  {
+    dis = "test_mul_2";
+    lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 44L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0xcL;
+  }; 
+(*  
+    mov r0, 0x40000001
+    mov r1, 4
+    mul32 r0, r1
+    exit
+*)
+  {
+    dis = "test_mul_3";
+    lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 64L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 44L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0x4L;
+  };
+(*  
+      mov r0, 0x40000001
+      mul r0, 4
+      exit
+*)
+  {
+    dis = "test_mul_4";
+    lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 64L; 39L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x100000004L;
+  };  
+(*  
+    mov r0, 0x40000001
+    mov r1, 4
+    mul r0, r1
+    exit
+*)
+  {
+    dis = "test_mul_5";
+    lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 64L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 47L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0x100000004L;
+  }; 
+(*  
+    mov r0, -1
+    mul32 r0, 4
+    exit
+*)
+  {
+    dis = "test_mul_6";
+    lp_std = [183L; 0L; 0L; 0L; 255L; 255L; 255L; 255L; 36L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0xFFFFFFFFFFFFFFFCL;
+  };  
+(*  
+    mov r0, 12
+    lddw r1, 0x100000004
+    div32 r0, r1
+    exit
+*)
+  {
+    dis = "test_div_1";
+    lp_std = [183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 24L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 60L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0x3L;
+  }; 
+(*  
+    lddw r0, 0x10000000c
+    div32 r0, 4
+    exit
+*)
+  {
+    dis = "test_div_2";
+    lp_std = [24L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 52L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x3L;
+  }; 
+(*  
+    lddw r0, 0x10000000c
+    mov r1, 4
+    div32 r0, r1
+    exit
+*)
+  {
+    dis = "test_div_3";
+    lp_std = [24L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 60L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0x3L;
+  }; 
+(*  
+    mov r0, 0xc
+    lsh r0, 32
+    div r0, 4
+    exit
+*)
+  {
+    dis = "test_div_4";
+    lp_std = [183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 55L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0x300000000L;
+  }; 
+(*  
+    mov r0, 0xc
+    lsh r0, 32
+    mov r1, 4
+    div r0, r1
+    exit
+*)
+  {
+    dis = "test_div_5";
+    lp_std = [183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 63L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 5L;
+    result_expected = 0x300000000L;
+  }; 
+(*  
+    mov32 r0, 5748
+    mod32 r0, 92
+    mov32 r1, 13
+    mod32 r0, r1
+    exit
+*)
+  {
+    dis = "test_mod_1";
+    lp_std = [180L; 0L; 0L; 0L; 116L; 22L; 0L; 0L; 148L; 0L; 0L; 0L; 92L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 13L; 0L; 0L; 0L; 156L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 5L;
+    result_expected = 0x5L;
+  }; 
+(*  
+    lddw r0, 0x100000003
+    mod32 r0, 3
+    exit
+*)
+  {
+    dis = "test_mod_2";
+    lp_std = [24L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 148L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  }; 
+(*  
+    mov32 r0, -1316649930
+    lsh r0, 32
+    or r0, 0x100dc5c8
+    mov32 r1, 0xdde263e
+    lsh r1, 32
+    or r1, 0x3cbef7f3
+    mod r0, r1
+    mod r0, 0x658f1778
+    exit
+*)
+  {
+    dis = "test_mod_3";
+    lp_std = [180L; 0L; 0L; 0L; 54L; 132L; 133L; 177L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 0L; 0L; 0L; 200L; 197L; 13L; 16L; 180L; 1L; 0L; 0L; 62L; 38L; 222L; 13L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 1L; 0L; 0L; 243L; 247L; 190L; 60L; 159L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 151L; 0L; 0L; 0L; 120L; 23L; 143L; 101L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 1L;
+    fuel = 9L;
+    result_expected = 0x30ba5a04L;
+  }; 
 ]
 
 let () =
