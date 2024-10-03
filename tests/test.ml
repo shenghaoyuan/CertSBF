@@ -1552,7 +1552,7 @@ exit
 *)
   {
     dis = "test_le16_1";
-    lp_std = [24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lp_std = [105L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 212L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x22L; 0x11L];
     lc_std = [];
     v = 1L;
@@ -1566,7 +1566,7 @@ exit
 *)
   {
     dis = "test_le16_2";
-    lp_std = [24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lp_std = [121L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 212L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
     lc_std = [];
     v = 1L;
@@ -1863,7 +1863,7 @@ exit
     fuel = 3L;
     result_expected = 0x0L;
   }; 
-(*  
+ (*  
     mov32 r0, -1316649930
     lsh r0, 32
     or r0, 0x100dc5c8
@@ -1882,7 +1882,42 @@ exit
     v = 1L;
     fuel = 9L;
     result_expected = 0x30ba5a04L;
-  }; 
+  };
+(*  
+    call function_foo
+    exit
+    function_foo:
+    mov r0, r10
+    exit
+    //ProgramResult::Ok(ebpf::MM_STACK_START (0x200000000) + config.stack_size() as u64),
+*)
+  {
+    dis = "test_dynamic_stack_frames_empty";
+    lp_std = [133L; 16L; 0L; 0L; 2L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 160L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 4L;
+    result_expected = 8590196736L;
+  };
+(*  
+    add r11, -8
+    call function_foo
+    exit
+    function_foo:
+    mov r0, r10
+    exit
+    //ProgramResult::Ok(ebpf::MM_STACK_START + config.stack_size() as u64 - 8),
+*)
+  {
+    dis = "test_dynamic_frame_ptr";
+    lp_std = [7L; 11L; 0L; 0L; 248L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 160L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 5L;
+    result_expected = 8590196728L;
+  };
 ]
 
 let () =
