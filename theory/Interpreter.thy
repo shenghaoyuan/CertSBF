@@ -82,11 +82,16 @@ definition eval_alu32_aux1 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   let dv :: i32 = scast (eval_reg dst rs) in (
   let sv :: i32 = eval_snd_op_i32 sop rs in (
   case bop of
-  BPF_ADD \<Rightarrow> OKS (rs#dst <-- (ucast (dv + sv))) |
-  BPF_SUB \<Rightarrow> (case sop of (SOReg i) \<Rightarrow> OKS (rs#dst <-- (ucast (dv - sv))) |
-                           _ \<Rightarrow> (if is_v1 then OKS (rs#dst <-- (ucast (dv - sv))) 
-                                else OKS (rs#dst <-- (ucast (sv - dv))))) |
-  BPF_MUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv * sv))) |
+  BPF_ADD \<Rightarrow> OKS (rs#dst <-- (scast (dv + sv))) |
+  BPF_SUB \<Rightarrow> (
+    case sop of
+    (SOReg i) \<Rightarrow> OKS (rs#dst <-- (scast (dv - sv))) |
+    _ \<Rightarrow> (
+      if is_v1 then
+        OKS (rs#dst <-- (scast (dv - sv))) 
+      else
+        OKS (rs#dst <-- (scast (sv - dv))))) |
+  BPF_MUL \<Rightarrow> OKS (rs#dst <-- (scast (dv * sv))) |
   _ \<Rightarrow> OKN
 )))"
 
@@ -372,16 +377,11 @@ definition eval_load :: "memory_chunk \<Rightarrow> dst_ty \<Rightarrow> src_ty 
     Some (Vbyte v) \<Rightarrow> Some (rs#dst <-- (ucast v))
 ))))"
 
-definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> reg_map option" where
-"eval_load_imm dst imm1 imm2 rs mem = (
-  let sv1 :: i64 = eval_snd_op_i64 (SOImm imm1) rs in (
-  let sv2 :: i64 = eval_snd_op_i64 (SOImm imm2) rs in (
-  let vm_addr :: u64 = ucast (sv1+sv2) in (
-  let v = loadv M64 mem vm_addr in (
-    case v of
-    Some (Vlong v) \<Rightarrow>  Some (rs#dst <-- v) |
-    _  \<Rightarrow>  None
-)))))"
+definition eval_load_imm :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> reg_map" where
+"eval_load_imm dst imm1 imm2 rs = (
+  let v :: u64 = or (and (ucast imm1) 0xffffffff) ((ucast imm2) << 32) in
+    (rs#dst <-- v)
+)"
 
 
 subsection  \<open> JUMP \<close>
@@ -524,9 +524,8 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
     Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv fm cur_cu remain_cu) |
 
   BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
-    case eval_load_imm dst imm1 imm2 rs m of
-    None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+2) rs' m ss sv fm cur_cu remain_cu) |
+    let rs' = eval_load_imm dst imm1 imm2 rs in
+      BPF_OK (pc+2) rs' m ss sv fm cur_cu remain_cu) |
 
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
@@ -626,6 +625,16 @@ value "bpf_interp_test
   [0xff, 0xff]
   []
   2 4 0x1234" *)
+
+value "bpf_interp_test
+  [ 183, 0, 0, 0, 12, 0, 0, 0,
+    24, 1, 0, 0, 4, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0,
+    60, 16, 0, 0, 0, 0, 0, 0,
+    149, 0, 0, 0, 0, 0, 0, 0]
+  [] []
+  1 4
+  0x3"
 
 (*
 value "(and (4::u32) 63)"

@@ -289,14 +289,24 @@ definition bpf_find_instr :: "nat \<Rightarrow> u8 list \<Rightarrow> bpf_instru
     Some off_v \<Rightarrow> (
       case u32_of_u8_list [l!(npc+4), l!(npc+5), l!(npc+6), l!(npc+7)] of
       None \<Rightarrow> None |
-      Some i \<Rightarrow>
+      Some i1 \<Rightarrow>
         let (off::i16) = scast off_v in
-        let (imm::i32) = scast i in
-          rbpf_decoder op (ucast dst) (ucast src) off imm
+        let (imm::i32) = scast i1 in
+          if op = 0x18 then
+            case u32_of_u8_list [l!(npc+12), l!(npc+13), l!(npc+14), l!(npc+15)] of
+            None \<Rightarrow> None |
+            Some i2 \<Rightarrow>
+              let (imm2::i32) = scast i2 in (
+                case u4_to_bpf_ireg (ucast dst) of
+                None \<Rightarrow> None |
+                Some dst_r \<Rightarrow> (
+                  Some (BPF_LD_IMM dst_r imm imm2)))
+          else
+            rbpf_decoder op (ucast dst) (ucast src) off imm
     )
 )"
 
-
+(*
 value "bpf_find_instr 0 [0x07::u8,0x0B,0x00,0x00,0x01,0x02,0x03,0x04] "
-
+*)
 end

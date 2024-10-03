@@ -3,9 +3,9 @@ theory bpf_generator
 
 begin
 
-
+(*
 export_code  eval_reg  in OCaml
-  module_name Test file_prefix test
+  module_name Test file_prefix test *)
 
 (*
 code_printing type_constructor nat \<rightharpoonup> (OCaml) "nat"
