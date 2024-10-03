@@ -1920,49 +1920,41 @@ let rec zero_word _A = Word Zero_int;;
 
 let rec less_word _A a b = less_int (the_int _A a) (the_int _A b);;
 
-let rec signed_cast _B _A
-  w = Word (take_bit_int (len_of _A.len0_len Type) (the_signed_int _B w));;
-
-let rec eval_snd_op_i64
-  x0 uu = match x0, uu with
-    SOImm i, uu ->
-      signed_cast
-        (len_signed
-          (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-        (len_signed
-          (len_bit0
-            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-        i
-    | SOReg r, rs ->
-        signed_cast
-          (len_bit0
-            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-          (len_signed
-            (len_bit0
-              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-          (rs r);;
-
 let rec eval_load_imm
-  dst imm1 imm2 rs mem =
-    (let sv1 = eval_snd_op_i64 (SOImm imm1) rs in
-     let sv2 = eval_snd_op_i64 (SOImm imm2) rs in
-     let vm_addr =
-       cast (len_signed
-              (len_bit0
-                (len_bit0
-                  (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+  dst imm1 imm2 rs =
+    (let a =
+       or_word
          (len_bit0
            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-         (plus_word
-           (len_signed
+         (and_word
+           (len_bit0
+             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+           (cast (len_signed
+                   (len_bit0
+                     (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
              (len_bit0
-               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-           sv1 sv2)
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+             imm1)
+           (of_int
+             (len_bit0
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+             (Pos (Bit1 (Bit1 (Bit1 (Bit1 (Bit1
+    (Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1
+  (Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1
+(Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1 (Bit1
+    (Bit1 (Bit1 (Bit1 (Bit1 One))))))))))))))))))))))))))))))))))
+         (push_bit_word
+           (len_bit0
+             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+           (nat_of_num (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))
+           (cast (len_signed
+                   (len_bit0
+                     (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+             (len_bit0
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+             imm2))
        in
-      (match loadv M64 mem vm_addr with None -> None | Some Vundef -> None
-        | Some (Vbyte _) -> None | Some (Vshort _) -> None
-        | Some (Vint _) -> None
-        | Some (Vlong v) -> Some (fun_upd equal_bpf_ireg rs dst v)));;
+      fun_upd equal_bpf_ireg rs dst a);;
 
 let rec divide_word _A
   a b = of_int _A (divide_inta (the_int _A a) (the_int _A b));;
@@ -2181,6 +2173,9 @@ let rec eval_call_imm
         (match push_frame rs ss is_v1 pc enable_stack_frame_gaps
           with (None, _) -> None | (Some ssa, rsa) -> Some (pc, (rsa, ssa))));;
 
+let rec signed_cast _B _A
+  w = Word (take_bit_int (len_of _A.len0_len Type) (the_signed_int _B w));;
+
 let rec eval_snd_op_u64
   x0 uu = match x0, uu with
     SOImm i, uu ->
@@ -2345,6 +2340,25 @@ let rec eval_store
 
 let rec modulo_word _A
   a b = of_int _A (modulo_inta (the_int _A a) (the_int _A b));;
+
+let rec eval_snd_op_i64
+  x0 uu = match x0, uu with
+    SOImm i, uu ->
+      signed_cast
+        (len_signed
+          (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        (len_signed
+          (len_bit0
+            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+        i
+    | SOReg r, rs ->
+        signed_cast
+          (len_bit0
+            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+          (len_signed
+            (len_bit0
+              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+          (rs r);;
 
 let rec eval_pqr64_aux2
   pop dst sop rs =
@@ -3276,9 +3290,10 @@ let rec eval_alu32_aux1
       (match bop
         with BPF_ADD ->
           OKS (fun_upd equal_bpf_ireg rs dst
-                (cast (len_signed
-                        (len_bit0
-                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (signed_cast
+                  (len_signed
+                    (len_bit0
+                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -3292,11 +3307,11 @@ let rec eval_alu32_aux1
             with SOImm _ ->
               (if is_v1
                 then OKS (fun_upd equal_bpf_ireg rs dst
-                           (cast (len_signed
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0
- (len_bit0 (len_bit0 len_num1))))))
+                           (signed_cast
+                             (len_signed
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                              (len_bit0
                                (len_bit0
                                  (len_bit0
@@ -3309,11 +3324,11 @@ let rec eval_alu32_aux1
                                        (len_bit0 (len_bit0 len_num1))))))
                                dv sv)))
                 else OKS (fun_upd equal_bpf_ireg rs dst
-                           (cast (len_signed
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0
- (len_bit0 (len_bit0 len_num1))))))
+                           (signed_cast
+                             (len_signed
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                              (len_bit0
                                (len_bit0
                                  (len_bit0
@@ -3327,10 +3342,10 @@ let rec eval_alu32_aux1
                                sv dv))))
             | SOReg _ ->
               OKS (fun_upd equal_bpf_ireg rs dst
-                    (cast (len_signed
-                            (len_bit0
-                              (len_bit0
-                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                    (signed_cast
+                      (len_signed
+                        (len_bit0
+                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                       (len_bit0
                         (len_bit0
                           (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -3342,9 +3357,10 @@ let rec eval_alu32_aux1
                         dv sv))))
         | BPF_MUL ->
           OKS (fun_upd equal_bpf_ireg rs dst
-                (cast (len_signed
-                        (len_bit0
-                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                (signed_cast
+                  (len_signed
+                    (len_bit0
+                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -3921,20 +3937,19 @@ let rec step
     = (let is_v1 = (match sv with V1 -> true | V2 -> false) in
         (match ins
           with BPF_LD_IMM (dst, imm1, imm2) ->
-            (match eval_load_imm dst imm1 imm2 rs m with None -> BPF_EFlag
-              | Some rsa ->
-                BPF_OK
-                  (plus_word
+            (let rsa = eval_load_imm dst imm1 imm2 rs in
+              BPF_OK
+                (plus_word
+                   (len_bit0
                      (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                     pc (of_int
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   pc (of_int
+                        (len_bit0
                           (len_bit0
                             (len_bit0
-                              (len_bit0
-                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                          (Pos (Bit0 One))),
-                    rsa, m, ss, sv, fm, cur_cu, remain_cu))
+                              (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                        (Pos (Bit0 One))),
+                  rsa, m, ss, sv, fm, cur_cu, remain_cu))
           | BPF_LDX (chk, dst, sop, off) ->
             (match eval_load chk dst sop off rs m with None -> BPF_EFlag
               | Some rsa ->
@@ -4863,7 +4878,7 @@ let rec bpf_find_instr
                 nth l (plus_nat npc (nat_of_num (Bit0 (Bit1 One))));
                 nth l (plus_nat npc (nat_of_num (Bit1 (Bit1 One))))]
             with None -> None
-            | Some i ->
+            | Some i1 ->
               (let off =
                  signed_cast
                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))
@@ -4871,21 +4886,55 @@ let rec bpf_find_instr
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
                    off_v
                  in
-               let a =
+               let imm =
                  signed_cast
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
                    (len_signed
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   i
+                   i1
                  in
-                rbpf_decoder op
-                  (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
-                    (len_bit0 (len_bit0 len_num1)) dst)
-                  (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
-                    (len_bit0 (len_bit0 len_num1)) src)
-                  off a))));;
+                (if equal_word (len_bit0 (len_bit0 (len_bit0 len_num1))) op
+                      (of_int (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                        (Pos (Bit0 (Bit0 (Bit0 (Bit1 One))))))
+                  then (match
+                         u32_of_u8_list
+                           [nth l (plus_nat npc
+                                    (nat_of_num (Bit0 (Bit0 (Bit1 One)))));
+                             nth l (plus_nat npc
+                                     (nat_of_num (Bit1 (Bit0 (Bit1 One)))));
+                             nth l (plus_nat npc
+                                     (nat_of_num (Bit0 (Bit1 (Bit1 One)))));
+                             nth l (plus_nat npc
+                                     (nat_of_num (Bit1 (Bit1 (Bit1 One)))))]
+                         with None -> None
+                         | Some i2 ->
+                           (let imm2 =
+                              signed_cast
+                                (len_bit0
+                                  (len_bit0
+                                    (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+                                (len_signed
+                                  (len_bit0
+                                    (len_bit0
+                                      (len_bit0
+(len_bit0 (len_bit0 len_num1))))))
+                                i2
+                              in
+                             (match
+                               u4_to_bpf_ireg
+                                 (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                                   (len_bit0 (len_bit0 len_num1)) dst)
+                               with None -> None
+                               | Some dst_r ->
+                                 Some (BPF_LD_IMM (dst_r, imm, imm2)))))
+                  else rbpf_decoder op
+                         (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                           (len_bit0 (len_bit0 len_num1)) dst)
+                         (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                           (len_bit0 (len_bit0 len_num1)) src)
+                         off imm)))));;
 
 let rec less_nat m x1 = match m, x1 with m, Suc n -> less_eq_nat m n
                    | n, Zero_nat -> false
@@ -4989,7 +5038,7 @@ let rec bpf_interp
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in BPF_EFlag)
           | BPF_Success a -> BPF_Success a | BPF_EFlag -> let _ = print_endline ("hello 9") in BPF_EFlag
-          | BPF_Err -> let _ = print_endline ("hello 4") in BPF_Err);;
+          | BPF_Err -> BPF_Err);;
 
 let rec init_reg_map
   x = (fun _ ->
@@ -5100,4 +5149,4 @@ let rec bpf_interp_test
                res)
       | BPF_EFlag -> false | BPF_Err -> false);;
 
-end;; (*struct Interp_test2*)
+end;; (*struct Interp_test*)
