@@ -13,6 +13,8 @@ definition SCRATCH_REGS :: nat where
 definition INSN_SIZE :: nat where 
 "INSN_SIZE = 8"
 
+abbreviation "MM_STACK_START:: u64 \<equiv> 0x200000000"
+
 (*
 consts program_vm_addr::u64 *)
 

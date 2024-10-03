@@ -12,6 +12,15 @@ subsubsection  \<open> Interpreter State \<close>
 (*
 type_synonym reg_map = "bpf_ireg \<Rightarrow> u64" *)
 
+definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
+"eval_reg dst rs = rs dst"
+
+syntax "_upd_reg" :: "'a => 'b => 'c => 'a" ("_ # _ <-- _" [1000, 1000, 1000] 1)
+
+(* Define the translation for the notation *)
+translations
+  "_upd_reg a b c" => "a(b := c)"
+
 record stack_state = 
 call_depth :: u64
 stack_pointer :: u64
@@ -39,21 +48,16 @@ definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
 definition init_bpf_state :: "mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
-"init_bpf_state m n v = BPF_OK 0 init_reg_map m init_stack_state v init_func_map 0 n"
+"init_bpf_state m n v =
+  BPF_OK 0
+    (init_reg_map#BR10 <--
+      (MM_STACK_START + (stack_frame_size * max_call_depth)))
+    m init_stack_state v init_func_map 0 n"
 
 datatype 'a option2 =
   NOK |
   OKS (the: 'a) |
   OKN  
-
-definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
-"eval_reg dst rs = rs dst"
-
-syntax "_upd_reg" :: "'a => 'b => 'c => 'a" ("_ # _ <-- _" [1000, 1000, 1000] 1)
-
-(* Define the translation for the notation *)
-translations
-  "_upd_reg a b c" => "a(b := c)"
 
 fun eval_snd_op_i32 :: "snd_op \<Rightarrow> reg_map \<Rightarrow> i32" where
 "eval_snd_op_i32 (SOImm i) _ = scast i" |
@@ -606,10 +610,10 @@ definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
 "u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
 definition bpf_interp_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> nat \<Rightarrow> int \<Rightarrow> bool" where
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
 "bpf_interp_test lp lm lc v fuel res = (
-  case bpf_interp (fuel+1) (int_to_u8_list lp)
-    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_nat (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
+  case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
+    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
   BPF_Success v \<Rightarrow> v = of_int res |
   _ \<Rightarrow> False
 )"
@@ -623,6 +627,7 @@ value "bpf_interp_test
   []
   2 4 0x1234" *)
 
+(*
 value "(and (4::u32) 63)"
 value "(2::u64) << (unat (and (4::u32) 63))"
 
@@ -640,7 +645,6 @@ value "bpf_interp_test
   []
   2 8 0x1"
 
-(*
 value "loadv M8 (u8_list_to_mem (int_to_u8_list [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09])) 2" *)
 
 (*
