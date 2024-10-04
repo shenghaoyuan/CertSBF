@@ -26,8 +26,17 @@ call_depth :: u64
 stack_pointer :: u64
 call_frames :: "CallFrame list"
 
+fun create_list :: "nat \<Rightarrow> 'a \<Rightarrow> 'a list" where
+"create_list 0 _ = []" |
+"create_list (Suc n) def_v = (
+  [def_v] @ (create_list n def_v)
+)"
+
 definition init_stack_state :: "stack_state" where
-"init_stack_state = \<lparr> call_depth = 0, stack_pointer = 1024, call_frames = [] \<rparr>"
+"init_stack_state = \<lparr> call_depth = 0, stack_pointer =
+  (MM_STACK_START + (stack_frame_size * max_call_depth)),
+  call_frames = create_list (unat max_call_depth)
+    \<lparr>frame_pointer = 0, target_pc = 0 \<rparr> \<rparr>"
 
 abbreviation "MM_INPUT_START :: u64 \<equiv> 0x400000000"
 
@@ -184,7 +193,7 @@ definition eval_add64_imm_R10 :: "imm_ty \<Rightarrow> stack_state \<Rightarrow>
 "eval_add64_imm_R10 i ss is_v1 = (
   let sp = stack_pointer ss in 
     if \<not>is_v1 then
-      Some (ss\<lparr>stack_pointer := sp+(ucast i)\<rparr>)
+      Some (ss\<lparr>stack_pointer := sp+(scast i)\<rparr>)
     else
       None
 )"
@@ -410,14 +419,24 @@ subsection  \<open> CALL \<close>
 
 definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> bool \<Rightarrow> stack_state option \<times> reg_map" where 
 "push_frame rs ss is_v1 pc enable_stack_frame_gaps = (
-  let pc = pc +1; fp = eval_reg BR10 rs;
-    frame = \<lparr>frame_pointer = fp, target_pc = pc\<rparr> in 
-  let update1 = call_depth ss +1 in (if update1 = max_call_depth then (None, rs) else (
-  let update2 = if is_v1 then (if enable_stack_frame_gaps then stack_pointer ss + stack_frame_size *2
-  else stack_pointer ss + stack_frame_size) else stack_pointer ss;  
-  update3 = (call_frames ss)[unat(call_depth ss):= frame] in
-  let stack = Some \<lparr>call_depth = update1, stack_pointer = update2, call_frames = update3\<rparr>;
-  reg = rs#BR10 <-- update2 in (stack, reg)
+  let npc = pc +1; fp = eval_reg BR10 rs;
+    frame = \<lparr>frame_pointer = fp, target_pc = npc\<rparr> in 
+  let update1 = call_depth ss +1 in (
+    if update1 = max_call_depth then (None, rs)
+    else (
+      let update2 =
+        if is_v1 then (
+          if enable_stack_frame_gaps then
+            stack_pointer ss + stack_frame_size *2
+          else
+            stack_pointer ss + stack_frame_size)
+        else
+          stack_pointer ss;  
+        update3 = (call_frames ss)[unat(call_depth ss):= frame] in
+      let stack = Some \<lparr> call_depth = update1, stack_pointer = update2,
+        call_frames = update3\<rparr>;
+        reg = rs#BR10 <-- update2 in
+          (stack, reg)
 )))"
 
 definition eval_call_reg :: "src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow>
@@ -427,7 +446,7 @@ definition eval_call_reg :: "src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \
   None \<Rightarrow> None |
   Some iv \<Rightarrow> (
     let pc1 = if is_v1 then eval_reg iv rs else eval_reg src rs in  
-    let (x, rs') = push_frame rs ss is_v1 pc1 enable_stack_frame_gaps in
+    let (x, rs') = push_frame rs ss is_v1 pc enable_stack_frame_gaps in
       case x of
       None \<Rightarrow> None |
       Some ss' \<Rightarrow> 
@@ -439,30 +458,42 @@ definition eval_call_reg :: "src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \
           ))
 )"
 
-definition eval_call_imm :: "imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> func_map \<Rightarrow> bool \<Rightarrow> (u64 \<times> reg_map \<times> stack_state) option" where
-"eval_call_imm imm rs ss is_v1 fm enable_stack_frame_gaps = (
-  case get_function_registry (ucast imm) fm of
+definition eval_call_imm :: "u64 \<Rightarrow> src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> func_map \<Rightarrow> bool \<Rightarrow> (u64 \<times> reg_map \<times> stack_state) option" where
+"eval_call_imm pc src imm rs ss is_v1 fm enable_stack_frame_gaps = (
+  let pc_option =
+    if src = BR0 then
+      get_function_registry (ucast imm) fm
+    else
+      Some (ucast imm) in
+  case pc_option of
   None \<Rightarrow> None |
-  Some pc \<Rightarrow> (
+  Some npc \<Rightarrow> (
     let (x, rs') = push_frame rs ss is_v1 pc enable_stack_frame_gaps in (
       case x of
       None \<Rightarrow> None |
-      Some ss' \<Rightarrow> Some (pc, rs', ss')
+      Some ss' \<Rightarrow> Some (npc, rs', ss')
     ))
 )"
 
 definition pop_frame:: "stack_state \<Rightarrow> CallFrame" where 
-"pop_frame ss = (call_frames ss)!(unat (call_depth ss)) "
+"pop_frame ss = (call_frames ss)!(unat (call_depth ss - 1)) "
 
 subsection  \<open> EXIT \<close>
                                        
 definition eval_exit :: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> (u64 \<times> reg_map \<times> stack_state)" where
 "eval_exit rs ss is_v1 = (
-    let x = call_depth ss-1 ; frame = pop_frame ss; rs'= rs#BR10 <-- (frame_pointer frame) in 
-    let y =  if is_v1 then (stack_pointer ss - (2 * stack_frame_size)) else stack_pointer ss; 
-     z = butlast (call_frames ss) ; ss' = \<lparr>call_depth = x, stack_pointer= y, call_frames = z\<rparr> in
-    let pc = target_pc frame in 
-      (pc, rs', ss')
+  let x = call_depth ss-1 in
+  let frame = pop_frame ss in
+  let rs'= rs#BR10 <-- (frame_pointer frame) in 
+  let y =
+    if is_v1 then
+      (stack_pointer ss - (2 * stack_frame_size))
+    else
+      stack_pointer ss in 
+  let z = butlast (call_frames ss) in
+  let ss' = \<lparr>call_depth = x, stack_pointer= y, call_frames = z\<rparr> in
+  let pc = target_pc frame in 
+    (pc, rs', ss')
 )"
 
 subsection  \<open> step \<close>
@@ -561,9 +592,10 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
       BPF_OK (pc + 1) rs m ss sv fm cur_cu remain_cu) |
 
   BPF_CALL_IMM src imm \<Rightarrow> (
-    case eval_call_imm imm rs ss is_v1 fm enable_stack_frame_gaps of
+    case eval_call_imm pc src imm rs ss is_v1 fm enable_stack_frame_gaps of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc, rs', ss') \<Rightarrow> BPF_OK pc rs' m ss' sv fm cur_cu remain_cu) |
+    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu
+    ) |
 
   BPF_CALL_REG src imm \<Rightarrow> (
     case eval_call_reg src imm rs ss is_v1 pc fm enable_stack_frame_gaps program_vm_addr of
@@ -625,16 +657,18 @@ value "bpf_interp_test
   [0xff, 0xff]
   []
   2 4 0x1234" *)
+(*
+value "let l :: u32 list = [1] in l[0 := 2]" *)
 
+(*
 value "bpf_interp_test
-  [ 183, 0, 0, 0, 12, 0, 0, 0,
-    24, 1, 0, 0, 4, 0, 0, 0,
-    0, 0, 0, 0, 1, 0, 0, 0,
-    60, 16, 0, 0, 0, 0, 0, 0,
+  [ 133, 16, 0, 0, 2, 0, 0, 0,
+    149, 0, 0, 0, 0, 0, 0, 0,
+    191, 160, 0, 0, 0, 0, 0, 0,
     149, 0, 0, 0, 0, 0, 0, 0]
   [] []
-  1 4
-  0x3"
+  2 4
+  8590196736" *)
 
 (*
 value "(and (4::u32) 63)"

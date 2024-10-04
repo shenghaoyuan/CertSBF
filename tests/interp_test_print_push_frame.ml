@@ -2049,7 +2049,7 @@ let rec list_update
     | [], i, y -> [];;
 
 let rec push_frame
-  rs ss is_v1 pc enable_stack_frame_gaps =
+  rs ss is_v1 pc enable_stack_frame_gaps = let _ =print_endline ("push_frame") in
     (let pca =
        plus_word
          (len_bit0
@@ -2058,8 +2058,14 @@ let rec push_frame
               (len_bit0
                 (len_bit0
                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-       in 
-     let fp = eval_reg BR10 rs in
+       in let _ = Printf.printf "PUSH target PC: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        pca)) in
+     let fp = eval_reg BR10 rs in let _ = Printf.printf "PUSH target FP: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        fp)) in
      let frame = CallFrame_ext (fp, pca, ()) in
      let update1 =
        plus_word
@@ -2122,7 +2128,10 @@ let rec push_frame
  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
      (Bit0 (Bit0 (Bit0 One)))))))))))))))
                   else stack_pointer ss)
-                in 
+                in let _ = Printf.printf "push call depth: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        (call_depth ss))) in
               let update3 =
                 list_update (call_frames ss)
                   (the_nat
@@ -2134,7 +2143,23 @@ let rec push_frame
                 in
               let stack = Some (Stack_state_ext (update1, update2, update3, ()))
                 in
-              let a = fun_upd equal_bpf_ireg rs BR10 update2 in 
+              let a = fun_upd equal_bpf_ireg rs BR10 update2 in let _ =print_endline ("push_frame before target pc") in
+              let target_pc (CallFrame_ext (frame_pointer, tp, more)) = tp in let _ =print_endline ("push_frame before res") in
+              let res = nth update3
+         (the_nat
+           (len_bit0
+             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+           (minus_word
+         (len_bit0
+           (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+         update1
+         (one_worda
+           (len_bit0
+             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))) in
+             let _ = Printf.printf "push_pop target pc: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        (target_pc res))) in
                (stack, a))));;
 
 let rec eval_call_reg
@@ -3483,7 +3508,7 @@ let rec pop_frame
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))));;
 
 let rec eval_exit
-  rs ss is_v1 =
+  rs ss is_v1 = let _ = print_endline ("eval_exit") in
     (let x =
        minus_word
          (len_bit0
@@ -3492,8 +3517,11 @@ let rec eval_exit
          (one_worda
            (len_bit0
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-       in
-     let frame = pop_frame ss in
+       in let _ = Printf.printf "get call depth: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        x)) in let _ = print_endline ("before pop_frame") in
+     let frame = pop_frame ss in let _ = print_endline ("after pop_frame") in
      let rsa = fun_upd equal_bpf_ireg rs BR10 (frame_pointer frame) in
      let y =
        (if is_v1
@@ -5055,7 +5083,7 @@ let rec bpf_interp
  (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                    remain_cu
                                  in
-                                  (* let _ = print_bpf_state st1 in *)
+                                  let _ = print_bpf_state st1 in
                                 bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in BPF_EFlag)
