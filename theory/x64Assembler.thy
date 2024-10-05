@@ -1024,12 +1024,11 @@ fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
 )"
 
 (*
-definition x64_encode :: "instruction \<Rightarrow> x64_bin \<Rightarrow> x64_bin option" where
-"x64_encode ins l_bin = (
-  case x64_assemble_one_instruction ins of
+definition x64_encodes_aux2 :: "instruction \<Rightarrow> x64_bin \<Rightarrow> x64_bin option" where
+"x64_encodes_aux2 ins l_bin = (
+  case x64_encode ins of
   None    \<Rightarrow> None |
-  Some l  \<Rightarrow> Some (l_bin@l)
-)"
+  Some l  \<Rightarrow> Some (l_bin@l))"
 
 
 fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
@@ -1062,17 +1061,26 @@ fun list_in_list :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarro
 "list_in_list [] _ _ = True" |
 "list_in_list (h#t) n l = (h = l!n \<and> list_in_list t (Suc n) l)"
 
-fun x64_encodes_aux :: "instruction list \<Rightarrow> x64_bin option" where
-"x64_encodes_aux [] = None" |
+fun x64_encodes_aux :: "instruction list \<Rightarrow> x64_bin option list" where
+"x64_encodes_aux [] = [None]" |
 "x64_encodes_aux (h#t) = (let ins' = x64_encode h in 
-                        (case ins' of None \<Rightarrow> None |
-                                      Some v \<Rightarrow> Some (v @ Option.the (x64_encodes_aux t))))"
+                        (case ins' of None \<Rightarrow> [None] |
+                                      Some v \<Rightarrow> [Some v] @ x64_encodes_aux t))"
 
-definition x64_encodes:: "instruction list \<Rightarrow> x64_bin option" where
-"x64_encodes xs = (case x64_encodes_aux xs of None \<Rightarrow> None | 
-                                              Some v \<Rightarrow> Some (butlast v))"
+definition x64_encodes:: "instruction list \<Rightarrow> x64_bin list option" where
+"x64_encodes xs = (let x = x64_encodes_aux xs in if x = [None] then None  
+                   else Some (map Option.the (butlast x)))"
 
-value "x64_encodes_aux [Pmovq_rr src dst]"
-value "x64_encodes [Pmovq_rr src dst]"
+primrec flat :: "'a list list => 'a list" where
+  "flat [] = []" |
+  "flat (x # xs) = x @ flat xs"
+
+definition x64_encodes_suffix:: "instruction list \<Rightarrow> x64_bin option" where
+"x64_encodes_suffix xs = (let l = x64_encodes xs in (if l = None then None else Some (flat (Option.the l))))"
+
+value "x64_encodes_aux [Pmovq_rr src dst,Pmovq_rr src dst]"
+value "x64_encodes [Pmovq_rr src dst,Pmovq_rr src dst]"
+value "x64_encode (Pmovq_rr src dst)"
+value "x64_encodes_suffix [Pmovq_rr src dst,Pmovq_rr src dst]"
 
 end

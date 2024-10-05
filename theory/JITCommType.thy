@@ -152,13 +152,13 @@ definition per_jit_neg_reg64 :: "bpf_ireg \<Rightarrow> SBPFV \<Rightarrow> x64_
 
 definition per_jit_and_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg  \<Rightarrow> x64_bin option" where
 "per_jit_and_reg64 dst src = (
-    let ins = Pandq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg dst) in
+    let ins = Pandq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
     x64_encode ins
 )"
 
 definition per_jit_mov_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_mov_reg64 dst src  = (
-    let ins = Pmovq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg dst) in
+    let ins = Pmovq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
     x64_encode ins
 )"
 
@@ -176,7 +176,7 @@ definition per_jit_mul_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x
       ins = [Pmulq_r (bpf_to_x64_reg src)];
       ins_suffix = if cond1 then [Pmovq_rr (x64Syntax.RAX) (bpf_to_x64_reg dst),Ppopl x64Syntax.RAX] 
                    else [Ppopl x64Syntax.RAX] in 
-    x64_encodes (ins_prefix@ins@ins_suffix)
+    x64_encodes_suffix (ins_prefix@ins@ins_suffix)
 )"
 
  (** 32 bit shift may use REG_SCRACH **)
@@ -188,7 +188,7 @@ definition per_jit_shift_reg64 :: "nat \<Rightarrow> bpf_ireg \<Rightarrow> bpf_
                    else [Ppushl_r x64Syntax.RCX, Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)] ;
       ins = if cond1 then  [opcode (bpf_to_x64_reg src)] else [opcode (bpf_to_x64_reg dst)];
       ins_suffix = if cond1 then [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX), Ppopl (bpf_to_x64_reg src)] else [Ppopl x64Syntax.RCX] in 
-    x64_encodes (ins_prefix@ins@ins_suffix)
+    x64_encodes_suffix (ins_prefix@ins@ins_suffix)
 )"
 
 
@@ -212,7 +212,7 @@ definition per_jit_conditional_jump_reg64 :: "u64 \<Rightarrow> condition \<Righ
       ins_prefix = if tcond \<noteq> None then [Pcmpq_rr (bpf_to_x64_reg src) (bpf_to_x64_reg dst)]
                    else [Ptestq_rr (bpf_to_x64_reg src) (bpf_to_x64_reg dst)] ;
       ins = if tcond \<noteq> None then  [Pjcc (Option.the tcond) t_pc' ] else [Pjcc Cond_e t_pc']
-      in x64_encodes (ins_prefix@ins)
+      in x64_encodes_suffix (ins_prefix@ins)
 )"
 
 definition per_jit_load_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> memory_chunk \<Rightarrow> off_ty \<Rightarrow>x64_bin option" where

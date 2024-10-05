@@ -321,22 +321,17 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 )"
 
 
-(*n interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
-"interp 0 _ _ = Stuck" |
-"interp (Suc n) l st = (
+fun interp2 :: "nat \<Rightarrow> instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp2 0 _ _ = Stuck" |
+"interp2 _ [] s = s" |
+"interp2 (Suc n) (ins#l) st = (
   case st of
   Stuck \<Rightarrow> Stuck |
   Next rs m \<Rightarrow> (
-    case rs PC of
-    Vlong v \<Rightarrow> (
-      case x64_decode (unat v) l of
-      None \<Rightarrow> Stuck |
-      Some (sz, ins) \<Rightarrow>
-        interp n l (exec_instr ins (of_nat sz) rs m)
-      ) |
-    _ \<Rightarrow> Stuck)
-)"
-*)
+        interp2 n l (exec_instr ins 1 rs m)
+))"
+
+value "interp2 3  [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX] s"
 
 
 fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
