@@ -41,20 +41,6 @@ let test_cases = [
     fuel = 3L;
     result_expected = 0x01L;
   };
-(*
-  mov32 r1, 1
-  mov32 r0, r1
-  exit
-*)
-  {
-    dis = "test_mov";
-    lp_std = [180L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 188L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
-    lm_std = [];
-    lc_std = [];
-    v = 2L;
-    fuel = 3L;
-    result_expected = 0x1L;
-  };
   (*
     mov32 r0, -1
     exit*)
@@ -1910,7 +1896,7 @@ exit
     //ProgramResult::Ok(ebpf::MM_STACK_START + config.stack_size() as u64 - 8),
 *)
   {
-    dis = "test_dynamic_frame_ptr";
+    dis = "test_dynamic_frame_ptr_1";
     lp_std = [7L; 11L; 0L; 0L; 248L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 160L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
@@ -1918,7 +1904,389 @@ exit
     fuel = 5L;
     result_expected = 8590196728L;
   };
+(*
+    add r11, -8
+    call function_foo
+    mov r0, r10
+    exit
+    function_foo:
+    exit
+*)
+  {
+    dis = "test_dynamic_frame_ptr_2";
+    lp_std = [0x07L; 0x0bL; 0x00L; 0x00L; 0xf8L; 0xffL; 0xffL; 0xffL; 0x85L; 0x10L; 0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0xbfL; 0xa0L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 5L;
+    result_expected = 8590196736L;
+  };
+(*
+    entrypoint:
+    call function_foo
+    mov r0, 42
+    exit
+    function_foo:
+    mov r0, 12
+    exit
+*)
+  {
+    dis = "test_entrypoint_exit";
+    lp_std =  [133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 5L;
+    result_expected = 42L;
+  };
+(*
+    call function_foo
+    call function_foo
+    exit
+    function_foo:
+    exit
+*)
+  {
+    dis = "test_stack_call_depth_tracking";
+    lp_std = [133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 8L;
+    result_expected = 0x0L;
+  };
+(*
+    call function_foo
+    call function_foo
+    exit
+    function_foo:
+    exit
+*)
+  {
+    dis = "test_bpf_to_bpf_depth";
+    lp_std = [113L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 254L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 21L; 1L; 2L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 255L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [64L];
+    lc_std = [];
+    v = 2L;
+    fuel = 254L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r6, 0x11
+    mov64 r7, 0x22
+    mov64 r8, 0x44
+    mov64 r9, 0x88
+    call function_foo
+    mov64 r0, r6
+    add64 r0, r7
+    add64 r0, r8
+    add64 r0, r9
+    exit
+    function_foo:
+    mov64 r6, 0x00
+    mov64 r7, 0x00
+    mov64 r8, 0x00
+    mov64 r9, 0x00
+    exit
+*)
+  {
+    dis = "test_bpf_to_bpf_scratch_registers";
+    lp_std = [0xb7L; 0x06L; 0x00L; 0x00L; 0x11L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x07L; 0x00L; 0x00L; 0x22L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x08L; 0x00L; 0x00L; 0x44L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x09L; 0x00L; 0x00L; 0x88L; 0x00L; 0x00L; 0x00L; 0x85L; 0x10L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0xbfL; 0x60L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x70L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x80L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x90L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x06L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x07L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x08L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x09L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 15L;
+    result_expected = 0xffL;
+  };
+(*
+    ldxb r2, [r1+0xc]
+    ldxb r3, [r1+0xd]
+    lsh64 r3, 0x8
+    or64 r3, r2
+    mov64 r0, 0x0
+    jne r3, 0x8, +0xc
+    ldxb r2, [r1+0x17]
+    jne r2, 0x6, +0xa
+    ldxb r2, [r1+0xe]
+    add64 r1, 0xe
+    and64 r2, 0xf
+    lsh64 r2, 0x2
+    add64 r1, r2
+    ldxh r2, [r1+0x2]
+    jeq r2, 0x5000, +0x2
+    ldxh r1, [r1+0x0]
+    jne r1, 0x5000, +0x1
+    mov64 r0, 0x1
+    exit
+*)
+  {
+    dis = "test_tcp_port80_match";
+    lp_std = [113L; 18L; 12L; 0L; 0L; 0L; 0L; 0L; 113L; 19L; 13L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 8L; 0L; 0L; 0L; 79L; 35L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 3L; 12L; 0L; 8L; 0L; 0L; 0L; 113L; 18L; 23L; 0L; 0L; 0L; 0L; 0L; 85L; 2L; 10L; 0L; 6L; 0L; 0L; 0L; 113L; 18L; 14L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 14L; 0L; 0L; 0L; 87L; 2L; 0L; 0L; 15L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 18L; 2L; 0L; 0L; 0L; 0L; 0L; 21L; 2L; 2L; 0L; 0L; 80L; 0L; 0L; 105L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 1L; 1L; 0L; 0L; 80L; 0L; 0L; 183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0x00L; 0x01L; 0x02L; 0x03L; 0x04L; 0x05L; 0x00L; 0x06L; 
+              0x07L; 0x08L; 0x09L; 0x0aL; 0x08L; 0x00L; 0x45L; 0x00L; 
+              0x00L; 0x56L; 0x00L; 0x01L; 0x00L; 0x00L; 0x40L; 0x06L; 
+              0xf9L; 0x4dL; 0xc0L; 0xa8L; 0x00L; 0x01L; 0xc0L; 0xa8L; 
+              0x00L; 0x02L; 0x27L; 0x10L; 0x00L; 0x50L; 0x00L; 0x00L; 
+              0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x50L; 0x02L; 
+              0x20L; 0x00L; 0xc5L; 0x18L; 0x00L; 0x00L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L];
+    lc_std = [];
+    v = 2L;
+    fuel = 17L;
+    result_expected = 0x01L;
+  };
+(*
+    ldxb r2, [r1+0xc]
+    ldxb r3, [r1+0xd]
+    lsh64 r3, 0x8
+    or64 r3, r2
+    mov64 r0, 0x0
+    jne r3, 0x8, +0xc
+    ldxb r2, [r1+0x17]
+    jne r2, 0x6, +0xa
+    ldxb r2, [r1+0xe]
+    add64 r1, 0xe
+    and64 r2, 0xf
+    lsh64 r2, 0x2
+    add64 r1, r2
+    ldxh r2, [r1+0x2]
+    jeq r2, 0x5000, +0x2
+    ldxh r1, [r1+0x0]
+    jne r1, 0x5000, +0x1
+    mov64 r0, 0x1
+    exit
+*)
+  {
+    dis = "test_tcp_port80_nomatch";
+    lp_std = [113L; 18L; 12L; 0L; 0L; 0L; 0L; 0L; 113L; 19L; 13L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 8L; 0L; 0L; 0L; 79L; 35L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 3L; 12L; 0L; 8L; 0L; 0L; 0L; 113L; 18L; 23L; 0L; 0L; 0L; 0L; 0L; 85L; 2L; 10L; 0L; 6L; 0L; 0L; 0L; 113L; 18L; 14L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 14L; 0L; 0L; 0L; 87L; 2L; 0L; 0L; 15L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 18L; 2L; 0L; 0L; 0L; 0L; 0L; 21L; 2L; 2L; 0L; 0L; 80L; 0L; 0L; 105L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 1L; 1L; 0L; 0L; 80L; 0L; 0L; 183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0x00L; 0x01L; 0x02L; 0x03L; 0x04L; 0x05L; 0x00L; 0x06L; 
+              0x07L; 0x08L; 0x09L; 0x0aL; 0x08L; 0x01L; 0x45L; 0x00L; 
+              0x00L; 0x56L; 0x00L; 0x01L; 0x00L; 0x00L; 0x40L; 0x06L; 
+              0xf9L; 0x4dL; 0xc0L; 0xa8L; 0x00L; 0x01L; 0xc0L; 0xa8L; 
+              0x00L; 0x02L; 0x27L; 0x10L; 0x00L; 0x50L; 0x00L; 0x00L; 
+              0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x50L; 0x02L; 
+              0x20L; 0x00L; 0xc5L; 0x18L; 0x00L; 0x00L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L;];
+    lc_std = [];
+    v = 2L;
+    fuel = 7L;
+    result_expected = 0x0L;
+  };
+(*
+    ldxb r2, [r1+0xc]
+    ldxb r3, [r1+0xd]
+    lsh64 r3, 0x8
+    or64 r3, r2
+    mov64 r0, 0x0
+    jne r3, 0x8, +0xc
+    ldxb r2, [r1+0x17]
+    jne r2, 0x6, +0xa
+    ldxb r2, [r1+0xe]
+    add64 r1, 0xe
+    and64 r2, 0xf
+    lsh64 r2, 0x2
+    add64 r1, r2
+    ldxh r2, [r1+0x2]
+    jeq r2, 0x5000, +0x2
+    ldxh r1, [r1+0x0]
+    jne r1, 0x5000, +0x1
+    mov64 r0, 0x1
+    exit
+*)
+  {
+    dis = "test_tcp_port80_nomatch_proto";
+    lp_std = [113L; 18L; 12L; 0L; 0L; 0L; 0L; 0L; 113L; 19L; 13L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 8L; 0L; 0L; 0L; 79L; 35L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 3L; 12L; 0L; 8L; 0L; 0L; 0L; 113L; 18L; 23L; 0L; 0L; 0L; 0L; 0L; 85L; 2L; 10L; 0L; 6L; 0L; 0L; 0L; 113L; 18L; 14L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 14L; 0L; 0L; 0L; 87L; 2L; 0L; 0L; 15L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 18L; 2L; 0L; 0L; 0L; 0L; 0L; 21L; 2L; 2L; 0L; 0L; 80L; 0L; 0L; 105L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 1L; 1L; 0L; 0L; 80L; 0L; 0L; 183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0x00L; 0x01L; 0x02L; 0x03L; 0x04L; 0x05L; 0x00L; 0x06L; 
+              0x07L; 0x08L; 0x09L; 0x0aL; 0x08L; 0x01L; 0x45L; 0x00L; 
+              0x00L; 0x56L; 0x00L; 0x01L; 0x00L; 0x00L; 0x40L; 0x06L; 
+              0xf9L; 0x4dL; 0xc0L; 0xa8L; 0x00L; 0x01L; 0xc0L; 0xa8L; 
+              0x00L; 0x02L; 0x27L; 0x10L; 0x00L; 0x50L; 0x00L; 0x00L; 
+              0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x50L; 0x02L; 
+              0x20L; 0x00L; 0xc5L; 0x18L; 0x00L; 0x00L; 0x44L; 0x44L; 
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
+              0x44L; 0x44L; 0x44L; 0x44L;];
+    lc_std = [];
+    v = 2L;
+    fuel = 9L;
+    result_expected = 0x0L;
+  };
+(*
+    ldxb r2, [r1+12]
+    ldxb r3, [r1+13]
+    lsh r3, 0x8
+    or r3, r2
+    mov r0, 0x0
+    jne r3, 0x8, +37
+    ldxb r2, [r1+23]
+    jne r2, 0x6, +35
+    ldxb r2, [r1+14]
+    add r1, 0xe
+    and r2, 0xf
+    lsh r2, 0x2
+    add r1, r2
+    mov r0, 0x0
+    ldxh r4, [r1+12]
+    add r1, 0x14
+    rsh r4, 0x2
+    and r4, 0x3c
+    mov r2, r4
+    add r2, -20
+    mov r5, 0x15
+    mov r3, 0x0
+    jgt r5, r4, +20
+    mov r5, r3
+    lsh r5, 0x20
+    arsh r5, 0x20
+    mov r4, r1
+    add r4, r5
+    ldxb r5, [r4]
+    jeq r5, 0x1, +4
+    jeq r5, 0x0, +12
+    mov r6, r3
+    jeq r5, 0x5, +9
+    ja +2
+    add r3, 0x1
+    mov r6, r3
+    ldxb r3, [r4+1]
+    add r3, r6
+    lsh r3, 0x20
+    arsh r3, 0x20
+    jsgt r2, r3, -18
+    ja +1
+    mov r0, 0x1
+    exit
+*)
+  {
+    dis = "test_tcp_sack_match";
+    lp_std = [113L; 18L; 12L; 0L; 0L; 0L; 0L; 0L; 113L; 19L; 13L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 8L; 0L; 0L; 0L; 79L; 35L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 3L; 12L; 0L; 8L; 0L; 0L; 0L; 113L; 18L; 23L; 0L; 0L; 0L; 0L; 0L; 85L; 2L; 10L; 0L; 6L; 0L; 0L; 0L; 113L; 18L; 14L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 14L; 0L; 0L; 0L; 87L; 2L; 0L; 0L; 15L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 18L; 2L; 0L; 0L; 0L; 0L; 0L; 21L; 2L; 2L; 0L; 0L; 80L; 0L; 0L; 105L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 1L; 1L; 0L; 0L; 80L; 0L; 0L; 183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0x00L; 0x26L; 0x62L; 0x2fL; 0x47L; 0x87L; 0x00L; 0x1dL; 
+              0x60L; 0xb3L; 0x01L; 0x84L; 0x08L; 0x00L; 0x45L; 0x00L; 
+              0x00L; 0x40L; 0xa8L; 0xdeL; 0x40L; 0x00L; 0x40L; 0x06L;
+              0x9dL; 0x58L; 0xc0L; 0xa8L; 0x01L; 0x03L; 0x3fL; 0x74L; 
+              0xf3L; 0x61L; 0xe5L; 0xc0L; 0x00L; 0x50L; 0xe5L; 0x94L; 
+              0x3fL; 0x77L; 0xa3L; 0xc4L; 0xc4L; 0x80L; 0xb0L; 0x10L; 
+              0x01L; 0x3eL; 0x34L; 0xb6L; 0x00L; 0x00L; 0x01L; 0x01L; 
+              0x08L; 0x0aL; 0x00L; 0x17L; 0x95L; 0x6fL; 0x8dL; 0x9dL; 
+              0x9eL; 0x27L; 0x01L; 0x01L; 0x05L; 0x0aL; 0xa3L; 0xc4L; 
+              0xcaL; 0x28L; 0xa3L; 0xc4L; 0xcfL; 0xd0L;];
+    lc_std = [];
+    v = 2L;
+    fuel = 79L;
+    result_expected = 0x01L;
+  };
+(*
+    ldxb r2, [r1+12]
+    ldxb r3, [r1+13]
+    lsh r3, 0x8
+    or r3, r2
+    mov r0, 0x0
+    jne r3, 0x8, +37
+    ldxb r2, [r1+23]
+    jne r2, 0x6, +35
+    ldxb r2, [r1+14]
+    add r1, 0xe
+    and r2, 0xf
+    lsh r2, 0x2
+    add r1, r2
+    mov r0, 0x0
+    ldxh r4, [r1+12]
+    add r1, 0x14
+    rsh r4, 0x2
+    and r4, 0x3c
+    mov r2, r4
+    add r2, -20
+    mov r5, 0x15
+    mov r3, 0x0
+    jgt r5, r4, +20
+    mov r5, r3
+    lsh r5, 0x20
+    arsh r5, 0x20
+    mov r4, r1
+    add r4, r5
+    ldxb r5, [r4]
+    jeq r5, 0x1, +4
+    jeq r5, 0x0, +12
+    mov r6, r3
+    jeq r5, 0x5, +9
+    ja +2
+    add r3, 0x1
+    mov r6, r3
+    ldxb r3, [r4+1]
+    add r3, r6
+    lsh r3, 0x20
+    arsh r3, 0x20
+    jsgt r2, r3, -18
+    ja +1
+    mov r0, 0x1
+    exit
+*)
+  {
+    dis = "test_tcp_sack_nomatch";
+    lp_std = [113L; 18L; 12L; 0L; 0L; 0L; 0L; 0L; 113L; 19L; 13L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 8L; 0L; 0L; 0L; 79L; 35L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 85L; 3L; 37L; 0L; 8L; 0L; 0L; 0L; 113L; 18L; 23L; 0L; 0L; 0L; 0L; 0L; 85L; 2L; 35L; 0L; 6L; 0L; 0L; 0L; 113L; 18L; 14L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 14L; 0L; 0L; 0L; 87L; 2L; 0L; 0L; 15L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 20L; 12L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 20L; 0L; 0L; 0L; 119L; 4L; 0L; 0L; 2L; 0L; 0L; 0L; 87L; 4L; 0L; 0L; 60L; 0L; 0L; 0L; 191L; 66L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 2L; 0L; 0L; 236L; 255L; 255L; 255L; 183L; 5L; 0L; 0L; 21L; 0L; 0L; 0L; 183L; 3L; 0L; 0L; 0L; 0L; 0L; 0L; 45L; 69L; 20L; 0L; 0L; 0L; 0L; 0L; 191L; 53L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 5L; 0L; 0L; 32L; 0L; 0L; 0L; 199L; 5L; 0L; 0L; 32L; 0L; 0L; 0L; 191L; 20L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 84L; 0L; 0L; 0L; 0L; 0L; 0L; 113L; 69L; 0L; 0L; 0L; 0L; 0L; 0L; 21L; 5L; 4L; 0L; 1L; 0L; 0L; 0L; 21L; 5L; 12L; 0L; 0L; 0L; 0L; 0L; 191L; 54L; 0L; 0L; 0L; 0L; 0L; 0L; 21L; 5L; 9L; 0L; 5L; 0L; 0L; 0L; 5L; 0L; 2L; 0L; 0L; 0L; 0L; 0L; 7L; 3L; 0L; 0L; 1L; 0L; 0L; 0L; 191L; 54L; 0L; 0L; 0L; 0L; 0L; 0L; 113L; 67L; 1L; 0L; 0L; 0L; 0L; 0L; 15L; 99L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 32L; 0L; 0L; 0L; 199L; 3L; 0L; 0L; 32L; 0L; 0L; 0L; 109L; 50L; 238L; 255L; 0L; 0L; 0L; 0L; 5L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [  0x00L; 0x26L; 0x62L; 0x2fL; 0x47L; 0x87L; 0x00L; 0x1dL; 
+                0x60L; 0xb3L; 0x01L; 0x84L; 0x08L; 0x00L; 0x45L; 0x00L; 
+                0x00L; 0x40L; 0xa8L; 0xdeL; 0x40L; 0x00L; 0x40L; 0x06L; 
+                0x9dL; 0x58L; 0xc0L; 0xa8L; 0x01L; 0x03L; 0x3fL; 0x74L; 
+                0xf3L; 0x61L; 0xe5L; 0xc0L; 0x00L; 0x50L; 0xe5L; 0x94L; 
+                0x3fL; 0x77L; 0xa3L; 0xc4L; 0xc4L; 0x80L; 0x80L; 0x10L; 
+                0x01L; 0x3eL; 0x34L; 0xb6L; 0x00L; 0x00L; 0x01L; 0x01L; 
+                0x08L; 0x0aL; 0x00L; 0x17L; 0x95L; 0x6fL; 0x8dL; 0x9dL; 
+                0x9eL; 0x27L];
+    lc_std = [];
+    v = 2L;
+    fuel = 55L;
+    result_expected = 0x0L;
+  };
 ]
 
 let () =
   List.iter run_test_case test_cases
+
+  (*
+    mov32 r0, 1
+    mov32 r1, 0
+    mod32 r0, r1
+    exit
+*)
+(*{
+  dis = "test_div";
+  lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x9cL; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
+  lm_std = [];
+  lc_std = [];
+  v = 1L;
+  fuel = 3L;
+  result_expected = 0x0L;
+};(*
+    mov64 r0, 0x0
+    mov64 r8, 0x1
+    lsh64 r8, 0x20
+    or64 r8, 0x30
+    callx r8
+    exit
+    function_foo:
+    mov64 r0, 0x2A
+    exit
+*)
+  {
+    dis = "test_callx";
+    lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 48L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    v = 2L;
+    fuel = 8L;
+    result_expected = 0x0L;
+  };*)

@@ -39,33 +39,6 @@ let rec times_num
 
 type myint = Zero_int | Pos of num | Neg of num;;
 
-
-let rec num_to_int (n: num) : int64 =
-  match n with
-  | One -> 1L
-  | Bit0 m -> Int64.mul 2L (num_to_int m)
-  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
-
-let myint_to_int (mi: myint) : int64 =
-  match mi with
-  | Zero_int -> 0L
-  | Pos n -> num_to_int n
-  | Neg n -> Int64.neg (num_to_int n)
-
-let rec num_of_int (n: int64) =
-  if n = 1L then One
-  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
-  else Bit1 (num_of_int (Int64.div n 2L))
-
-
-let int_of_standard_int (n: int64) =
-  if n = 0L then Zero_int
-  else if n > 0L then  Pos (num_of_int (n))
-  else Neg (num_of_int (Int64.sub 0L n))
-
-let int_list_of_standard_int_list lst =
-  List.map int_of_standard_int lst
-
 let rec times_inta k l = match k, l with Neg m, Neg n -> Pos (times_num m n)
                      | Neg m, Pos n -> Neg (times_num m n)
                      | Pos m, Neg n -> Neg (times_num m n)
@@ -1933,11 +1906,11 @@ let rec eval_add64_imm_R10
                           (len_bit0
                             (len_bit0
                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                        sp (signed_cast (len_signed
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0
- (len_bit0 (len_bit0 len_num1))))))
+                        sp (signed_cast
+                             (len_signed
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                              (len_bit0
                                (len_bit0
                                  (len_bit0
@@ -2050,7 +2023,7 @@ let rec list_update
 
 let rec push_frame
   rs ss is_v1 pc enable_stack_frame_gaps =
-    (let pca =
+    (let npc =
        plus_word
          (len_bit0
            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -2058,9 +2031,9 @@ let rec push_frame
               (len_bit0
                 (len_bit0
                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-       in 
+       in
      let fp = eval_reg BR10 rs in
-     let frame = CallFrame_ext (fp, pca, ()) in
+     let frame = CallFrame_ext (fp, npc, ()) in
      let update1 =
        plus_word
          (len_bit0
@@ -2122,7 +2095,7 @@ let rec push_frame
  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
      (Bit0 (Bit0 (Bit0 One)))))))))))))))
                   else stack_pointer ss)
-                in 
+                in
               let update3 =
                 list_update (call_frames ss)
                   (the_nat
@@ -2134,7 +2107,7 @@ let rec push_frame
                 in
               let stack = Some (Stack_state_ext (update1, update2, update3, ()))
                 in
-              let a = fun_upd equal_bpf_ireg rs BR10 update2 in 
+              let a = fun_upd equal_bpf_ireg rs BR10 update2 in
                (stack, a))));;
 
 let rec eval_call_reg
@@ -3475,12 +3448,13 @@ let rec pop_frame
            (len_bit0
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
            (minus_word
-         (len_bit0
-           (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-         (call_depth ss)
-         (one_worda
-           (len_bit0
-             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))));;
+             (len_bit0
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+             (call_depth ss)
+             (one_worda
+               (len_bit0
+                 (len_bit0
+                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))));;
 
 let rec eval_exit
   rs ss is_v1 =
@@ -4259,7 +4233,8 @@ let rec step
               | Some (pca, (rsa, ssa)) ->
                 BPF_OK (pca, rsa, m, ssa, sv, fm, cur_cu, remain_cu))
           | BPF_CALL_IMM (src, imm) ->
-            (match eval_call_imm pc src imm rs ss is_v1 fm enable_stack_frame_gaps
+            (match
+              eval_call_imm pc src imm rs ss is_v1 fm enable_stack_frame_gaps
               with None -> BPF_EFlag
               | Some (pca, (rsa, ssa)) ->
                 BPF_OK (pca, rsa, m, ssa, sv, fm, cur_cu, remain_cu))
@@ -4985,6 +4960,31 @@ let rec less_nat m x1 = match m, x1 with m, Suc n -> less_eq_nat m n
 and less_eq_nat x0 n = match x0, n with Suc m, n -> less_nat m n
                   | Zero_nat, n -> true;;
 
+let rec num_to_int (n: num) : int64 =
+  match n with
+  | One -> 1L
+  | Bit0 m -> Int64.mul 2L (num_to_int m)
+  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
+
+let myint_to_int (mi: myint) : int64 =
+  match mi with
+  | Zero_int -> 0L
+  | Pos n -> num_to_int n
+  | Neg n -> Int64.neg (num_to_int n)
+
+let rec num_of_int (n: int64) =
+  if n = 1L then One
+  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
+  else Bit1 (num_of_int (Int64.div n 2L))
+
+
+let int_of_standard_int (n: int64) =
+  if n = 0L then Zero_int
+  else if n > 0L then  Pos (num_of_int (n))
+  else Neg (num_of_int (Int64.sub 0L n))
+
+let int_list_of_standard_int_list lst =
+  List.map int_of_standard_int lst
 
 let print_regmap rs =
   let reg_list = [("R0", BR0); ("R1", BR1); ("R2", BR2); ("R3", BR3);
@@ -5055,13 +5055,13 @@ let rec bpf_interp
  (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                    remain_cu
                                  in
-                                  (* let _ = print_bpf_state st1 in *)
+                                 (*let _ = print_bpf_state st1 in*)
                                 bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in BPF_EFlag)
           | BPF_Success a -> BPF_Success a | BPF_EFlag -> let _ = print_endline ("hello 9") in BPF_EFlag
           | BPF_Err -> BPF_Err);;
-          
+
 let rec create_list x0 uu = match x0, uu with Zero_nat, uu -> []
                       | Suc n, def_v -> [def_v] @ create_list n def_v;;
 
