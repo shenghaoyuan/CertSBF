@@ -13,7 +13,7 @@ module Interp_test : sig
     myint list -> myint list -> myint list -> myint -> myint -> myint -> bool
   val int_of_standard_int : int64 -> myint
   val int_list_of_standard_int_list : int64 list -> myint list
-end = struct
+  end = struct
 
 type num = One | Bit0 of num | Bit1 of num;;
 
@@ -1966,8 +1966,6 @@ let rec divide_word _A
 let rec minus_word _A
   a b = of_int _A (minus_inta (the_int _A a) (the_int _A b));;
 
-let rec get_function_registry key fm = fm key;;
-
 let rec u4_to_bpf_ireg
   dst = (if equal_word (len_bit0 (len_bit0 len_num1)) dst
               (zero_word (len_bit0 (len_bit0 len_num1)))
@@ -2151,20 +2149,9 @@ let rec eval_call_reg
                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                             iNSN_SIZE)
                         in
-                       (match
-                         get_function_registry
-                           (cast (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0
- (len_bit0 (len_bit0 len_num1))))))
-                             (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
-                             next_pc)
-                           fm
-                         with None -> None
-                         | Some _ -> Some (next_pc, (rsa, ssa))))))));;
+                       Some (next_pc, (rsa, ssa)))))));;
+
+let rec get_function_registry key fm = fm key;;
 
 let rec eval_call_imm
   pc src imm rs ss is_v1 fm enable_stack_frame_gaps =
@@ -5028,6 +5015,7 @@ let print_bpf_state st =
   | BPF_Success _ -> print_endline("success")
   | _ -> print_endline("error")
 
+
 let rec bpf_interp
   x0 uu uv uw ux = match x0, uu, uv, uw, ux with
     Zero_nat, uu, uv, uw, ux -> let _ = print_endline ("hello 5") in BPF_EFlag
@@ -5075,7 +5063,7 @@ let rec bpf_interp
  (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                    remain_cu
                                  in
-                                 let _ = print_bpf_state st1 in
+                                 (*let _ = print_bpf_state st1 in*)
                                 bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in BPF_EFlag)

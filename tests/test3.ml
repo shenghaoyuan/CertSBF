@@ -45,7 +45,7 @@ let test_cases = [
     lc_std = [];
     v = 2L;
     fuel = 8L;
-    result_expected = 0x0L;
+    result_expected = 0x2aL;
   };
 ]
 
