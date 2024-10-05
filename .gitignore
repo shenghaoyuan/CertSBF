@@ -1,6 +1,9 @@
 */*.thy~
 */#*.thy#
 *.log
+*/*.cmi
+*/test
+*/*.cmo
 Makefile.config
 Makefile
 theory/IsabelleTutorialExample.thy
