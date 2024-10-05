@@ -27,23 +27,25 @@ let run_test_case test_case =
 
 
 let test_cases = [
-(*  
-    add r11, -8
-    call function_foo
+(*
+    mov64 r0, 0x0
+    mov64 r8, 0x1
+    lsh64 r8, 0x20
+    or64 r8, 0x30
+    callx r8
     exit
     function_foo:
-    mov r0, r10
+    mov64 r0, 0x2A
     exit
-    //ProgramResult::Ok(ebpf::MM_STACK_START + config.stack_size() as u64 - 8),
 *)
   {
-    dis = "test_dynamic_frame_ptr";
-    lp_std = [7L; 11L; 0L; 0L; 248L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 160L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    dis = "test_callx";
+    lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 48L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
     v = 2L;
-    fuel = 5L;
-    result_expected = 8590196728L;
+    fuel = 8L;
+    result_expected = 0x0L;
   };
 ]
 

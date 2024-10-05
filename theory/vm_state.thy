@@ -14,6 +14,7 @@ subsection  \<open> A call frame used for function calls inside the Interpreter 
 record CallFrame = (*  /// The caller saved registers
     pub caller_saved_registers: [u64; ebpf::SCRATCH_REGS],
 *)
+caller_saved_registers :: "u64 list"
 frame_pointer :: u64
 target_pc :: u64
 

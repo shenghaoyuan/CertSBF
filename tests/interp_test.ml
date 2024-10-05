@@ -1019,7 +1019,8 @@ type condition = Eq | Gt | Ge | Lt | Le | SEt | Ne | SGt | SGe | SLt | SLe;;
 
 type 'a callFrame_ext =
   CallFrame_ext of
-    num1 bit0 bit0 bit0 bit0 bit0 bit0 word *
+    num1 bit0 bit0 bit0 bit0 bit0 bit0 word list *
+      num1 bit0 bit0 bit0 bit0 bit0 bit0 word *
       num1 bit0 bit0 bit0 bit0 bit0 bit0 word * 'a;;
 
 type 'a stack_state_ext =
@@ -2033,7 +2034,9 @@ let rec push_frame
                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
        in
      let fp = eval_reg BR10 rs in
-     let frame = CallFrame_ext (fp, npc, ()) in
+     let caller =
+       [eval_reg BR6 rs; eval_reg BR7 rs; eval_reg BR8 rs; eval_reg BR9 rs] in
+     let frame = CallFrame_ext (caller, fp, npc, ()) in
      let update1 =
        plus_word
          (len_bit0
@@ -3437,10 +3440,17 @@ let rec eval_load
                    v))
         | Some (Vlong v) -> Some (fun_upd equal_bpf_ireg rs dst v)));;
 
-let rec frame_pointer
-  (CallFrame_ext (frame_pointer, target_pc, more)) = frame_pointer;;
+let rec caller_saved_registers
+  (CallFrame_ext (caller_saved_registers, frame_pointer, target_pc, more)) =
+    caller_saved_registers;;
 
-let rec target_pc (CallFrame_ext (frame_pointer, target_pc, more)) = target_pc;;
+let rec frame_pointer
+  (CallFrame_ext (caller_saved_registers, frame_pointer, target_pc, more)) =
+    frame_pointer;;
+
+let rec target_pc
+  (CallFrame_ext (caller_saved_registers, frame_pointer, target_pc, more)) =
+    target_pc;;
 
 let rec pop_frame
   ss = nth (call_frames ss)
@@ -3468,7 +3478,17 @@ let rec eval_exit
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
        in
      let frame = pop_frame ss in
-     let rsa = fun_upd equal_bpf_ireg rs BR10 (frame_pointer frame) in
+     let rsa =
+       fun_upd equal_bpf_ireg
+         (fun_upd equal_bpf_ireg
+           (fun_upd equal_bpf_ireg
+             (fun_upd equal_bpf_ireg
+               (fun_upd equal_bpf_ireg rs BR10 (frame_pointer frame)) BR9
+               (nth (caller_saved_registers frame) (nat_of_num (Bit1 One))))
+             BR8 (nth (caller_saved_registers frame) (nat_of_num (Bit0 One))))
+           BR7 (nth (caller_saved_registers frame) one_nat))
+         BR6 (nth (caller_saved_registers frame) Zero_nat)
+       in
      let y =
        (if is_v1
          then minus_word
@@ -5055,7 +5075,7 @@ let rec bpf_interp
  (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                    remain_cu
                                  in
-                                 (*let _ = print_bpf_state st1 in*)
+                                 let _ = print_bpf_state st1 in
                                 bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
               else let _ = print_endline ("hello 8") in BPF_EFlag)
@@ -5109,10 +5129,10 @@ let init_stack_state : unit stack_state_ext
                 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
               (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))))
           (CallFrame_ext
-            (zero_word
-               (len_bit0
-                 (len_bit0
-                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))),
+            ([], zero_word
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))),
               zero_word
                 (len_bit0
                   (len_bit0

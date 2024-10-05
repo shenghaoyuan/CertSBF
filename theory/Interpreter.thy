@@ -36,7 +36,10 @@ definition init_stack_state :: "stack_state" where
 "init_stack_state = \<lparr> call_depth = 0, stack_pointer =
   (MM_STACK_START + (stack_frame_size * max_call_depth)),
   call_frames = create_list (unat max_call_depth)
-    \<lparr>frame_pointer = 0, target_pc = 0 \<rparr> \<rparr>"
+    \<lparr> caller_saved_registers = [],
+      frame_pointer = 0,
+      target_pc = 0 \<rparr> \<rparr>"
+(* create_list 4 0 *)
 
 abbreviation "MM_INPUT_START :: u64 \<equiv> 0x400000000"
 
@@ -419,8 +422,12 @@ subsection  \<open> CALL \<close>
 
 definition push_frame:: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> bool \<Rightarrow> stack_state option \<times> reg_map" where 
 "push_frame rs ss is_v1 pc enable_stack_frame_gaps = (
-  let npc = pc +1; fp = eval_reg BR10 rs;
-    frame = \<lparr>frame_pointer = fp, target_pc = npc\<rparr> in 
+  let npc = pc +1 in
+  let fp = eval_reg BR10 rs in
+  let caller = [eval_reg BR6 rs, eval_reg BR7 rs,
+                eval_reg BR8 rs, eval_reg BR9 rs] in
+  let frame = \<lparr> caller_saved_registers = caller,
+                frame_pointer = fp, target_pc = npc\<rparr> in 
   let update1 = call_depth ss +1 in (
     if update1 = max_call_depth then (None, rs)
     else (
@@ -452,9 +459,7 @@ definition eval_call_reg :: "src_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \
       Some ss' \<Rightarrow> 
         if pc1 < program_vm_addr then None else (
           let next_pc = (pc1 - program_vm_addr)div (of_nat INSN_SIZE) in 
-            case get_function_registry (ucast next_pc) fm of
-            None \<Rightarrow> None | 
-            Some _ => Some (next_pc, rs', ss')
+            Some (next_pc, rs', ss')
           ))
 )"
 
@@ -484,7 +489,12 @@ definition eval_exit :: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<
 "eval_exit rs ss is_v1 = (
   let x = call_depth ss-1 in
   let frame = pop_frame ss in
-  let rs'= rs#BR10 <-- (frame_pointer frame) in 
+  let rs'= (((((
+            rs#BR10 <-- (frame_pointer frame))
+              #BR9  <-- ((caller_saved_registers frame)!(3)))
+              #BR8  <-- ((caller_saved_registers frame)!(2)))
+              #BR7  <-- ((caller_saved_registers frame)!(1)))
+              #BR6  <-- ((caller_saved_registers frame)!(0))) in 
   let y =
     if is_v1 then
       (stack_pointer ss - (2 * stack_frame_size))
@@ -644,7 +654,8 @@ definition bpf_interp_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
 "bpf_interp_test lp lm lc v fuel res = (
   case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
-    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) ) (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
+    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) )
+      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
   BPF_Success v \<Rightarrow> v = of_int res |
   _ \<Rightarrow> False
 )"
@@ -662,13 +673,38 @@ value "let l :: u32 list = [1] in l[0 := 2]" *)
 
 (*
 value "bpf_interp_test
-  [ 133, 16, 0, 0, 2, 0, 0, 0,
+  [ 183, 0, 0, 0, 0, 0, 0, 0,
+    183, 8, 0, 0, 1, 0, 0, 0,
+    103, 8, 0, 0, 32, 0, 0, 0,
+    71, 8, 0, 0, 48, 0, 0, 0,
+    141, 128, 0, 0, 0, 0, 0, 0,
     149, 0, 0, 0, 0, 0, 0, 0,
-    191, 160, 0, 0, 0, 0, 0, 0,
+    183, 0, 0, 0, 42, 0, 0, 0,
     149, 0, 0, 0, 0, 0, 0, 0]
   [] []
-  2 4
-  8590196736" *)
+  2 8
+  0x2a" *)
+
+(*
+value "bpf_interp_test
+  [ 0xb7, 0x06, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00,
+    0xb7, 0x07, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00,
+    0xb7, 0x08, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00,
+    0xb7, 0x09, 0x00, 0x00, 0x88, 0x00, 0x00, 0x00,
+    0x85, 0x10, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00,
+    0xbf, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x0f, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x0f, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x0f, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xb7, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xb7, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xb7, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xb7, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+  [] []
+  2 15
+  0xff" *)
 
 (*
 value "(and (4::u32) 63)"

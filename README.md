@@ -32,22 +32,23 @@ isabelle components -u . # Add AFP to ...
 # go to CertSBF folder and open this project in jedit
 cd /YOUR-PATH/CertSBF
 
-# adding the following libs
-make
-```
-## Install on WSL
-```shell
+# adding the following libs when install on WSL
 # Ubuntu 22.04.3 LTS (GNU/Linux 5.15.153.1-microsoft-standard-WSL2 x86_64)
 sudo apt-get install libxi6 libxtst6 libxrender1 fontconfig
-```
 
+make
+```
 
 # x64 Reference
 As Solana rBPF has a x86_64 JIT compiler which involves of ISA instructions encoding formats, we refer to [x64 Manual](https://cdrdv2.intel.com/v1/dl/getContent/671200), and if you read the comment with `P123` in the isabelle/hol file, which means, the source text description could be found in the x64 Manual `Page 123`. Good Luck~
 
 
-# Note
-- `static_analysis.rs` is a test for generated jited code, skip it now
-- `static_analysis.rs#276L: self.cfg_nodes.entry(insn.ptr + 1).or_default();` should be removed?
-- `static_analysis.rs#311L: std::mem::swap(&mut self.cfg_nodes, &mut cfg_nodes);`, why swap?
-- `static_analysis.rs#324L: std::mem::swap(&mut self.cfg_nodes, &mut cfg_nodes);`, now cfg_nodes are empty?
+# Code Statistics
+1. install the `cloc` tool
+```shell
+sudo apt-get install cloc
+``` 
+2. run the following command to get the lines of code. Note that currently `cloc` doesn't support Isabelle/HOL now, we specify the lanuage to OCaml because both use `(* *)` as comments.
+```shell
+make code
+```
