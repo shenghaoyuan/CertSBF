@@ -334,12 +334,208 @@ proof -
 lemma add_sub_consistency:"add64 (Vlong a) (Vlong b) = Vlong c \<Longrightarrow> sub64 (Vlong c) (Vlong a) = (Vlong b) "
   using add64_def sub64_def by auto
 
-lemma shift_subgoal_rr_aux1_1:"Next reg'' m'' = interp2 n xins (Next reg m) \<Longrightarrow> length xins = (2::nat) \<Longrightarrow> \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')  "
-  sorry  
+(*lemma interp2_aux1:
+  assumes a0:"length xins = (2::nat)" and 
+          a1:"result = interp2 n xins (Next reg m)"
+        shows "result = Next reg' m' \<longrightarrow> n\<ge>2"
+proof (rule ccontr)
+  assume a2:"\<not> (result = Next reg' m' \<longrightarrow> n\<ge>2)"
+  let ?res_ok = "Next reg' m'"
+  have a3:"\<not> (\<not> result = ?res_ok \<or> (n\<ge>2))" using imp_conv_disj a2 by blast
+  have a4:"result = ?res_ok \<and> n<2" using a3 by simp
+   then show "False"
+   proof
+     have b0:"n<2" using a4 conjE by simp
+     have b2: "interp2 n xins (Next reg m) = Stuck"using a0 exec_instr_def 
+       by (smt (verit, del_insts) b0 interp2.elims interp2.simps(2) length_0_conv less_2_cases nat.inject outcome.simps(4) zero_neq_numeral)
+     thus "False" using b2 
+       using a1 a4 by (simp add: a0 exec_instr_def)
+   qed
+ qed
 
-lemma shift_subgoal_rr_aux1_2:"length xins = (2::nat) \<Longrightarrow> Next reg' m' = (exec_instr (xins!0) 1 reg m)  \<Longrightarrow> Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')  \<Longrightarrow>
-  Next reg'' m'' = interp2 3 xins (Next reg m)"
+lemma interp2_aux2:
+  assumes a0:"length xins = (2::nat)" and 
+          a1:"result = interp2 n xins (Next reg m)"
+        shows "result = Next reg' m' \<longrightarrow> (exec_instr (xins!0) 1 reg m) \<noteq> Stuck"
+proof (rule ccontr)
+  assume a2:"\<not> (result = Next reg' m' \<longrightarrow> (exec_instr (xins!0) 1 reg m) \<noteq> Stuck)"
+  let ?tmp = "(exec_instr (xins!0) 1 reg m) "
+  let ?res_ok = "Next reg' m'"
+  have a3:"\<not> (\<not> result = ?res_ok \<or> ?tmp \<noteq> Stuck)" using imp_conv_disj a2 by blast
+  have a4:"result = ?res_ok \<and> ?tmp = Stuck" using a3 by simp
+   then show "False"
+   proof
+     have b0:"?tmp = Stuck" using a4 conjE by simp
+     have b1:"xins\<noteq>[]" using a0 by auto
+     have b2: "interp2 n xins (Next reg m) = Stuck"using a0 b0 b1 exec_instr_def 
+       by (smt (verit, del_insts) interp2.elims nth_Cons_0 outcome.case(2) outcome.simps(4))
+     thus "False" using b2 
+       using a1 a4 by (simp add: a0 exec_instr_def)
+   qed
+ qed
+
+(*interp2 n (drop 1 xins) (Next reg' m') = (exec_instr (xins!1) 1 reg' m')*)
+lemma interp2_aux3:
+  assumes a0:"length xins = (2::nat)" and 
+          a1:"result = interp2 n xins (Next reg m)" and
+          a2:"Next reg' m' = (exec_instr (xins!0) 1 reg m)"
+        shows "result = Next reg'' m'' \<longrightarrow> (exec_instr (xins!1) 1 reg' m') \<noteq> Stuck"
+proof (rule ccontr)
+  assume a2:"\<not> (result = Next reg'' m'' \<longrightarrow> (exec_instr (xins!1) 1 reg' m') \<noteq> Stuck)"
+  let ?tmp = "(exec_instr (xins!1) 1 reg' m') "
+  let ?res_ok = "Next reg'' m''"
+  have a3:"\<not> (\<not> result = ?res_ok \<or> ?tmp \<noteq> Stuck)" using imp_conv_disj a2 by blast
+  have a4:"result = ?res_ok \<and> ?tmp = Stuck" using a3 by simp
+   then show "False"
+   proof
+     have b0:"?tmp = Stuck" using a4 conjE by simp
+     have b1:"xins\<noteq>[]" using a0 by auto
+     have b2:"interp2 (n-1) (drop 1 xins) (Next reg' m') = (exec_instr (xins!1) 1 reg' m')" using a0 a1 a2 b1 
+       by (smt (verit, ccfv_threshold) Cons_nth_drop_Suc One_nat_def Suc_n_not_le_n drop_eq_Nil interp2.elims lessI list.inject numeral_2_eq_2 outcome.case(2) outcome.simps(4))
+     have b3: "interp2 (n-1) (drop 1 xins) (Next reg' m') = Stuck"using a0 b0 b1 exec_instr_def a2
+       using interp2.elims nth_Cons_0 outcome.case(2) outcome.simps(4) using b2 by simp
+     have b4: "interp2 n xins (Next reg m) = Stuck" using a0 a1 b3 exec_instr_def a2 b1
+       by (smt (verit) Cons_nth_drop_Suc One_nat_def Suc_n_not_le_n assms(3) drop0 drop_eq_Nil interp2.elims list.inject list_consists_2 numeral_2_eq_2 outcome.case(2) outcome.simps(4) zero_less_Suc)
+     thus "False" using b2 
+       using a1 a4 by (simp add: a0 exec_instr_def)
+   qed
+ qed
+
+
+lemma interp2_aux4:"n > 0 \<Longrightarrow> interp2 n [] (Next reg m) = Next reg m"
+  by (metis Suc_pred interp2.simps(2))
+
+
+lemma interp2_aux4: assumes a0:"Next reg2 m2 = interp2 n xins (Next reg m)" and
+  a1:"length xins = (2::nat)"
+shows" \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg2 m2 = (exec_instr (xins!1) 1 reg' m')  "
+proof-
+  have b0:"n\<ge>2" using a0 a1 interp2_aux1 by blast
+  from a0 a1 have "\<exists> result1. result1 = (exec_instr (xins!0) 1 reg m)" by simp
+  then obtain result1 where " result1 = (exec_instr (xins!0) 1 reg m)" by simp
+  have b1:"result1 \<noteq> Stuck" using interp2_aux2 a0 a1 
+    by (metis \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> a0 a1)
+  from b1 have "\<exists> reg' m'. Next reg' m' = result1" 
+    by (metis outcome.exhaust)
+  then obtain reg' m' where "Next reg' m' = result1" by blast
+  have "\<exists> result2. result2 = (exec_instr (xins!1) 1 reg' m')" by simp
+  then obtain result2 where " result2 = (exec_instr (xins!1) 1 reg' m')" by simp
+  have b3:"result2 \<noteq> Stuck" using interp2_aux3 a0 a1 
+    by (metis \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> \<open>(result2::outcome) = exec_instr ((xins::instruction list) ! (1::nat)) (1::64 word) (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option)\<close> \<open>Next (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option) = (result1::outcome)\<close>)
+  then obtain reg'' m'' where "Next reg'' m'' = result2" 
+    by (metis outcome.exhaust)
+  have b4:"Next reg'' m'' = Next reg2 m2" using b1 interp2_aux4 interp2_aux1 try
+  show ?thesis using a0 a1 b0 
+    using \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> \<open>(result2::outcome) = exec_instr ((xins::instruction list) ! (1::nat)) (1::64 word) (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option)\<close> \<open>Next (reg''::preg \<Rightarrow> val) (m''::64 word \<Rightarrow> 8 word option option) = (result2::outcome)\<close> \<open>Next (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option) = (result1::outcome)\<close> b4 by blast
+qed
+lemma shift_subgoal_rr_aux1_1:"Next reg'' m'' = interp2 n xins (Next reg m) \<Longrightarrow> length xins = (2::nat) \<Longrightarrow> \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')  "
+  using interp2_aux4 by simp
+
+
+lemma shift_subgoal_rr_aux1_2:
+  assumes a0:"length xins = (2::nat)" and a1:"Next reg' m' = (exec_instr (xins!0) 1 reg m)" and a1:" Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')"
+  shows "Next reg'' m'' = interp2 n xins (Next reg m)"
   sorry
+
+lemma shift_subgoal_rr_aux2:
+  assumes a0:"xins = [(Pmovq_rr src (x64Syntax.RCX)),(Pshlq_r dst)]" and 
+    a1:"Next reg'' m'' = interp2 n xins (Next reg m) " 
+  shows " m'' = m"
+proof-
+  have b0:"length xins = (2::nat)" using a0 by simp
+  thus ?thesis using b0 a0 a1 shift_subgoal_rr_aux2_3 
+    by (meson shift_subgoal_rr_aux1_1)
+qed
+
+
+lemma push_pop_subgoal_rr_aux2_2:
+  assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX]" and 
+    a1:"Next reg'' m'' = interp2 n xins (Next reg m)" and
+    a2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None "
+  shows "reg'' (IR x64Syntax.RCX) = reg (IR x64Syntax.RCX)"
+proof-
+  have b0:"length xins = (2::nat)" using a0 by simp
+  thus ?thesis using b0 a0 a1 a2 push_pop_subgoal_rr_aux2_1 shift_subgoal_rr_aux1_1
+    by metis
+qed
+*)
+
+lemma interp3_aux2:
+  assumes a0:"length xins = (2::nat)" and 
+          a1:"result = interp3 xins (Next reg m)"
+        shows "result = Next reg' m' \<longrightarrow> (exec_instr (xins!0) 1 reg m) \<noteq> Stuck"
+proof (rule ccontr)
+  assume a2:"\<not> (result = Next reg' m' \<longrightarrow> (exec_instr (xins!0) 1 reg m) \<noteq> Stuck)"
+  let ?tmp = "(exec_instr (xins!0) 1 reg m) "
+  let ?res_ok = "Next reg' m'"
+  have a3:"\<not> (\<not> result = ?res_ok \<or> ?tmp \<noteq> Stuck)" using imp_conv_disj a2 by blast
+  have a4:"result = ?res_ok \<and> ?tmp = Stuck" using a3 by simp
+   then show "False"
+   proof
+     have b0:"?tmp = Stuck" using a4 conjE by simp
+     have b1:"xins\<noteq>[]" using a0 by auto
+     have b2: "interp3 xins (Next reg m) = Stuck"using a0 b0 b1 exec_instr_def 
+       by (smt (verit, del_insts) interp3.elims nth_Cons_0 outcome.case(2) outcome.simps(4))
+     thus "False" using b2 
+       using a1 a4 by (simp add: a0 exec_instr_def)
+   qed
+ qed
+
+
+lemma interp3_aux3:
+  assumes a0:"length xins = (2::nat)" and 
+          a1:"result = interp3 xins (Next reg m)" and
+          a2:"Next reg' m' = (exec_instr (xins!0) 1 reg m)"
+        shows "result = Next reg'' m'' \<longrightarrow> (exec_instr (xins!1) 1 reg' m') \<noteq> Stuck"
+proof (rule ccontr)
+  assume a2:"\<not> (result = Next reg'' m'' \<longrightarrow> (exec_instr (xins!1) 1 reg' m') \<noteq> Stuck)"
+  let ?tmp = "(exec_instr (xins!1) 1 reg' m') "
+  let ?res_ok = "Next reg'' m''"
+  have a3:"\<not> (\<not> result = ?res_ok \<or> ?tmp \<noteq> Stuck)" using imp_conv_disj a2 by blast
+  have a4:"result = ?res_ok \<and> ?tmp = Stuck" using a3 by simp
+   then show "False"
+   proof
+     have b0:"?tmp = Stuck" using a4 conjE by simp
+     have b1:"xins\<noteq>[]" using a0 by auto
+     have b2:"interp3 (drop 1 xins) (Next reg' m') = (exec_instr (xins!1) 1 reg' m')" using a0 a1 a2 b0 b1 
+       by (metis Cons_nth_drop_Suc Suc_eq_plus1 drop_eq_Nil interp3.simps(1) interp3.simps(2) le_refl lessI nat_1_add_1 outcome.simps(4))
+     have b3: "interp3 (drop 1 xins) (Next reg' m') = Stuck"using a0 b0 b1 exec_instr_def a2
+       using interp2.elims nth_Cons_0 outcome.case(2) outcome.simps(4) using b2 by simp
+     have b4: "interp3 xins (Next reg m) = Stuck" using a0 a1 b3 exec_instr_def a2 
+       by (metis (no_types, lifting) Cons_nth_drop_Suc One_nat_def Suc_1 assms(3) drop_all eq_imp_le interp3.simps(2) lessI list_consists_2 outcome.simps(4))
+     thus "False" using b2 
+       using a1 a4 by (simp add: a0 exec_instr_def)
+   qed
+ qed
+
+lemma interp3_aux4:"interp3 [] (Next reg m) = Next reg m"
+  by simp
+
+lemma interp3_aux5: assumes a0:"Next reg2 m2 = interp3 xins (Next reg m)" and
+  a1:"length xins = (2::nat)"
+shows" \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg2 m2 = (exec_instr (xins!1) 1 reg' m')  "
+proof-
+  from a0 a1 have "\<exists> result1. result1 = (exec_instr (xins!0) 1 reg m)" by simp
+  then obtain result1 where " result1 = (exec_instr (xins!0) 1 reg m)" by simp
+  have b1:"result1 \<noteq> Stuck" using interp3_aux2 a0 a1 
+    by (metis \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> a0 a1)
+  from b1 have "\<exists> reg' m'. Next reg' m' = result1" 
+    by (metis outcome.exhaust)
+  then obtain reg' m' where "Next reg' m' = result1" by blast
+  have "\<exists> result2. result2 = (exec_instr (xins!1) 1 reg' m')" by simp
+  then obtain result2 where " result2 = (exec_instr (xins!1) 1 reg' m')" by simp
+  have b3:"result2 \<noteq> Stuck" using interp3_aux3 a0 a1 
+    by (metis \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> \<open>(result2::outcome) = exec_instr ((xins::instruction list) ! (1::nat)) (1::64 word) (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option)\<close> \<open>Next (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option) = (result1::outcome)\<close>)
+  then obtain reg'' m'' where "Next reg'' m'' = result2" 
+    by (metis outcome.exhaust)
+  have b4:"Next reg'' m'' = Next reg2 m2" using interp3_aux4 a1 
+    by (metis Suc_eq_plus1 \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> \<open>(result2::outcome) = exec_instr ((xins::instruction list) ! (1::nat)) (1::64 word) (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option)\<close> \<open>Next (reg''::preg \<Rightarrow> val) (m''::64 word \<Rightarrow> 8 word option option) = (result2::outcome)\<close> \<open>Next (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option) = (result1::outcome)\<close> a0 add.commute add.right_neutral interp3.simps(2) list_consists_2 outcome.simps(4))
+  show ?thesis using a0 a1 
+    using \<open>(result1::outcome) = exec_instr ((xins::instruction list) ! (0::nat)) (1::64 word) (reg::preg \<Rightarrow> val) (m::64 word \<Rightarrow> 8 word option option)\<close> \<open>(result2::outcome) = exec_instr ((xins::instruction list) ! (1::nat)) (1::64 word) (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option)\<close> \<open>Next (reg''::preg \<Rightarrow> val) (m''::64 word \<Rightarrow> 8 word option option) = (result2::outcome)\<close> \<open>Next (reg'::preg \<Rightarrow> val) (m'::64 word \<Rightarrow> 8 word option option) = (result1::outcome)\<close> b4 by blast
+qed
+
+lemma shift_subgoal_rr_aux1_1:"Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> length xins = (2::nat) \<Longrightarrow> \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')  "
+  using interp3_aux5 by simp
 
 lemma shift_subgoal_rr_aux2_1:"xins = Pmovq_rr src (x64Syntax.RCX) \<Longrightarrow> 
     Next reg'' m'' = (exec_instr xins 1 reg m) \<Longrightarrow> m'' = m "
@@ -359,7 +555,7 @@ lemma shift_subgoal_rr_aux2_3:
 
 lemma shift_subgoal_rr_aux2:
   assumes a0:"xins = [(Pmovq_rr src (x64Syntax.RCX)),(Pshlq_r dst)]" and 
-    a1:"Next reg'' m'' = interp2 n xins (Next reg m) " 
+    a1:"Next reg'' m'' = interp3 xins (Next reg m) " 
   shows " m'' = m"
 proof-
   have b0:"length xins = (2::nat)" using a0 by simp
@@ -391,7 +587,7 @@ lemma shift_subgoal_rr_aux3_3:
 
 lemma shift_subgoal_rr_aux3:
   assumes a0:"xins = [(Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)),(Pshlq_r (bpf_to_x64_reg dst))]" and 
-    a1:"Next reg'' m'' = interp2 n xins (Next reg m) " 
+    a1:"Next reg'' m'' = interp3 xins (Next reg m) " 
   shows "reg'' (IR SP) = reg (IR SP)"
 proof-
   have b0:"length xins = (2::nat)" using a0 by simp
@@ -456,7 +652,7 @@ qed
 
 lemma push_pop_subgoal_rr_aux2_2:
   assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX]" and 
-    a1:"Next reg'' m'' = interp2 n xins (Next reg m)" and
+    a1:"Next reg'' m'' = interp3 xins (Next reg m)" and
     a2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None "
   shows "reg'' (IR x64Syntax.RCX) = reg (IR x64Syntax.RCX)"
 proof-
@@ -493,12 +689,12 @@ qed
 
 
 lemma shift_subgoal_rr_aux4_2:"xins = [Pmovq_rr src (x64Syntax.RCX),Pshlq_r dst] \<Longrightarrow> 
-    Next reg'' m'' = interp2 n xins (Next reg m) \<Longrightarrow> 
+    Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> 
     \<forall> r . r \<notin> {dst,x64Syntax.RCX} \<longrightarrow> reg' (IR r) = reg (IR r)"
   sorry
 
 lemma shift_subgoal_rr_aux4:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr src (x64Syntax.RCX),Pshlq_r dst,Ppopl x64Syntax.RCX] \<Longrightarrow> 
-    Next reg'' m'' = interp2 n xins (Next reg m) \<Longrightarrow> 
+    Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> 
     \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
   sorry
 
@@ -507,7 +703,7 @@ lemma shift_subgoal_rr_aux5:
      "bins = BPF_ALU64 BPF_LSH dst (SOReg src) \<Longrightarrow>
      xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr ri (x64Syntax.RCX),Pshlq_r rd,Ppopl x64Syntax.RCX] \<Longrightarrow>
      (BPF_OK pc rs' m' ss' is_v1 (cur_cu+1) remain_cu) = step fuel bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
-     Next reg' m' = interp2 sz xins (Next reg m) \<Longrightarrow>
+     Next reg' m' = interp3 xins (Next reg m) \<Longrightarrow>
      rd = (bpf_to_x64_reg dst) \<Longrightarrow>
      ri = (bpf_to_x64_reg src) \<Longrightarrow>
      reg (IR rd) = Vlong n1 \<Longrightarrow>
@@ -560,7 +756,7 @@ lemma shlq_subgoal_rr_generic:
        a2:"list_in_list bl (unat pc) l_bin" and
        a3:"x64_decodes (unat pc) l_bin = Some v" and
        a4:"(BPF_OK pc rs' m' ss' is_v1 (cur_cu+1) remain_cu) = step fuel bins rs m ss is_v1 cur_cu remain_cu" and
-       a5:"Next reg' m' = interp2 (unat pc) xins (Next reg m) " and
+       a5:"Next reg' m' = interp3 xins (Next reg m) " and
        a6:"(\<forall> r. Vlong (rs r) = reg (IR (bpf_to_x64_reg r)))" and
        a7:"(bpf_to_x64_reg dst) \<noteq> x64Syntax.RCX" and
        a8:"xins = map snd v"

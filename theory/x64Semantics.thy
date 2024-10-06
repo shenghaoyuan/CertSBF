@@ -322,8 +322,8 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 
 
 fun interp2 :: "nat \<Rightarrow> instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
-"interp2 0 _ _ = Stuck" |
 "interp2 _ [] s = s" |
+"interp2 0 _ _ = Stuck" |
 "interp2 (Suc n) (ins#l) st = (
   case st of
   Stuck \<Rightarrow> Stuck |
@@ -331,7 +331,18 @@ fun interp2 :: "nat \<Rightarrow> instruction list \<Rightarrow> outcome \<Right
         interp2 n l (exec_instr ins 1 rs m)
 ))"
 
-value "interp2 3  [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX] s"
+
+fun interp3 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp3 [] s = s" |
+"interp3 (ins#l) st = (
+  case st of
+  Stuck \<Rightarrow> Stuck |
+  Next rs m \<Rightarrow> (
+        interp3 l (exec_instr ins 1 rs m)
+))"
+
+value "interp2 3 [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX] s"
+value "interp2 0 [] s"
 
 
 fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
