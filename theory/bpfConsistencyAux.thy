@@ -537,7 +537,7 @@ qed
 lemma shift_subgoal_rr_aux1_1:"Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> length xins = (2::nat) \<Longrightarrow> \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')  "
   using interp3_aux5 by simp
 
-lemma shift_subgoal_rr_aux2_1:"xins = Pmovq_rr src (x64Syntax.RCX) \<Longrightarrow> 
+lemma shift_subgoal_rr_aux2_1:"xins = Pmovq_rr (x64Syntax.RCX) src  \<Longrightarrow> 
     Next reg'' m'' = (exec_instr xins 1 reg m) \<Longrightarrow> m'' = m "
   apply(unfold exec_instr_def) by simp
 
@@ -546,7 +546,7 @@ lemma shift_subgoal_rr_aux2_2:"xins = Pshlq_r dst \<Longrightarrow>
   apply(unfold exec_instr_def) by simp
 
 lemma shift_subgoal_rr_aux2_3:
-  assumes a0:"xins = [(Pmovq_rr src (x64Syntax.RCX)),(Pshlq_r dst)]" and 
+  assumes a0:"xins = [(Pmovq_rr (x64Syntax.RCX) src),(Pshlq_r dst)]" and 
     a1:"Next reg' m' = (exec_instr (xins!0) 1 reg m) " and
     a2:"Next reg'' m'' = (exec_instr (xins!1) 1 reg' m') " 
   shows " m'' = m"
@@ -554,7 +554,7 @@ lemma shift_subgoal_rr_aux2_3:
   by (metis One_nat_def a0 a1 a2 nth_Cons_0 nth_Cons_Suc)
 
 lemma shift_subgoal_rr_aux2:
-  assumes a0:"xins = [(Pmovq_rr src (x64Syntax.RCX)),(Pshlq_r dst)]" and 
+  assumes a0:"xins = [(Pmovq_rr (x64Syntax.RCX) src),(Pshlq_r dst)]" and 
     a1:"Next reg'' m'' = interp3 xins (Next reg m) " 
   shows " m'' = m"
 proof-
@@ -563,11 +563,11 @@ proof-
     by (meson shift_subgoal_rr_aux1_1)
 qed
 
-lemma reg_rsp_consist:"dst = (bpf_to_x64_reg r) \<Longrightarrow> dst \<noteq> x64Syntax.RSP"
-  apply(cases r) 
+lemma reg_rsp_consist:"r = (bpf_to_x64_reg dst) \<Longrightarrow> r \<noteq> x64Syntax.RSP"
+  apply(cases dst) 
   by (unfold bpf_to_x64_reg_corr bpf_to_x64_reg_def, simp_all)
 
-lemma shift_subgoal_rr_aux3_1:"xins = Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX) \<Longrightarrow> 
+lemma shift_subgoal_rr_aux3_1:"xins = Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src)\<Longrightarrow> 
     Next reg'' m'' = (exec_instr xins 1 reg m) \<Longrightarrow> reg'' (IR SP) = reg (IR SP) "
   apply(unfold exec_instr_def reg_rsp_consist bpf_to_x64_reg_corr) 
   using nextinstr_def reg_rsp_consist by fastforce
@@ -576,13 +576,18 @@ lemma shift_subgoal_rr_aux3_2:"xins = Pshlq_r (bpf_to_x64_reg dst) \<Longrightar
     Next reg'' m'' = (exec_instr xins 1 reg m) \<Longrightarrow> reg'' (IR SP) = reg (IR SP) "
   apply(unfold exec_instr_def reg_rsp_consist bpf_to_x64_reg_corr)
   apply(cases xins, simp_all)
-  apply(unfold nextinstr_def reg_rsp_consist shl64_def)
+  apply(unfold nextinstr_def reg_rsp_consist shl64_def nextinstr_nf_def reg_rsp_consist)
   apply(cases "reg (IR (bpf_to_x64_reg dst))",simp_all)
+      apply metis
+  subgoal for x2 apply (simp add:add64_def)sorry
+  subgoal for x3 apply (simp add:add64_def) sorry
+  subgoal for x4 apply (simp add:add64_def) sorry
+  subgoal for x5 apply (simp add:add64_def) 
+    using reg_rsp_consist by blast
   (* no dealing with Vundef ? *)
-  sorry
-
+  done
 lemma shift_subgoal_rr_aux3_3:
-  assumes a0:"xins = [(Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)),(Pshlq_r (bpf_to_x64_reg dst))]" and 
+  assumes a0:"xins = [(Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src)),(Pshlq_r (bpf_to_x64_reg dst))]" and 
     a1:"Next reg' m' = (exec_instr (xins!0) 1 reg m) " and
     a2:"Next reg'' m'' = (exec_instr (xins!1) 1 reg' m') " 
   shows " reg'' (IR SP) = reg (IR SP) "
@@ -590,7 +595,7 @@ lemma shift_subgoal_rr_aux3_3:
   by (metis One_nat_def a0 a1 a2 nth_Cons_0 nth_Cons_Suc)
 
 lemma shift_subgoal_rr_aux3:
-  assumes a0:"xins = [(Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX)),(Pshlq_r (bpf_to_x64_reg dst))]" and 
+  assumes a0:"xins = [(Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src)),(Pshlq_r (bpf_to_x64_reg dst))]" and 
     a1:"Next reg'' m'' = interp3 xins (Next reg m) " 
   shows "reg'' (IR SP) = reg (IR SP)"
 proof-
@@ -600,8 +605,8 @@ proof-
 qed
 
 lemma push_pop_subgoal_rr_aux1:
-  assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX]" and 
-          a1:"result = (exec_instr (xins!0) 1 reg m)"
+  assumes a0:"hd xins = Ppushl_r x64Syntax.RCX" and 
+          a1:"result = (exec_instr (hd xins) 1 reg m)"
         shows "result = Next reg' m' \<longrightarrow> storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None"
 proof (rule ccontr)
   assume a2:"\<not> (result = Next reg' m' \<longrightarrow> storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None)"
@@ -670,7 +675,6 @@ lemma push_pop_subgoal_rr_aux2_3:
           a2:"interp3 (butlast(tl xins)) (Next reg' m') = Next reg2 m'"and
           a3:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m') " and
           (*a3:"Next reg'' m'' = interp3 xins (Next reg m)" and*)
-          a4:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None " and
           a5:"Next reg' m' = (exec_instr (xins!0) 1 reg m) " and
           a6:"reg' (IR SP) =  reg2 (IR SP)"
   shows "reg'' (IR x64Syntax.RCX) = reg (IR x64Syntax.RCX)"
@@ -679,7 +683,7 @@ proof-
   have "xins = [Ppushl_r x64Syntax.RCX]@?midlist@[Ppopl x64Syntax.RCX]" using a0 a1
     by (metis append_Cons append_Nil append_butlast_last_id hd_Nil_eq_last instruction.distinct(5787) last_ConsL last_tl list.collapse)
   have b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR x64Syntax.RCX))" using exec_instr_def a0 
-    using a4 exec_push_def a5 a0 
+    using exec_push_def a5 a0 
     by (smt (z3) a1 hd_Nil_eq_last hd_conv_nth instruction.distinct(5787) instruction.simps(6295))
   (*then obtain reg' m' where b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR x64Syntax.RCX))" by blast*)
   have b1:"Next reg' m' =
@@ -689,7 +693,10 @@ proof-
           ((undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))))
            (RIP := add64 (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))) RIP) (Vlong ((1::64 word) + (1::64 word)))))
           x) " using b0 nextinstr_nf_def nextinstr_def exec_push_def by metis
-  have b2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX))= Some m'" using b1 a4 by auto
+  have b2_1:"(exec_instr (xins!0) 1 reg m) = Next reg' m' \<longrightarrow> storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None" using push_pop_subgoal_rr_aux1 a0 a1 
+    by (metis b1 option.case(1) outcome.simps(3))
+  have b2_2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None" using b2_1 a5 by simp
+  have b2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX))= Some m'" using b1 b2_2 by auto
   have b3:"reg' (IR SP) = sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)" using b1 b2 by auto
   let "?sp" = "reg' (IR SP)"
   have b4:"storev M32 m (reg' (IR SP)) (reg (IR ireg.RCX)) = Some m'" using b2 b3 by simp
@@ -714,18 +721,17 @@ qed
 
 
 lemma shift_subgoal_rr_aux4_1:
-  assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" and 
-    a1:"Next reg'' m'' = interp3 xins (Next reg m)" and
-    a2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None "
+  assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" and 
+    a1:"Next reg'' m'' = interp3 xins (Next reg m)" 
   shows "reg'' (IR x64Syntax.RCX) = reg (IR x64Syntax.RCX)"
 proof-
   have a3:"hd xins = Ppushl_r x64Syntax.RCX" using a0 by simp
   have a4:"last xins = Ppopl x64Syntax.RCX" using a0 by simp
-  have b0:"(butlast(tl xins)) = [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX),Pshlq_r (bpf_to_x64_reg dst)]" using a0 by simp
-  let ?midlist = "[ Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX),Pshlq_r (bpf_to_x64_reg dst)]"
+  have b0:"(butlast(tl xins)) = [Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst)]" using a0 by simp
+  let ?midlist = "[ Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src) ,Pshlq_r (bpf_to_x64_reg dst)]"
   have b1:"\<exists> reg' m'. Next reg' m' = exec_push 1 M32 m reg (reg (IR x64Syntax.RCX))" using exec_instr_def a0 
     using a1 exec_push_def a0 
-    using a2 by fastforce
+    by (smt (verit, del_insts) instruction.simps(6295) interp3.simps(2) option.case_eq_if outcome.case(2) outcome.simps(4))
   then obtain reg' m' where b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR x64Syntax.RCX))" by blast
   have b2:"\<exists> reg2 m2. interp3 ?midlist (Next reg' m') = Next reg2 m2" sorry
   then obtain reg2 m2 where b3:"interp3 ?midlist (Next reg' m') = Next reg2 m2" by auto
@@ -734,38 +740,61 @@ proof-
   have b6:"Next reg' m' = (exec_instr (xins!0) 1 reg m) " using a0 by (simp add: b0 exec_instr_def)
   have b7:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m2)" sorry
   have b8:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m')" using b7 b4 by simp
-  thus ?thesis using a3 a4 b4 b5 b6 b8 a2 a1 push_pop_subgoal_rr_aux2_3
+  thus ?thesis using a3 a4 b4 b5 b6 b8 a1 push_pop_subgoal_rr_aux2_3
     by (metis a0 b3 butlast.simps(2) list.distinct(1) list.sel(3))
 qed
 
-lemma shift_subgoal_rr_aux4_2:"xins = Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX) \<Longrightarrow> 
+lemma shift_subgoal_rr_aux4_2:"xins = Pmovq_rr (x64Syntax.RCX) src \<Longrightarrow> 
     Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
-    \<forall> r . r \<notin> {x64Syntax.RCX} \<longrightarrow> reg' (IR r) = reg (IR r)"
+    \<forall> r . r \<noteq> x64Syntax.RCX \<longrightarrow> reg' (IR r) = reg (IR r)"
   apply(unfold exec_instr_def )
   apply(cases xins, simp_all)
-  apply(unfold nextinstr_def add64_def)
-  apply(cases "(reg(IR src := reg (IR ireg.RCX))) RIP", simp_all)
-  sorry
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def)
+  by auto
 
-lemma shift_subgoal_rr_aux4_2:"xins = [Pmovq_rr src (x64Syntax.RCX),Pshlq_r dst] \<Longrightarrow> 
+lemma  shift_subgoal_rr_aux4_3:"xins = Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src) \<Longrightarrow> 
+    Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
+    \<forall> r. bpf_to_x64_reg r \<noteq> x64Syntax.RCX \<longrightarrow> reg' (IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))"
+  apply(unfold exec_instr_def )
+  apply(cases xins, simp_all)
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def)
+  by simp
+
+lemma shift_subgoal_rr_aux4_4:"xins = Pshlq_r dst \<Longrightarrow> 
+    Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
+    \<forall> r . r \<noteq> dst \<longrightarrow> reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def )
+  apply(cases xins, simp_all)
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def)
+  by auto
+
+lemma  shift_subgoal_rr_aux4_5:"xins = Pshlq_r (bpf_to_x64_reg dst) \<Longrightarrow> 
+    Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
+    \<forall> r \<noteq> dst. reg' (IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))"
+  apply(unfold exec_instr_def )
+  apply(cases xins, simp_all)
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def)
+  by simp
+
+lemma shift_subgoal_rr_aux4_6:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX] \<Longrightarrow> 
     Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> 
-    \<forall> r . r \<notin> {dst, x64Syntax.RCX} \<longrightarrow> reg' (IR r) = reg (IR r)"
-  sorry
+    \<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX} \<longrightarrow> reg'' (IR r) = reg (IR r)"
+  using shift_subgoal_rr_aux4_5 shift_subgoal_rr_aux4_3 shift_subgoal_rr_aux1_1 sorry
 
-lemma shift_subgoal_rr_aux4_2:"xins = [Pmovq_rr src (x64Syntax.RCX),Pshlq_r dst] \<Longrightarrow> 
-    Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> 
-    \<forall> r . r \<notin> {dst, x64Syntax.RCX} \<longrightarrow> reg' (IR r) = reg (IR r)"
-  sorry
-
-lemma shift_subgoal_rr_aux4:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr src (x64Syntax.RCX),Pshlq_r dst,Ppopl x64Syntax.RCX] \<Longrightarrow> 
-    Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> 
-    \<forall> r\<noteq>dst. reg'' (IR r) = reg (IR r)"
-  sorry
-
+lemma shift_subgoal_rr_aux4:
+  assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src) ,Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX] " and
+    a1:"Next reg'' m'' = interp3 xins (Next reg m) " 
+  shows" \<forall> r \<noteq> dst. reg'' (IR  (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))"
+proof-
+  have b0:"reg'' (IR x64Syntax.RCX) = reg (IR x64Syntax.RCX)" using a0 a1 shift_subgoal_rr_aux4_1 by simp
+  have b1:"\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX} \<longrightarrow> reg'' (IR r) = reg (IR r)" using shift_subgoal_rr_aux4_6 a0 a1 by simp
+  have b2:"\<forall> r . r \<noteq> (bpf_to_x64_reg dst) \<longrightarrow> reg'' (IR r) = reg (IR r)" using b0 b1 by auto
+  thus ?thesis using b2 by simp
+qed
 
 lemma shift_subgoal_rr_aux5:
      "bins = BPF_ALU64 BPF_LSH dst (SOReg src) \<Longrightarrow>
-     xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr ri (x64Syntax.RCX),Pshlq_r rd,Ppopl x64Syntax.RCX] \<Longrightarrow>
+     xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) ri,Pshlq_r rd,Ppopl x64Syntax.RCX] \<Longrightarrow>
      (BPF_OK pc rs' m' ss' is_v1 (cur_cu+1) remain_cu) = step fuel bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
      Next reg' m' = interp3 xins (Next reg m) \<Longrightarrow>
      rd = (bpf_to_x64_reg dst) \<Longrightarrow>
@@ -826,9 +855,9 @@ lemma shlq_subgoal_rr_generic:
        a8:"xins = map snd v"
   shows "(\<forall> r. Vlong (rs' r) = reg' (IR (bpf_to_x64_reg r)))"
 proof -
-  have b:"Some bl = x64_encodes_suffix [Ppushl_r x64Syntax.RCX, Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" 
+  have b:"Some bl = x64_encodes_suffix [Ppushl_r x64Syntax.RCX, Pmovq_rr(x64Syntax.RCX) (bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" 
     using a0 a1 a7 per_jit_shift_reg64_def by simp
-  moreover have b0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" 
+  moreover have b0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" 
     using x64_encodes_decodes_consistency per_jit_shift_reg64_def a1 a2 a3 
     using a8 calculation by presburger
     moreover have b1:"Vlong (rs dst) = reg (IR (bpf_to_x64_reg dst))" using a6 spec by simp
