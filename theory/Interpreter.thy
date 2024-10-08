@@ -59,10 +59,10 @@ datatype bpf_state =
 definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
-definition init_bpf_state :: "mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
-"init_bpf_state m n v =
+definition init_bpf_state :: "reg_map \<Rightarrow>mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
+"init_bpf_state rs m n v =
   BPF_OK 0
-    (init_reg_map#BR10 <--
+    (rs#BR10 <--
       (MM_STACK_START + (stack_frame_size * max_call_depth)))
     m init_stack_state v init_func_map 0 n"
 
@@ -650,11 +650,26 @@ definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
 definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
 "u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
+definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
+" intlist_to_reg_map l = ( \<lambda> r.
+    case r of BR0 \<Rightarrow> of_int (l!0) |
+              BR1 \<Rightarrow> of_int (l!1) |
+              BR2 \<Rightarrow> of_int (l!2) |
+              BR3 \<Rightarrow> of_int (l!3) |
+              BR4 \<Rightarrow> of_int (l!4) |
+              BR5 \<Rightarrow> of_int (l!5) |
+              BR6 \<Rightarrow> of_int (l!6) |
+              BR7 \<Rightarrow> of_int (l!7) |
+              BR8 \<Rightarrow> of_int (l!8) |
+              BR9 \<Rightarrow> of_int (l!9) |
+              BR10\<Rightarrow> of_int (l!10)
+)"
+
 definition bpf_interp_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
-"bpf_interp_test lp lm lc v fuel res = (
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
+"bpf_interp_test lp lr lm lc v fuel res = (
   case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
-    (init_bpf_state (u8_list_to_mem (int_to_u8_list lm) )
+    (init_bpf_state (intlist_to_reg_map lr) (u8_list_to_mem (int_to_u8_list lm) )
       (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
   BPF_Success v \<Rightarrow> v = of_int res |
   _ \<Rightarrow> False

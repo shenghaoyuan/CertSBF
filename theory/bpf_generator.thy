@@ -13,7 +13,7 @@ code_printing type_constructor nat \<rightharpoonup> (OCaml) "nat"
   | constant Suc  \<rightharpoonup> (OCaml) "Succ" *)
 
 export_code bpf_interp_test in OCaml
-  module_name Interp_test file_prefix interp_test2
+  module_name Interp_test file_prefix interp_test
 
 (*export_code eval_alu32 in OCaml
   module_name Alu32 file_prefix alu32
