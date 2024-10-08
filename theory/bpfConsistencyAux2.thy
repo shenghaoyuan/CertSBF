@@ -610,4 +610,72 @@ qed
 *)
 
 
+
+lemma run_trans: "\<forall> A B C as bs. interp3 as A  = B \<and> interp3 bs B = C \<longrightarrow> interp3 (as @ bs) A = C"
+  proof-
+  {
+    fix B C as bs
+    have "\<forall> A. interp3 as A  = B \<and> interp3 bs B = C \<longrightarrow> interp3 (as @ bs) A = C"
+      proof(induct as)
+        case Nil then show ?case by simp
+      next
+        case (Cons c cs)
+        assume a0: "\<forall>A. interp3 cs A = B \<and> interp3 bs B = C \<longrightarrow> interp3 (cs @ bs) A = C"
+        show ?case
+          proof-
+            fix A
+            have "interp3 (c # cs) A  = B \<and> interp3 bs B = C \<longrightarrow> interp3 ((c # cs) @ bs) A = C"
+            proof
+              assume b0: "interp3 (c # cs) A = B \<and> interp3 bs B = C"
+
+              from b0 obtain A' where b2: "interp3 [c] A  = A' \<and> interp3 cs A' = B" 
+              proof(cases A)
+                case (Next x11 x12)
+                then show ?thesis sorry
+              next
+                case Stuck
+                then show ?thesis sorry
+              qed
+              with a0 b0 have "interp3 (cs @ bs) A' = C"
+                using local.Cons by blast
+              with b2 show "interp3 ((c # cs) @ bs) A = C" 
+                by simp
+            qed
+          then show ?thesis using a0 by auto
+          qed
+      qed
+  }
+  then show ?thesis by auto
+  qed
+
+
+lemma run_trans: "\<forall> A B C as bs. interp4 as A  = B \<and> interp4 bs B = C \<longrightarrow> interp4 (as @ bs) A = C"
+  proof-
+  {
+    fix B C as bs
+    have "\<forall> A. interp4 as A  = B \<and> interp4 bs B = C \<longrightarrow> interp4 (as @ bs) A = C"
+      proof(induct as)
+        case Nil then show ?case by simp
+      next
+        case (Cons c cs)
+        assume a0: "\<forall>A. interp4 cs A = B \<and> interp4 bs B = C \<longrightarrow> interp4 (cs @ bs) A = C"
+        show ?case
+          proof-
+            fix A
+            have "interp4 (c # cs) A  = B \<and> interp4 bs B = C \<longrightarrow> interp4 ((c # cs) @ bs) A = C"
+            proof
+              assume b0: "interp4 (c # cs) A = B \<and> interp4 bs B = C"
+              from b0 obtain A' where b2: "interp4 [c] A  = A' \<and> interp4 cs A' = B" by simp
+              with a0 b0 have "interp4 (cs @ bs) A' = C"
+                using local.Cons by blast
+              with b2 show "interp4 ((c # cs) @ bs) A = C" 
+                by simp
+            qed
+          then show ?thesis using a0 by auto
+          qed
+      qed
+  }
+  then show ?thesis by auto
+  qed
+
 end

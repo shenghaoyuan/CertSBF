@@ -535,74 +535,7 @@ proof-
        using a1 a2 by fastforce
    qed
 
-(*
-lemma run_trans: "\<forall> A B C as bs. interp3 as A  = B \<and> interp3 bs B = C \<longrightarrow> interp3 (as @ bs) A = C"
-  proof-
-  {
-    fix B C as bs
-    have "\<forall> A. interp3 as A  = B \<and> interp3 bs B = C \<longrightarrow> interp3 (as @ bs) A = C"
-      proof(induct as)
-        case Nil then show ?case by simp
-      next
-        case (Cons c cs)
-        assume a0: "\<forall>A. interp3 cs A = B \<and> interp3 bs B = C \<longrightarrow> interp3 (cs @ bs) A = C"
-        show ?case
-          proof-
-            fix A
-            have "interp3 (c # cs) A  = B \<and> interp3 bs B = C \<longrightarrow> interp3 ((c # cs) @ bs) A = C"
-            proof
-              assume b0: "interp3 (c # cs) A = B \<and> interp3 bs B = C"
 
-              from b0 obtain A' where b2: "interp3 [c] A  = A' \<and> interp3 cs A' = B" 
-              proof(cases A)
-                case (Next x11 x12)
-                then show ?thesis sorry
-              next
-                case Stuck
-                then show ?thesis sorry
-              qed
-              with a0 b0 have "interp3 (cs @ bs) A' = C"
-                using local.Cons by blast
-              with b2 show "interp3 ((c # cs) @ bs) A = C" 
-                by simp
-            qed
-          then show ?thesis using a0 by auto
-          qed
-      qed
-  }
-  then show ?thesis by auto
-  qed
-
-
-lemma run_trans: "\<forall> A B C as bs. interp4 as A  = B \<and> interp4 bs B = C \<longrightarrow> interp4 (as @ bs) A = C"
-  proof-
-  {
-    fix B C as bs
-    have "\<forall> A. interp4 as A  = B \<and> interp4 bs B = C \<longrightarrow> interp4 (as @ bs) A = C"
-      proof(induct as)
-        case Nil then show ?case by simp
-      next
-        case (Cons c cs)
-        assume a0: "\<forall>A. interp4 cs A = B \<and> interp4 bs B = C \<longrightarrow> interp4 (cs @ bs) A = C"
-        show ?case
-          proof-
-            fix A
-            have "interp4 (c # cs) A  = B \<and> interp4 bs B = C \<longrightarrow> interp4 ((c # cs) @ bs) A = C"
-            proof
-              assume b0: "interp4 (c # cs) A = B \<and> interp4 bs B = C"
-              from b0 obtain A' where b2: "interp4 [c] A  = A' \<and> interp4 cs A' = B" by simp
-              with a0 b0 have "interp4 (cs @ bs) A' = C"
-                using local.Cons by blast
-              with b2 show "interp4 ((c # cs) @ bs) A = C" 
-                by simp
-            qed
-          then show ?thesis using a0 by auto
-          qed
-      qed
-  }
-  then show ?thesis by auto
-  qed
-*)
 lemma shift_subgoal_rr_aux1_1:"Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> length xins = (2::nat) \<Longrightarrow> \<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m) \<and> Next reg'' m'' = (exec_instr (xins!1) 1 reg' m')  "
   using interp3_aux5 by simp
 
@@ -707,7 +640,8 @@ proof -
           ((undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))))
            (RIP := add64 (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))) RIP) (Vlong ((1::64 word) + (1::64 word)))))
           x) " using b0 nextinstr_nf_def nextinstr_def exec_push_def by metis
-  have b2_1:"(exec_instr (xins!0) 1 reg m) = Next reg' m' \<longrightarrow> storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None" using push_pop_subgoal_rr_aux1 a0 a1 by blast
+  have b2_1:"(exec_instr (xins!0) 1 reg m) = Next reg' m' \<longrightarrow> storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None" using push_pop_subgoal_rr_aux1 a0 a1 
+    by (metis b1 option.case(1) outcome.simps(3))
   have b2_2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX)) \<noteq> None" using b2_1 a1 by simp
   have b2:"storev M32 m (sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)) (reg (IR ireg.RCX))= Some m'" using b1 b2_2 by auto
   have b3:"reg' (IR SP) = sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)" using b1 b2 by auto
@@ -825,8 +759,6 @@ proof-
     by (metis a0 b3 butlast.simps(2) list.distinct(1) list.sel(3))
 qed
 
-
-
 lemma shift_subgoal_rr_aux4_2:"xins = Pmovq_rr (x64Syntax.RCX) src \<Longrightarrow> 
     Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
     \<forall> r . r \<noteq> x64Syntax.RCX \<longrightarrow> reg' (IR r) = reg (IR r)"
@@ -859,10 +791,67 @@ lemma  shift_subgoal_rr_aux4_5:"xins = Pshlq_r (bpf_to_x64_reg dst) \<Longrighta
   apply(unfold nextinstr_nf_def nextinstr_def add64_def)
   by simp
 
-lemma shift_subgoal_rr_aux4_6:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX] \<Longrightarrow> 
-    Next reg'' m'' = interp3 xins (Next reg m) \<Longrightarrow> 
-    \<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX} \<longrightarrow> reg'' (IR r) = reg (IR r)"
-  using shift_subgoal_rr_aux4_5 shift_subgoal_rr_aux4_3 shift_subgoal_rr_aux1_1 sorry
+
+lemma  shift_subgoal_rr_aux4_8:"xins = Ppushl_r x64Syntax.RCX \<Longrightarrow> 
+    Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
+    \<forall> r. r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX, x64Syntax.RSP} \<longrightarrow> reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def )
+  apply(cases xins, simp_all)
+  apply(unfold  exec_push_def nextinstr_nf_def nextinstr_def sub64_def Let_def)
+  apply(cases "reg (IR SP)",simp_all)
+      apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+  subgoal for x2 apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+    done
+ subgoal for x3 apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+   done
+subgoal for x4 apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+  done
+  subgoal for x5 apply(cases "vlong_of_memory_chunk M32",simp_all)
+        apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+subgoal for x4 apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+  done
+subgoal for x3 apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+  done
+subgoal for x3 apply(cases "storev M32 m Vundef (reg (IR ireg.RCX))",simp_all)
+  done
+subgoal for x5a apply(cases "storev M32 m (Vlong (x5 - x5a)) (reg (IR ireg.RCX))",simp_all)
+  done
+  done
+  done
+
+lemma  shift_subgoal_rr_aux4_9:"xins = Ppopl x64Syntax.RCX \<Longrightarrow> 
+    Next reg' m' = (exec_instr xins 1 reg m)\<Longrightarrow> 
+    \<forall> r. r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX, x64Syntax.RSP} \<longrightarrow> reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def )
+  apply(cases xins, simp_all)
+  apply(unfold exec_pop_def nextinstr_nf_def nextinstr_def sub64_def Let_def)
+  apply(cases "loadv M32 m (reg (IR SP))",simp_all)
+  done
+
+lemma shift_subgoal_rr_aux4_6:
+  assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src),Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" and 
+    a1:"Next reg'' m'' = interp3 xins (Next reg m)" 
+  shows "\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX, x64Syntax.RSP} \<longrightarrow> reg'' (IR r) = reg (IR r)"
+proof-
+  have b0_1:"\<exists> reg1 m1. Next reg1 m1 = (exec_instr (xins!0) 1 reg m)" using exec_instr_def a0
+    by (metis a1 interp3_aux2 list.distinct(1) outcome.exhaust)
+  then obtain reg1 m1 where b0_2:"Next reg1 m1 = (exec_instr (xins!0) 1 reg m)" using b0_1 by auto
+  have b0:"\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX, x64Syntax.RSP} \<longrightarrow> reg1 (IR r) = reg (IR r)" using a0 b0_2 shift_subgoal_rr_aux4_8 by auto
+  have b1_1:"\<exists> reg2 m2. Next reg2 m2 = (exec_instr (xins!1) 1 reg1 m1)" 
+    by (simp add: a0 exec_instr_def)
+  then obtain reg2 m2 where b1_2:"Next reg2 m2 = (exec_instr (xins!1) 1 reg1 m1)" using b1_1 by auto
+  have b1:"\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX} \<longrightarrow> reg1 (IR r) = reg2 (IR r)" using a0 b1_2  
+    by (metis One_nat_def insertCI nth_Cons_0 nth_Cons_Suc shift_subgoal_rr_aux4_2)
+  have b2_1:"\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" 
+    by (simp add: a0 exec_instr_def)
+  then obtain reg3 m3 where b2_2:"Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" using b1_1 by auto
+  have b2:"\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX} \<longrightarrow> reg3 (IR r) = reg2 (IR r)" using a0 b1_2
+    using b2_2 shift_subgoal_rr_aux4_4 by auto
+  have b3_1:"Next reg'' m'' = (exec_instr (xins!3) 1 reg3 m3)" 
+    sorry
+  have b3:"\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX, x64Syntax.RSP} \<longrightarrow> reg3 (IR r) = reg'' (IR r)" using a0 b3_1 sorry
+  thus ?thesis using b0 b1 b2 b3 by simp
+qed
 
 lemma shift_subgoal_rr_aux4:
   assumes a0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src) ,Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX] " and
@@ -875,7 +864,7 @@ proof-
   thus ?thesis using b2 by simp
 qed
 
-lemma shift_subgoal_rr_aux5_1:
+(*lemma shift_subgoal_rr_aux5_1:
      "bins = BPF_ALU64 BPF_LSH dst (SOReg src) \<Longrightarrow>
      xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) ri,Pshlq_r rd,Ppopl x64Syntax.RCX] \<Longrightarrow>
      (BPF_OK pc rs' m' ss' is_v1 (cur_cu+1) remain_cu) = step fuel bins rs m ss is_v1 cur_cu remain_cu \<Longrightarrow>
@@ -888,7 +877,7 @@ lemma shift_subgoal_rr_aux5_1:
      n2  = rs src \<Longrightarrow> 
      Vlong (rs' dst) = reg' (IR (bpf_to_x64_reg dst))"
   sorry
-
+*)
 lemma shift_subgoal_rr_aux5:
   assumes a0:"bins = BPF_ALU64 BPF_LSH dst (SOReg src)" and
      a1:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) ri,Pshlq_r rd,Ppopl x64Syntax.RCX]" and

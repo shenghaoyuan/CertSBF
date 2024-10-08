@@ -60,7 +60,11 @@ lemma x64_encode_decode_consistency:
 lemma x64_encodes_decodes_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encodes_suffix insns \<Longrightarrow>
     x64_decodes pc l = Some v \<Longrightarrow> insns = map snd v"
-  sorry
+  apply(induct insns,simp_all)
+  subgoal
+    apply(unfold x64_encodes_suffix_def x64_encodes_def x64_decodes_def Let_def, simp_all) 
+    done
+  subgoal for a insns1 apply(unfold x64_encodes_suffix_def x64_encodes_def x64_decodes_def Let_def) 
   (*using  x64_encode_decode_consistency x64_decodes_def x64_encodes_suffix_def x64_encodes_def *)
  (* 
  apply (cases ins; simp_all)
