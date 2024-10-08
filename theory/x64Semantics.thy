@@ -341,6 +341,17 @@ fun interp3 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" wh
         interp3 l (exec_instr ins 1 rs m)
 ))"
 
+
+definition exec_instr2::"instruction \<Rightarrow> outcome \<Rightarrow> outcome" where
+"exec_instr2 ins st = st"
+
+fun interp4 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp4 [] s = s" |
+"interp4 (ins#l) st = (
+        interp4 l (exec_instr2 ins st)
+)"
+
+
 value "interp2 3 [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX] s"
 value "interp2 0 [] s"
 
