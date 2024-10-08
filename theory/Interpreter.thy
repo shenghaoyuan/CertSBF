@@ -675,6 +675,23 @@ definition bpf_interp_test ::
   _ \<Rightarrow> False
 )"
 
+definition int_to_bpf_ireg :: "int \<Rightarrow> bpf_ireg" where
+"int_to_bpf_ireg i = (
+  case u4_to_bpf_ireg (of_int i) of
+  None \<Rightarrow> BR0 |
+  Some v \<Rightarrow> v
+)"
+
+definition step_test ::
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
+"step_test lp lr lm lc v fuel ipc i res = (
+  case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
+    (init_bpf_state (intlist_to_reg_map lr) (u8_list_to_mem (int_to_u8_list lm) )
+      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
+  BPF_OK pc rs _ _ _ _ _ _ \<Rightarrow> (pc = of_int ipc) \<and> (rs (int_to_bpf_ireg i) = of_int res) |
+  _ \<Rightarrow> False
+)"
+
 (*
 value "(of_int (-8613303245920329199::int)::u64)"
 
