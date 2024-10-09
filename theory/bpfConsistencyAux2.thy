@@ -678,4 +678,34 @@ lemma run_trans: "\<forall> A B C as bs. interp4 as A  = B \<and> interp4 bs B =
   then show ?thesis by auto
   qed
 
+
+(*lemma test1:
+  assumes 
+       a1:"Some bl = x64_encode (Porq_rr dst src)" and
+       a2:"list_in_list bl (unat pc) l_bin" and
+       a3:"x64_decode (unat pc) l_bin = Some (length l_bin, xins)"  
+     shows "xins = Porq_rr dst src"
+  using x64_encode_decode_consistency 
+  by (metis a1 a2 a3 option.sel prod.inject)
+
+value "x64_decodes 0 (Option.the(x64_encodes_suffix ([Pmovq_rr x64Syntax.RAX x64Syntax.RBX,Pnop])))"
+value "x64_decodes 0 (Option.the(x64_encodes_suffix ([Pnop,Pnop])))"
+value "map snd [(1::nat,Pnop),(3::nat,Pmovq_rr x64Syntax.RAX x64Syntax.RBX)]"
+
+
+value "x64_encodes_suffix [Pmovq_rr src dst,Pmovq_rr src dst]"
+value "x64_decodes 0 (Option.the(x64_encodes_suffix [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RAX) (x64Syntax.RCX),
+  Pshlq_r (x64Syntax.RBX),Ppopl x64Syntax.RCX]))"
+value "x64_decodes 0 (Option.the(x64_encodes_suffix [Ppushl_r x64Syntax.RCX, Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX),
+Pshlq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]))"
+
+lemma test2:
+  assumes 
+       a1:"Some bl = x64_encodes_suffix [Pnop]" and
+       a2:"list_in_list bl 0 l_bin" and
+       a3:"x64_decodes 0 l_bin = Some v" and
+       a4:"xins = map snd v"  
+     shows "xins = [Pnop]"
+  using x64_encodes_decodes_consistency a1 a2 a3 a4 by simp
+*)
 end

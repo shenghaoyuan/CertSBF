@@ -182,6 +182,7 @@ definition per_jit_mul_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x
  (** 32 bit shift may use REG_SCRACH **)
 definition per_jit_shift_reg64 :: "nat \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_shift_reg64 n dst src = (
+if n \<notin>{4,5,7} then None else
   let opcode = (if n = 4 then Pshlq_r else if n = 5 then Pshrq_r else Psarl_r) in
   let cond1 = ((bpf_to_x64_reg dst) = x64Syntax.RCX);
       ins_prefix = if cond1 then [Ppushl_r (bpf_to_x64_reg src), Pxchgq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src)]
