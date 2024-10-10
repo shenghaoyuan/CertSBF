@@ -685,11 +685,32 @@ definition int_to_bpf_ireg :: "int \<Rightarrow> bpf_ireg" where
 definition step_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
 "step_test lp lr lm lc v fuel ipc i res = (
-  case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
-    (init_bpf_state (intlist_to_reg_map lr) (u8_list_to_mem (int_to_u8_list lm) )
-      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
-  BPF_OK pc rs _ _ _ _ _ _ \<Rightarrow> (pc = of_int ipc) \<and> (rs (int_to_bpf_ireg i) = of_int res) |
-  _ \<Rightarrow> False
+  let prog  = int_to_u8_list lp in
+  let rs    = ((intlist_to_reg_map lr)#BR10 <--
+      (MM_STACK_START + (stack_frame_size * max_call_depth))) in
+  let m     = u8_list_to_mem (int_to_u8_list lm) in
+  let stk   = init_stack_state in
+  let sv    = if v = 1 then V1 else V2 in
+  let fm    = init_func_map in (
+    case bpf_find_instr 0 prog of
+    None \<Rightarrow> False |
+    Some ins0 \<Rightarrow> 
+      let st1 = step 0 ins0 rs m stk sv fm True 0x100000000 0 3 in
+        if length lp = 8 then ( \<comment> \<open> for ALU,branch, memory load \<close>
+          case st1 of
+          BPF_OK pc1 rs1 _ _ _ _ _ _ \<Rightarrow> (pc1 = of_int ipc) \<and> (rs1 (int_to_bpf_ireg i) = of_int res) |
+          _ \<Rightarrow> False )
+        else if length lp = 16 then ( \<comment> \<open> for memory store \<close>
+          case st1 of
+          BPF_OK pc1 rs1 m1 ss1 sv1 fm1 cur_cu1 remain_cu1 \<Rightarrow> (
+            case bpf_find_instr 1 prog of
+            None \<Rightarrow> False |
+            Some ins1 \<Rightarrow> (
+              case step pc1 ins1 rs1 m1 ss1 sv1 fm1 True 0x100000000 1 2 of
+              BPF_OK pc2 rs2 _ _ _ _ _ _ \<Rightarrow> (pc2 = of_int ipc) \<and> (rs2 (int_to_bpf_ireg i) = of_int res) |
+              _ \<Rightarrow> False ) ) |
+          _ \<Rightarrow> False )
+        else False )
 )"
 
 (*
