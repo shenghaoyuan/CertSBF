@@ -1293,7 +1293,7 @@ lemma sarq_subgoal_rr_generic:
   shows "(\<forall> r. Vlong (rs' r) = reg' (IR (bpf_to_x64_reg r)))"
 proof -
   have b:"Some bl = x64_encodes_suffix [Ppushl_r x64Syntax.RCX, Pmovq_rr(x64Syntax.RCX) (bpf_to_x64_reg src),Psarq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" 
-    using a0 a1 a7 per_jit_shift_reg64_def sorry
+    using a0 a1 a7 per_jit_shift_reg64_def by simp
   moreover have b0:"xins = [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX)(bpf_to_x64_reg src),Psarq_r (bpf_to_x64_reg dst),Ppopl x64Syntax.RCX]" 
     using x64_encodes_decodes_consistency per_jit_shift_reg64_def a1 a2 a3 
     using a8 calculation by presburger

@@ -171,23 +171,39 @@ definition per_jit_add_reg64_1 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow>
 
 definition per_jit_mul_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_mul_reg64 dst src = (
-  let cond1 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RAX); cond2 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RDX);
-      ins_prefix = if cond1 then [Ppushl_r x64Syntax.RAX, Pmovq_rr (bpf_to_x64_reg dst) (x64Syntax.RAX)] else [];
+  let cond1 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RAX);
+      ins_prefix = if cond1 then [Ppushl_r x64Syntax.RAX, Pmovq_rr (x64Syntax.RAX) (bpf_to_x64_reg dst)] else [];
       ins = [Pmulq_r (bpf_to_x64_reg src)];
       ins_suffix = if cond1 then [Pmovq_rr (x64Syntax.RAX) (bpf_to_x64_reg dst),Ppopl x64Syntax.RAX] 
                    else [Ppopl x64Syntax.RAX] in 
     x64_encodes_suffix (ins_prefix@ins@ins_suffix)
 )"
 
+definition per_jit_div_and_mod_reg64 :: "bool \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
+"per_jit_div_and_mod_reg64 b dst src = (
+  let op = (if b then Pdivq_r else Pmodq_r) in 
+  let cond1 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RAX); cond2 = ((bpf_to_x64_reg dst) \<noteq> x64Syntax.RDX);
+      ins_prefix1 = if cond1 then [Ppushl_r x64Syntax.RAX, Pmovq_rr (x64Syntax.RAX) (bpf_to_x64_reg dst)] else [];
+      ins_prefix2 = if cond2 then [Ppushl_r x64Syntax.RDX, Pxorq_rr (x64Syntax.RDX) (x64Syntax.RDX)] else [];
+      ins_prefix = ins_prefix1@ins_prefix2 in 
+  let ins = [op (bpf_to_x64_reg src)] in 
+  let ins_suffix1 = if b \<and> cond1 then [Pmovq_rr (bpf_to_x64_reg dst) x64Syntax.RAX] 
+         else if \<not> b \<and> cond2 then [Pmovq_rr (bpf_to_x64_reg dst) x64Syntax.RDX] else [];
+      ins_suffix2 = if cond1 then [Ppopl x64Syntax.RAX] else [];
+      ins_suffix3 = if cond2 then [Ppopl x64Syntax.RDX] else [];
+      ins_suffix = ins_suffix1@ins_suffix2@ins_suffix3 in 
+    x64_encodes_suffix (ins_prefix@ins@ins_suffix)
+)"
+
  (** 32 bit shift may use REG_SCRACH **)
 definition per_jit_shift_reg64 :: "nat \<Rightarrow> bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_shift_reg64 n dst src = (
-if n \<notin>{4,5,7} then None else
-  let opcode = (if n = 4 then Pshlq_r else if n = 5 then Pshrq_r else Psarl_r) in
+  let opcode = (if n = 4 then Some Pshlq_r else if n = 5 then Some Pshrq_r else if n = 7 then Some Psarl_r else None) in
+  if opcode = None then None else
   let cond1 = ((bpf_to_x64_reg dst) = x64Syntax.RCX);
       ins_prefix = if cond1 then [Ppushl_r (bpf_to_x64_reg src), Pxchgq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src)]
                    else [Ppushl_r x64Syntax.RCX, Pmovq_rr (x64Syntax.RCX) (bpf_to_x64_reg src)] ;
-      ins = if cond1 then  [opcode (bpf_to_x64_reg src)] else [opcode (bpf_to_x64_reg dst)];
+      ins = if cond1 then  [(Option.the opcode) (bpf_to_x64_reg src)] else [(Option.the opcode) (bpf_to_x64_reg dst)];
       ins_suffix = if cond1 then [Pmovq_rr (bpf_to_x64_reg src) (x64Syntax.RCX), Ppopl (bpf_to_x64_reg src)] else [Ppopl x64Syntax.RCX] in 
     x64_encodes_suffix (ins_prefix@ins@ins_suffix)
 )"
@@ -240,6 +256,8 @@ fun per_jit_ins ::" u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Ri
   BPF_ALU64 BPF_LSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 4 dst src) |
   BPF_ALU64 BPF_RSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 5 dst src) |
   BPF_ALU64 BPF_ARSH dst (SOReg src) \<Rightarrow> (per_jit_shift_reg64 7 dst src) |
+  BPF_ALU64 BPF_MOD dst (SOReg src) \<Rightarrow> (per_jit_div_and_mod_reg64 False dst src) |
+  BPF_ALU64 BPF_DIV dst (SOReg src) \<Rightarrow> (per_jit_div_and_mod_reg64 True dst src) |
   BPF_LDX chk dst src off  \<Rightarrow> (per_jit_load_reg64 dst src chk off )|
   BPF_JA off \<Rightarrow> per_jit_ja off |
   BPF_JUMP cond dst (SOReg src) ofs \<Rightarrow> per_jit_conditional_jump_reg64 pc cond rs dst src ofs |
