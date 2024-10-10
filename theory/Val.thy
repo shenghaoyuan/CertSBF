@@ -322,10 +322,11 @@ definition divmod64u :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> (
               quotient::u128  = dividend div divisor;
               remainder::u128 = dividend mod divisor
             in
-              if quotient \<le> ucast u64_MAX then
+              Some (Vlong (ucast quotient), Vlong (ucast remainder))
+              \<comment>\<open> if quotient \<le> ucast u64_MAX then
                 Some (Vlong (ucast quotient), Vlong (ucast remainder))
               else
-                None
+                None \<close>
             else
               None
       | _ \<Rightarrow> None)
