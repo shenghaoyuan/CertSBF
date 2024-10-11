@@ -284,25 +284,31 @@ definition bpf_find_instr :: "nat \<Rightarrow> u8 list \<Rightarrow> bpf_instru
   let reg = l!(npc+1) in
   let dst = unsigned_bitfield_extract_u8 0 4 reg in
   let src = unsigned_bitfield_extract_u8 4 4 reg in
-    case u16_of_u8_list [l!(npc+2), l!(npc+3)] of
-    None \<Rightarrow> None |
-    Some off_v \<Rightarrow> (
-      case u32_of_u8_list [l!(npc+4), l!(npc+5), l!(npc+6), l!(npc+7)] of
+    if length l < npc+7 then
+      None
+    else
+      case u16_of_u8_list [l!(npc+2), l!(npc+3)] of
       None \<Rightarrow> None |
-      Some i1 \<Rightarrow>
-        let (off::i16) = scast off_v in
-        let (imm::i32) = scast i1 in
-          if op = 0x18 then
-            case u32_of_u8_list [l!(npc+12), l!(npc+13), l!(npc+14), l!(npc+15)] of
-            None \<Rightarrow> None |
-            Some i2 \<Rightarrow>
-              let (imm2::i32) = scast i2 in (
-                case u4_to_bpf_ireg (ucast dst) of
+      Some off_v \<Rightarrow> (
+        case u32_of_u8_list [l!(npc+4), l!(npc+5), l!(npc+6), l!(npc+7)] of
+        None \<Rightarrow> None |
+        Some i1 \<Rightarrow>
+          let (off::i16) = scast off_v in
+          let (imm::i32) = scast i1 in
+            if op = 0x18 then
+              if length l < npc+15 then
+                None
+              else
+                case u32_of_u8_list [l!(npc+12), l!(npc+13), l!(npc+14), l!(npc+15)] of
                 None \<Rightarrow> None |
-                Some dst_r \<Rightarrow> (
-                  Some (BPF_LD_IMM dst_r imm imm2)))
-          else
-            rbpf_decoder op (ucast dst) (ucast src) off imm
+                Some i2 \<Rightarrow>
+                  let (imm2::i32) = scast i2 in (
+                    case u4_to_bpf_ireg (ucast dst) of
+                    None \<Rightarrow> None |
+                    Some dst_r \<Rightarrow> (
+                      Some (BPF_LD_IMM dst_r imm imm2)))
+            else
+              rbpf_decoder op (ucast dst) (ucast src) off imm
     )
 )"
 

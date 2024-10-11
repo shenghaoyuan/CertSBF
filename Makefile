@@ -17,7 +17,7 @@ code:
 	@echo "SBPF Semantics"
 	cd theory && cloc --force-lang="OCaml" Interpreter.thy InterpreterSafety.thy rBPFDecoder.thy
 	@echo "SBPF Verifier"
-	cd theory && cloc --force-lang="OCaml" vm.thy verifier.thy
+	cd theory && cloc --force-lang="OCaml" vm.thy verifier.thy VerifierSafety.thy
 	@echo "SBPF Assembler-Disassembler"
 	cd theory && cloc --force-lang="OCaml" Assembler.thy ConsistencyCommProof.thy ConsistencyProof.thy ConsistencyProof1.thy ConsistencyProof2.thy Disassembler.thy
 	@echo "SBPF JIT"

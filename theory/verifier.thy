@@ -73,6 +73,8 @@ definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> na
 
   BPF_ST  _ _ _ _  \<Rightarrow> True |
 
+  BPF_ADD_STK _ \<Rightarrow> sbpf_version \<noteq> V1 |
+
   BPF_ALU bop dst sop \<Rightarrow> (
     case bop of
     BPF_MUL \<Rightarrow> if sbpf_version = V1 then True else False |
@@ -93,7 +95,8 @@ definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> na
     BPF_ARSH \<Rightarrow> (
       case sop of
       SOImm i \<Rightarrow> if 0 \<le> i \<and> i < 32 then True else False |
-      SOReg _ \<Rightarrow> True)
+      SOReg _ \<Rightarrow> True) |
+    _ \<Rightarrow> True
   ) |
 
   BPF_NEG32_REG _ \<Rightarrow> if sbpf_version = V1 then True else False |
@@ -127,7 +130,8 @@ definition verify_one :: "bpf_instruction \<Rightarrow> bpf_bin \<Rightarrow> na
     BPF_ARSH \<Rightarrow> (
       case sop of
       SOImm i \<Rightarrow> if 0 \<le> i \<and> i < 64 then True else False |
-      SOReg _ \<Rightarrow> True)
+      SOReg _ \<Rightarrow> True) |
+    _ \<Rightarrow> True
   ) |
 
   BPF_NEG64_REG _ \<Rightarrow> if sbpf_version = V1 then True else False |
@@ -207,11 +211,12 @@ definition check_registers :: "bpf_bin \<Rightarrow> bool \<Rightarrow> nat \<Ri
           False
 )"
 
+(** if pc \<noteq> (len div INSN_SIZE) then False else True  *)
 fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_bin \<Rightarrow> SBPFV \<Rightarrow>
  func_map \<Rightarrow> bool \<Rightarrow> bool" where
 "verifier_aux fuel pc len l sbpf_version fr reject_callx_r10 = (
   case fuel of
-  0 \<Rightarrow> if pc \<noteq> (len div INSN_SIZE) then False else True |
+  0 \<Rightarrow> False |
   Suc n \<Rightarrow> (
     case bpf_find_instr pc l of
     None \<Rightarrow> False |
@@ -230,7 +235,7 @@ fun verifier_aux :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bpf_b
 definition verifier :: "bpf_bin \<Rightarrow> SBPFV \<Rightarrow> func_map \<Rightarrow> bool \<Rightarrow> bool" where
 "verifier l sbpf_version fr reject_callx_r10 = (
   if check_prog_len l then
-    verifier_aux (length l) 0 (length l) l sbpf_version fr reject_callx_r10
+    verifier_aux (length l div INSN_SIZE) 0 (length l div INSN_SIZE) l sbpf_version fr reject_callx_r10
   else
     False
 )"
