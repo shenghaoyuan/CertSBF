@@ -33,3 +33,10 @@ ocamlfind ocamlc -o step -package yojson -linkpkg step_test.cmo step.ml
 
 
 
+#### rbpf
+
+step_test_fixed单个指令测试
+
+step_test_random会生成多个指令并执行测试
+
+ 
