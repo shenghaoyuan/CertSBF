@@ -6,10 +6,6 @@ ocamlc -o test interp_test.cmo test.ml
 ./test
 ```
 
-
-
-
-
 ### step test
 
 首先将step.ml中的文件路径改为正确的路径
