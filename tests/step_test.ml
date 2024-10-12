@@ -2364,81 +2364,98 @@ let rec eval_snd_op_i64
               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
           (rs r);;
 
+
+let rec num_to_int (n: num) : int64 =
+  match n with
+  | One -> 1L
+  | Bit0 m -> Int64.mul 2L (num_to_int m)
+  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
+
+let myint_to_int (mi: myint) : int64 =
+  match mi with
+  | Zero_int -> 0L
+  | Pos n -> num_to_int n
+  | Neg n -> Int64.neg (num_to_int n)
+
+let rec num_of_int (n: int64) =
+  if n = 1L then One
+  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
+  else Bit1 (num_of_int (Int64.div n 2L))
+
+
+let int_of_standard_int (n: int64) =
+  if n = 0L then Zero_int
+  else if n > 0L then  Pos (num_of_int (n))
+  else Neg (num_of_int (Int64.sub 0L n))
+
+let int_list_of_standard_int_list lst =
+  List.map int_of_standard_int lst
+
+let rec dvd (_A1, _A2)
+  a b = eq _A1
+          (modulo
+            _A2.semiring_modulo_trivial_semidom_modulo.semiring_modulo_semiring_modulo_trivial.modulo_semiring_modulo
+            b a)
+          (zero _A2.algebraic_semidom_semidom_modulo.semidom_divide_algebraic_semidom.semidom_semidom_divide.comm_semiring_1_cancel_semidom.comm_semiring_1_comm_semiring_1_cancel.semiring_1_comm_semiring_1.semiring_0_semiring_1.mult_zero_semiring_0.zero_mult_zero);;
+
+let rec rust_srem
+  a b = (if equal_inta b Zero_int then None
+          else (if dvd (equal_int, semidom_modulo_int) b a then Some Zero_int
+                 else (if less_int Zero_int a && less_int b Zero_int
+                        then Some (modulo_inta a (uminus_inta b))
+                        else (if less_int a Zero_int && less_int Zero_int b
+                               then Some (uminus_inta
+   (modulo_inta (uminus_inta a) b))
+                               else None))));;
+
+let rec rust_sdiv
+  a b = (if equal_inta b Zero_int then None
+          else (if dvd (equal_int, semidom_modulo_int) b a
+                 then Some (divide_inta a b)
+                 else (let c = divide_inta a b in
+                        (if less_int Zero_int c then Some c
+                          else Some (plus_inta c one_inta)))));;
+
 let rec eval_pqr64_aux2
   pop dst sop rs =
     (let dv =
-       signed_cast
+       the_signed_int
          (len_bit0
            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+         (eval_reg dst rs)
+       in
+     let sv =
+       the_signed_int
          (len_signed
            (len_bit0
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-         (eval_reg dst rs)
+         (eval_snd_op_i64 sop rs)
        in
-     let sv = eval_snd_op_i64 sop rs in
       (match pop with BPF_LMUL -> OKN | BPF_UDIV -> OKN | BPF_UREM -> OKN
         | BPF_SDIV ->
-          (if equal_word
-                (len_signed
-                  (len_bit0
-                    (len_bit0
-                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                sv (zero_word
-                     (len_signed
-                       (len_bit0
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+          (if equal_inta sv Zero_int
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
-                               (len_bit0
-                                 (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (divide_word
-                           (len_signed
+            else (match rust_sdiv dv sv with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
                              (len_bit0
                                (len_bit0
                                  (len_bit0
-                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                           dv sv))))
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                             res))))
         | BPF_SREM ->
-          (if equal_word
-                (len_signed
-                  (len_bit0
-                    (len_bit0
-                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                sv (zero_word
-                     (len_signed
-                       (len_bit0
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+          (if equal_inta sv Zero_int
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
-                               (len_bit0
-                                 (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (modulo_word
-                           (len_signed
+            else (match rust_srem dv sv with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
                              (len_bit0
                                (len_bit0
                                  (len_bit0
-                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                           dv sv))))));;
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                             res))))));;
 
 let rec eval_pqr64_aux1
   pop dst sop rs =
@@ -5084,32 +5101,6 @@ let rec less_nat m x1 = match m, x1 with m, Suc n -> less_eq_nat m n
 and less_eq_nat x0 n = match x0, n with Suc m, n -> less_nat m n
                   | Zero_nat, n -> true;;
 
-
-let rec num_to_int (n: num) : int64 =
-  match n with
-  | One -> 1L
-  | Bit0 m -> Int64.mul 2L (num_to_int m)
-  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
-
-let myint_to_int (mi: myint) : int64 =
-  match mi with
-  | Zero_int -> 0L
-  | Pos n -> num_to_int n
-  | Neg n -> Int64.neg (num_to_int n)
-
-let rec num_of_int (n: int64) =
-  if n = 1L then One
-  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
-  else Bit1 (num_of_int (Int64.div n 2L))
-
-
-let int_of_standard_int (n: int64) =
-  if n = 0L then Zero_int
-  else if n > 0L then  Pos (num_of_int (n))
-  else Neg (num_of_int (Int64.sub 0L n))
-
-let int_list_of_standard_int_list lst =
-  List.map int_of_standard_int lst
 
 let print_regmap rs =
   let reg_list = [("R0", BR0); ("R1", BR1); ("R2", BR2); ("R3", BR3);

@@ -329,15 +329,79 @@ definition eval_pqr64_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   _ \<Rightarrow> OKN   
 )))"
 
+(*
+value "sint (0x99addc7fdd190ac8::i64)"
+value "sint (0x543727b::i64)"
+value "(sint (0x99addc7fdd190ac8::i64)) div sint (0x543727b::i64)"
+value "0x1d32844580::i64"
+value "0xFFFFFFEC8F679312::i64" 
+value "(-(11::int)) div (10::int)"
+value "(-(15::int)) div (10::int)"
+value "(-(19::int)) div (10::int)"
+value "((11::int)) div (10::int)"
+value "((11::int)) div (10::int)"
+value "((15::int)) div (10::int)"
+value "((19::int)) div (10::int)"
+
+value "((-20::int)) mod (10::int)"
+value "(-(11::int)) mod (10::int)"
+value "(-(15::int)) mod (10::int)"
+value "(0::int) mod (10::int)"
+value "(0::int) mod (-10::int)"
+value "(-(19::int)) mod (10::int)"
+value "((19::int)) mod (-10::int)"
+value "(-(19::int)) mod (0::int)"
+value "((19::int)) mod (-0::int)"
+value "((11::int)) mod (10::int)"
+value "((11::int)) mod (10::int)"
+value "((15::int)) mod (10::int)"
+value "((19::int)) mod (10::int)"
+value "((-20::int)) mod (10::int)" *)
+
+definition rust_sdiv :: "int \<Rightarrow> int \<Rightarrow> int option" where
+"rust_sdiv a b = (
+  if b = 0 then None
+  else if b dvd a then
+    Some (a div b)
+  else 
+    let c = a div b in
+      if c > 0 then Some c else Some (c + 1))"
+
+definition rust_srem :: "int \<Rightarrow> int \<Rightarrow> int option" where
+"rust_srem a b = (
+  if b = 0 then None
+  else if (b dvd a) then
+    Some 0
+  else if a > 0 \<and> b < 0 then
+    Some (a mod (-b))
+  else if a < 0 \<and> b > 0 then
+    Some (- ((-a) mod b))
+  else
+    None)"
+
 definition eval_pqr64_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_pqr64_aux2 pop dst sop rs = (
-  let dv :: i64 = scast (eval_reg dst rs) in (
-  let sv :: i64 = eval_snd_op_i64 sop rs in (
+  let dv :: int = sint (eval_reg dst rs) in (
+  let sv :: int = sint (eval_snd_op_i64 sop rs) in (
   case pop of
-  BPF_SDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv div sv))) | 
-  BPF_SREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
+  BPF_SDIV \<Rightarrow>
+    if sv = 0 then (
+      case sop of
+      SOImm _ \<Rightarrow> NOK |
+      _ \<Rightarrow> OKN)
+    else (
+      case rust_sdiv dv sv of
+      None \<Rightarrow> NOK |
+      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))) | 
+  BPF_SREM \<Rightarrow>
+    if sv = 0 then (
+      case sop of
+      SOImm _ \<Rightarrow> NOK |
+      _ \<Rightarrow> OKN)
+    else (
+      case rust_srem dv sv of
+      None \<Rightarrow> NOK |
+      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))) |
   _ \<Rightarrow> OKN  
 )))"
 

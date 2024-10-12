@@ -24,6 +24,7 @@ ocaml_in2用于单个测试，ocaml_in1用于多个测试
 
 ```
 opam install ocamlfind
+opam install yojson
 eval $(opam env)
 
 ocamlc -c step_test.ml
