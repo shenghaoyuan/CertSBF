@@ -1164,6 +1164,35 @@ let rec or_word _A v w = Word (or_int (the_int _A v) (the_int _A w));;
 let rec cast _B _A
   w = Word (take_bit_int (len_of _A.len0_len Type) (the_int _B w));;
 
+
+
+let rec num_to_int (n: num) : int64 =
+  match n with
+  | One -> 1L
+  | Bit0 m -> Int64.mul 2L (num_to_int m)
+  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
+
+let myint_to_int (mi: myint) : int64 =
+  match mi with
+  | Zero_int -> 0L
+  | Pos n -> num_to_int n
+  | Neg n -> Int64.neg (num_to_int n)
+
+let rec num_of_int (n: int64) =
+  if n = 1L then One
+  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
+  else Bit1 (num_of_int (Int64.div n 2L))
+
+
+let int_of_standard_int (n: int64) =
+  if n = 0L then Zero_int
+  else if n > 0L then  Pos (num_of_int (n))
+  else Neg (num_of_int (Int64.sub 0L n))
+
+let int_list_of_standard_int_list lst =
+  List.map int_of_standard_int lst
+
+
 let rec option_u64_of_u8_8
   v0 v1 v2 v3 v4 v5 v6 v7 = let _ = print_endline("happy 00") in
     (match v0 with None -> let _ = print_endline("happy 11") in None
@@ -1459,8 +1488,11 @@ let rec loadv
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                    (Pos (Bit1 One)))))
         | M64 -> let _ = print_endline("happy 5") in
-          option_u64_of_u8_8 (m addr)
-            (m (plus_word
+        let v0 = (m addr) in  let _ = print_endline("h0") in let _ =  Printf.printf "PC: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        addr)) in
+        let v1 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1468,8 +1500,8 @@ let rec loadv
                  (one_worda
                    (len_bit0
                      (len_bit0
-                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))))
-            (m (plus_word
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))) in  let _ = print_endline("h1") in
+          let v2 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1478,8 +1510,8 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   (Pos (Bit0 One)))))
-            (m (plus_word
+                   (Pos (Bit0 One))))) in let _ = print_endline("h2") in
+          let v3 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1488,8 +1520,8 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   (Pos (Bit1 One)))))
-            (m (plus_word
+                   (Pos (Bit1 One))))) in let _ = print_endline("h3") in
+          let v4 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1498,8 +1530,8 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   (Pos (Bit0 (Bit0 One))))))
-            (m (plus_word
+                   (Pos (Bit0 (Bit0 One)))))) in let _ = print_endline("h4") in
+          let v5 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1508,8 +1540,8 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   (Pos (Bit1 (Bit0 One))))))
-            (m (plus_word
+                   (Pos (Bit1 (Bit0 One)))))) in let _ = print_endline("h5") in
+          let v6 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1518,8 +1550,8 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   (Pos (Bit0 (Bit1 One))))))
-            (m (plus_word
+                   (Pos (Bit0 (Bit1 One)))))) in let _ = print_endline("h6") in
+          let v7 = (m (plus_word
                  (len_bit0
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1528,7 +1560,8 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   (Pos (Bit1 (Bit1 One)))))));;
+                   (Pos (Bit1 (Bit1 One)))))) in let _ = print_endline("h7") in
+          option_u64_of_u8_8 v0 v1 v2 v3 v4 v5 v6 v7);;
 
 let rec equal_word _A v w = equal_inta (the_int _A v) (the_int _A w);;
 
@@ -5166,32 +5199,6 @@ let rec bpf_find_instr
                                   (len_bit0 (len_bit0 len_num1)) src)
                                 off imm))))));;
 
-let rec num_to_int (n: num) : int64 =
-  match n with
-  | One -> 1L
-  | Bit0 m -> Int64.mul 2L (num_to_int m)
-  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
-
-let myint_to_int (mi: myint) : int64 =
-  match mi with
-  | Zero_int -> 0L
-  | Pos n -> num_to_int n
-  | Neg n -> Int64.neg (num_to_int n)
-
-let rec num_of_int (n: int64) =
-  if n = 1L then One
-  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
-  else Bit1 (num_of_int (Int64.div n 2L))
-
-
-let int_of_standard_int (n: int64) =
-  if n = 0L then Zero_int
-  else if n > 0L then  Pos (num_of_int (n))
-  else Neg (num_of_int (Int64.sub 0L n))
-
-let int_list_of_standard_int_list lst =
-  List.map int_of_standard_int lst
-
 let print_regmap rs =
   let reg_list = [("R0", BR0); ("R1", BR1); ("R2", BR2); ("R3", BR3);
                   ("R4", BR4); ("R5", BR5); ("R6", BR6); ("R7", BR7);
@@ -5222,23 +5229,39 @@ let rec u8_list_to_mem_plus
                   (len_bit0
                     (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                 i)
-              (size_list l)
-          then Some (nth l
-                      (plus_nat
-                        (the_nat
-                          (len_bit0
-                            (len_bit0
-                              (len_bit0
-                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                          i)
-                        (nat_of_num
-                          (Bit0 (Bit0 (Bit0
+              (nat_of_num
+                (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
-(Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
-    (Bit0 One)))))))))))))))))))))))))))))))))))))
-          else None));;
+One)))))))))))))))))))))))))))))))))))
+          then None
+          else (if less_nat
+                     (minus_nat
+                       (the_nat
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0
+                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                         i)
+                       (nat_of_num
+                         (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 One))))))))))))))))))))))))))))))))))))
+                     (size_list l)
+                 then Some (nth l
+                             (the_nat
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0
+                                     (len_bit0
+                                       (len_bit0 (len_bit0 len_num1))))))
+                               i))
+                 else None)));;
 
 let rec u8_list_to_mem
   l = (fun i ->
@@ -5374,7 +5397,10 @@ let rec step_test
                                       (of_int
 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
 (Pos (Bit0 One)))
-                                    with BPF_OK (pc2, rs2, _, _, _, _, _, _) ->
+                                    with BPF_OK (pc2, rs2, _, _, _, _, _, _) -> let _ = Printf.printf "res: %Lx\n" (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        (rs2 (int_to_bpf_ireg i)))) in
                                       equal_word
 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))) pc2
 (of_int

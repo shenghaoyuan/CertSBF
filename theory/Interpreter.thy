@@ -758,7 +758,7 @@ definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
 
 (**r the initial state of R1 should be MM_INPUT_START, so here should be (MM_INPUT_START + i), we set MM_INPUT_START = 0 in this model *)
 definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
-"u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
+"u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!(unat i)) else None)"
 
 definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
 " intlist_to_reg_map l = ( \<lambda> r.
@@ -792,8 +792,15 @@ definition int_to_bpf_ireg :: "int \<Rightarrow> bpf_ireg" where
   Some v \<Rightarrow> v
 )"
 
+(*
 definition u8_list_to_mem_plus :: "u8 list \<Rightarrow> mem" where
-"u8_list_to_mem_plus l = (\<lambda> i. if (unat i) < length(l) then Some (l!(((unat i)+0x400000000))) else None)"
+"u8_list_to_mem_plus l = (\<lambda> i.
+  if (unat i) < 0x400000000 then
+    None
+  else if (unat i) - 0x400000000 < length(l) then
+    Some (l!(unat i))
+  else
+    None)" *)
 
 definition step_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
@@ -801,7 +808,7 @@ definition step_test ::
   let prog  = int_to_u8_list lp in
   let rs    = ((intlist_to_reg_map lr)#BR10 <--
       (MM_STACK_START + (stack_frame_size * max_call_depth))) in
-  let m     = u8_list_to_mem_plus (int_to_u8_list lm) in
+  let m     = u8_list_to_mem (int_to_u8_list lm) in
   let stk   = init_stack_state in
   let sv    = if v = 1 then V1 else V2 in
   let fm    = init_func_map in (
@@ -825,6 +832,25 @@ definition step_test ::
           _ \<Rightarrow> False )
         else False )
 )"
+
+
+value "step_test
+  [ 0x63, 0x90, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x79, 0x08, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00]
+  [ 0x0000000000000000, 0xB93C732C3C25264D, 0x7BED36F9786AA8FF, 0x23A0682F7E883EB9,
+    0x343330A3A66902F7, 0x0D74ED1EBAD8DF8E, 0x5012F6BEC353AAC1, 0x4509C87940AB1BDE,
+    0x9C443012D4B72741, 0xB5D25DFEA9184088]
+  [ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+    0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+    0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B,
+    0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
+    0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41,
+    0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C,
+    0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+    0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, 0x60, 0x61, 0x62,
+    0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D]
+  [] 2 2 2 8 0x3B3A3938A9184088"
 
 (*
 value "(of_int (-8613303245920329199::int)::u64)"
