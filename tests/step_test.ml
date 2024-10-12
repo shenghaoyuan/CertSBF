@@ -1165,22 +1165,22 @@ let rec cast _B _A
   w = Word (take_bit_int (len_of _A.len0_len Type) (the_int _B w));;
 
 let rec option_u64_of_u8_8
-  v0 v1 v2 v3 v4 v5 v6 v7 =
-    (match v0 with None -> None
+  v0 v1 v2 v3 v4 v5 v6 v7 = let _ = print_endline("happy 00") in
+    (match v0 with None -> let _ = print_endline("happy 11") in None
       | Some n0 ->
-        (match v1 with None -> None
+        (match v1 with None -> let _ = print_endline("happy 12") in None
           | Some n1 ->
-            (match v2 with None -> None
+            (match v2 with None -> let _ = print_endline("happy 13") in None
               | Some n2 ->
-                (match v3 with None -> None
+                (match v3 with None -> let _ = print_endline("happy 14") in None
                   | Some n3 ->
-                    (match v4 with None -> None
+                    (match v4 with None -> let _ = print_endline("happy 15") in None
                       | Some n4 ->
-                        (match v5 with None -> None
+                        (match v5 with None -> let _ = print_endline("happy 16") in None
                           | Some n5 ->
-                            (match v6 with None -> None
+                            (match v6 with None -> let _ = print_endline("happy 17") in None
                               | Some n6 ->
-                                (match v7 with None -> None
+                                (match v7 with None -> let _ = print_endline("happy 18") in None
                                   | Some n7 ->
                                     Some (or_word
    (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -1416,7 +1416,7 @@ let rec loadv
   mc m addr =
     option_val_of_u64 mc
       (match mc with M8 -> option_u64_of_u8_1 (m addr)
-        | M16 ->
+        | M16 -> let _ = print_endline("happy 0") in
           option_u64_of_u8_2 (m addr)
             (m (plus_word
                  (len_bit0
@@ -1427,7 +1427,7 @@ let rec loadv
                    (len_bit0
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))))
-        | M32 ->
+        | M32 -> let _ = print_endline("happy -1") in
           option_u64_of_u8_4 (m addr)
             (m (plus_word
                  (len_bit0
@@ -1458,7 +1458,7 @@ let rec loadv
                      (len_bit0
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                    (Pos (Bit1 One)))))
-        | M64 ->
+        | M64 -> let _ = print_endline("happy 5") in
           option_u64_of_u8_8 (m addr)
             (m (plus_word
                  (len_bit0
@@ -3478,7 +3478,7 @@ let rec eval_alu32
 
 let rec eval_load
   chk dst sop off rs mem =
-    (let sv = eval_snd_op_u64 (SOReg sop) rs in
+    (let sv = eval_snd_op_u64 (SOReg sop) rs in let _ = print_endline("happy 1") in
      let vm_addr =
        plus_word
          (len_bit0
@@ -3488,7 +3488,7 @@ let rec eval_load
               (len_bit0
                 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
               off)
-       in
+       in  let _ = print_endline("happy 2") in 
       (match loadv chk mem vm_addr with None -> None | Some Vundef -> None
         | Some (Vbyte v) ->
           Some (fun_upd equal_bpf_ireg rs dst
@@ -4062,9 +4062,9 @@ let rec step
                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                         (Pos (Bit0 One))),
                   rsa, m, ss, sv, fm, cur_cu, remain_cu))
-          | BPF_LDX (chk, dst, sop, off) ->
-            (match eval_load chk dst sop off rs m with None -> BPF_EFlag
-              | Some rsa ->
+          | BPF_LDX (chk, dst, sop, off) -> let _ = print_endline ("hello 3") in
+            (match eval_load chk dst sop off rs m with None -> let _ = print_endline ("hello 5") in BPF_EFlag
+              | Some rsa -> let _ = print_endline ("hello 4") in
                 BPF_OK
                   (plus_word
                      (len_bit0
@@ -5214,6 +5214,31 @@ let print_bpf_state st =
   | BPF_Success _ -> print_endline("success")
   | _ -> print_endline("error")
 
+let rec u8_list_to_mem_plus
+  l = (fun i ->
+        (if less_nat
+              (the_nat
+                (len_bit0
+                  (len_bit0
+                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                i)
+              (size_list l)
+          then Some (nth l
+                      (plus_nat
+                        (the_nat
+                          (len_bit0
+                            (len_bit0
+                              (len_bit0
+                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                          i)
+                        (nat_of_num
+                          (Bit0 (Bit0 (Bit0
+(Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+    (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+(Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+    (Bit0 One)))))))))))))))))))))))))))))))))))))
+          else None));;
 
 let rec u8_list_to_mem
   l = (fun i ->
@@ -5267,7 +5292,7 @@ let rec step_test
                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))
        in
-     let m = u8_list_to_mem (int_to_u8_list lm) in
+     let m = u8_list_to_mem_plus (int_to_u8_list lm) in
      let stk = init_stack_state in
      let sv = (if equal_inta v one_inta then V1 else V2) in
      let fm = init_func_map in
@@ -5297,10 +5322,10 @@ let rec step_test
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                  (Pos (Bit1 One)))
-             in (*
-            let _ = print_bpf_state st1 in *)
+             in
+            let _ = print_bpf_state st1 in
             (if equal_nat (size_list lp) (nat_of_num (Bit0 (Bit0 (Bit0 One))))
-              then (match st1
+              then let _ = print_endline ("hello 8") in (match st1
                      with BPF_OK (pc1, rs1, _, _, _, _, _, _) ->
                        equal_word
                          (len_bit0
@@ -5330,11 +5355,11 @@ let rec step_test
                      | BPF_Err -> false)
               else (if equal_nat (size_list lp)
                          (nat_of_num (Bit0 (Bit0 (Bit0 (Bit0 One)))))
-                     then (match st1
+                     then let _ = print_endline ("hello 9") in (match st1
                             with BPF_OK (pc1, rs1, m1, ss1, sv1, fm1, _, _) ->
                               (match bpf_find_instr one_nat prog
-                                with None -> false
-                                | Some ins1 ->
+                                with None ->  let _ = print_endline ("hello 1") in false
+                                | Some ins1 -> let _ = print_endline ("hello 2") in
                                   (match
                                     step pc1 ins1 rs1 m1 ss1 sv1 fm1 true
                                       (of_int

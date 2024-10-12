@@ -792,13 +792,16 @@ definition int_to_bpf_ireg :: "int \<Rightarrow> bpf_ireg" where
   Some v \<Rightarrow> v
 )"
 
+definition u8_list_to_mem_plus :: "u8 list \<Rightarrow> mem" where
+"u8_list_to_mem_plus l = (\<lambda> i. if (unat i) < length(l) then Some (l!(((unat i)+0x400000000))) else None)"
+
 definition step_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
 "step_test lp lr lm lc v fuel ipc i res = (
   let prog  = int_to_u8_list lp in
   let rs    = ((intlist_to_reg_map lr)#BR10 <--
       (MM_STACK_START + (stack_frame_size * max_call_depth))) in
-  let m     = u8_list_to_mem (int_to_u8_list lm) in
+  let m     = u8_list_to_mem_plus (int_to_u8_list lm) in
   let stk   = init_stack_state in
   let sv    = if v = 1 then V1 else V2 in
   let fm    = init_func_map in (
