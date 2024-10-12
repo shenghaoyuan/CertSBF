@@ -67,5 +67,5 @@ let read_test_cases filename =
   | _ -> failwith "Expected a list of test cases"
 
 let () =
-  let test_cases = read_test_cases "../data/ocaml_in2.json" in
+  let test_cases = read_test_cases "../data/ocaml_in1.json" in
   List.iter run_test_case test_cases

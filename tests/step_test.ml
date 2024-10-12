@@ -2283,14 +2283,16 @@ let rec eval_pqr64_2
                 (eval_snd_op_u64 sop rs)
               in
             let dv_i =
-              cast (len_signed
-                     (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                (len_bit0
+              signed_cast
+                (len_signed
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                (len_signed
+                  (len_bit0
+                    (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                 (signed_cast
                   (len_bit0
                     (len_bit0
@@ -2302,14 +2304,16 @@ let rec eval_pqr64_2
                   (eval_reg dst rs))
               in
             let sv_i =
-              cast (len_signed
-                     (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                (len_bit0
+              signed_cast
+                (len_signed
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                (len_signed
+                  (len_bit0
+                    (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                 (signed_cast
                   (len_bit0
                     (len_bit0
@@ -2318,28 +2322,29 @@ let rec eval_pqr64_2
                     (len_bit0
                       (len_bit0
                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                  (eval_reg dst rs))
+                  (eval_snd_op_u64 sop rs))
               in
              (match pop2
                with BPF_UHMUL ->
                  OKS (fun_upd equal_bpf_ireg rs dst
-                       (drop_bit_word
+                       (cast (len_bit0
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0
+                                     (len_bit0
+                                       (len_bit0 (len_bit0 len_num1)))))))
                          (len_bit0
                            (len_bit0
                              (len_bit0
                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (nat_of_num
-                           (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
-                         (cast (len_bit0
-                                 (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0
- (len_bit0 (len_bit0 len_num1)))))))
+                         (drop_bit_word
                            (len_bit0
                              (len_bit0
                                (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                                 (len_bit0
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                           (nat_of_num
+                             (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
                            (times_worda
                              (len_bit0
                                (len_bit0
@@ -2350,30 +2355,35 @@ let rec eval_pqr64_2
                              dv_u sv_u))))
                | BPF_SHMUL ->
                  OKS (fun_upd equal_bpf_ireg rs dst
-                       (drop_bit_word
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (nat_of_num
-                           (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
-                         (cast (len_bit0
+                       (cast (len_signed
+                               (len_bit0
                                  (len_bit0
                                    (len_bit0
                                      (len_bit0
                                        (len_bit0
- (len_bit0 (len_bit0 len_num1)))))))
+ (len_bit0 (len_bit0 len_num1))))))))
+                         (len_bit0
                            (len_bit0
                              (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           (times_worda
+                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                         (drop_bit_word
+                           (len_signed
                              (len_bit0
                                (len_bit0
                                  (len_bit0
                                    (len_bit0
                                      (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
+                                       (len_bit0 (len_bit0 len_num1))))))))
+                           (nat_of_num
+                             (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
+                           (times_worda
+                             (len_signed
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0
+                                     (len_bit0
+                                       (len_bit0
+ (len_bit0 (len_bit0 len_num1))))))))
                              dv_i sv_i)))))));;
 
 let rec eval_store
@@ -2444,14 +2454,14 @@ let rec rust_srem
                         else (if less_int a Zero_int && less_int Zero_int b
                                then Some (uminus_inta
    (modulo_inta (uminus_inta a) b))
-                               else None))));;
+                               else Some (modulo_inta a b)))));;
 
 let rec rust_sdiv
   a b = (if equal_inta b Zero_int then None
           else (if dvd (equal_int, semidom_modulo_int) b a
                  then Some (divide_inta a b)
                  else (let c = divide_inta a b in
-                        (if less_int Zero_int c then Some c
+                        (if less_eq_int Zero_int c then Some c
                           else Some (plus_inta c one_inta)))));;
 
 let rec eval_pqr64_aux2
@@ -2694,21 +2704,29 @@ let rec eval_pqr32_aux1
                        (len_bit0
                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
+            else (match
+                   rust_sdiv
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       dv)
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       sv)
+                   with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
+                             (len_bit0
                                (len_bit0
                                  (len_bit0
                                    (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (divide_word
-                           (len_signed
-                             (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           dv sv))))
+                             res))))
         | BPF_SREM ->
           (if equal_word
                 (len_signed
@@ -2719,21 +2737,29 @@ let rec eval_pqr32_aux1
                        (len_bit0
                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
+            else (match
+                   rust_srem
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       dv)
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       sv)
+                   with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
+                             (len_bit0
                                (len_bit0
                                  (len_bit0
                                    (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (modulo_word
-                           (len_signed
-                             (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           dv sv))))));;
+                             res))))));;
 
 let rec eval_pqr32
   pop dst sop rs is_v1 =
@@ -5271,8 +5297,8 @@ let rec step_test
                    (len_bit0
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                  (Pos (Bit1 One)))
-             in
-            (*let _ = print_bpf_state st1 in*)
+             in (*
+            let _ = print_bpf_state st1 in *)
             (if equal_nat (size_list lp) (nat_of_num (Bit0 (Bit0 (Bit0 One))))
               then (match st1
                      with BPF_OK (pc1, rs1, _, _, _, _, _, _) ->

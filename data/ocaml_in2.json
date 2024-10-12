@@ -1,27 +1,27 @@
 [
   {
-    "dis": "sdiv64 r5, 0x0543727B",
+    "dis": "shmul64 r6, 0xFFFFFFFF83BF73F0",
     "lp_std": [
-      "0xD6",
-      "0x05",
+      "0xB6",
+      "0x06",
       "0x00",
       "0x00",
-      "0x7B",
-      "0x72",
-      "0x43",
-      "0x05"
+      "0xF0",
+      "0x73",
+      "0xBF",
+      "0x83"
     ],
     "lr_std": [
       "0x0000000000000000",
-      "0x064F9FD1A561A519",
-      "0x97677AA103E21451",
-      "0x435F5EE9A8720826",
-      "0xDA743B95619351B1",
-      "0x99ADDC7FDD190AC8",
-      "0x26A84194DE9389A9",
-      "0x323707476CD9CE9D",
-      "0x7552322AEC355975",
-      "0x016D2BA4F1F1D3BB"
+      "0xF6EAA217FAB82C6B",
+      "0x25A9881262A5DE92",
+      "0xDD4BF6723984EE16",
+      "0x16E3CDF30C1AA272",
+      "0x4618184B2282B247",
+      "0x34220E9BED66DA39",
+      "0xE55E78043CC9B30F",
+      "0x84F5A7151E0D70FD",
+      "0xD17E10FA149D82D1"
     ],
     "lm_std": [
       "0x00",
@@ -38,8 +38,8 @@
     "lc_std": [],
     "v": "0x2",
     "fuel": "0x1",
-    "index": "0x5",
+    "index": "0x6",
     "ipc": "0x1",
-    "result_expected": "0xFFFFFFEC8F679312"
+    "result_expected": "0xFFFFFFFFE6B25BE2"
   }
 ]
