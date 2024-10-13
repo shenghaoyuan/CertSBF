@@ -1,5 +1,9 @@
 ### interpreter test
 
+folder structure
+- `rbpf`: the original Solana eBPF VM with the official test suite, we additionlly build a `interpreter_step` for micro-benchmark testing.
+- `data`: all benchmarks and data
+
 ```shell
 ocamlc -c interp_test.ml
 ocamlc -o test interp_test.cmo test.ml

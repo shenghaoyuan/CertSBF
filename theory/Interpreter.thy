@@ -816,7 +816,7 @@ definition step_test ::
     None \<Rightarrow> False |
     Some ins0 \<Rightarrow> 
       let st1 = step 0 ins0 rs m stk sv fm True 0x100000000 0 3 in
-        if length lp = 8 then ( \<comment> \<open> for ALU,branch, memory load \<close>
+        if prog!(0) = 0x18 \<or> length lp = 8 then ( \<comment> \<open> for ALU,branch, memory load \<close>
           case st1 of
           BPF_OK pc1 rs1 _ _ _ _ _ _ \<Rightarrow> (pc1 = of_int ipc) \<and> (rs1 (int_to_bpf_ireg i) = of_int res) |
           _ \<Rightarrow> False )
@@ -833,7 +833,47 @@ definition step_test ::
         else False )
 )"
 
+(*
+definition step_test1 ::
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> (u64 * u64) option" where
+"step_test1 lp lr lm lc v fuel ipc i = (
+  let prog  = int_to_u8_list lp in
+  let rs    = ((intlist_to_reg_map lr)#BR10 <--
+      (MM_STACK_START + (stack_frame_size * max_call_depth))) in
+  let m     = u8_list_to_mem (int_to_u8_list lm) in
+  let stk   = init_stack_state in
+  let sv    = if v = 1 then V1 else V2 in
+  let fm    = init_func_map in (
+    case bpf_find_instr 0 prog of
+    None \<Rightarrow> None |
+    Some ins0 \<Rightarrow> 
+      let st1 = step 0 ins0 rs m stk sv fm True 0x100000000 0 3 in
+        if prog!(0) = 0x18 \<or> length lp = 8 then ( \<comment> \<open> for ALU,branch, memory load \<close>
+          case st1 of
+          BPF_OK pc1 rs1 _ _ _ _ _ _ \<Rightarrow> Some (pc1, rs1 (int_to_bpf_ireg i)) |
+          _ \<Rightarrow> None )
+        else if length lp = 16 then ( \<comment> \<open> for memory store \<close>
+          case st1 of
+          BPF_OK pc1 rs1 m1 ss1 sv1 fm1 cur_cu1 remain_cu1 \<Rightarrow> (
+            case bpf_find_instr 1 prog of
+            None \<Rightarrow> None |
+            Some ins1 \<Rightarrow> (
+              case step pc1 ins1 rs1 m1 ss1 sv1 fm1 True 0x100000000 1 2 of
+              BPF_OK pc2 rs2 _ _ _ _ _ _ \<Rightarrow> Some (pc2, rs2 (int_to_bpf_ireg i)) |
+              _ \<Rightarrow> None ) ) |
+          _ \<Rightarrow> None )
+        else None )
+)"
+value "step_test1
+  [ 0x18, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78,
+    0x00, 0x00, 0x00, 0x00, 0x9a, 0xbc, 0xde, 0xf0]
+  [ 0x0000000000000000, 0xB93C732C3C25264D, 0x7BED36F9786AA8FF, 0x23A0682F7E883EB9,
+    0x343330A3A66902F7, 0x0D74ED1EBAD8DF8E, 0x5012F6BEC353AAC1, 0x4509C87940AB1BDE,
+    0x9C443012D4B72741, 0xB5D25DFEA9184088]
+  []
+  [] 2 2 2 0" *)
 
+(*
 value "step_test
   [ 0x63, 0x90, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x79, 0x08, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -851,6 +891,8 @@ value "step_test
     0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, 0x60, 0x61, 0x62,
     0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D]
   [] 2 2 2 8 0x3B3A3938A9184088"
+
+*)
 
 (*
 value "(of_int (-8613303245920329199::int)::u64)"
