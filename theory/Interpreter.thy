@@ -286,7 +286,34 @@ value "sint (0x543727b::i64)"
 value "(sint (0x99addc7fdd190ac8::i64)) div sint (0x543727b::i64)"
 value "0x1d32844580::i64"
 value "0xFFFFFFEC8F679312::i64" 
+
 value "(-(11::int)) div (10::int)"
+value "(-(19::int)) div (10::int)"
+value "(11::int) div (-(10::int))"
+value "(19::int) div (-(10::int))"
+
+value "(-(11::i16)) div (10::i16)"
+value "(-(19::i16)) div (10::i16)"
+value "(11::i16) div (-(10::i16))"
+value "(19::i16) div (-(10::i16))"
+
+
+value "(-(11::int)) mod (10::int)"
+value "(-(19::int)) mod (10::int)"
+value "(11::int) mod (-(10::int))"
+value "(19::int) mod (-(10::int))"
+
+
+value "(-(11::i16)) mod (10::i16)"
+value "(-(19::i16)) mod (10::i16)"
+value "(11::i16) mod (-(10::i16))"
+value "(19::i16) mod (-(10::i16))"
+
+
+
+
+value "sint (6552::i16)"
+
 value "(-(15::int)) div (10::int)"
 value "(-(19::int)) div (10::int)"
 value "((11::int)) div (10::int)"
@@ -307,7 +334,7 @@ value "((11::int)) mod (10::int)"
 value "((11::int)) mod (10::int)"
 value "((15::int)) mod (10::int)"
 value "((19::int)) mod (10::int)"
-value "((-20::int)) mod (10::int)" *)
+value "((-20::int)) mod (10::int)" *) 
 
 definition rust_sdiv :: "int \<Rightarrow> int \<Rightarrow> int option" where
 "rust_sdiv a b = (
