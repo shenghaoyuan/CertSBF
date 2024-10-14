@@ -1,43 +1,17 @@
-### interpreter test
-
-folder structure
-- `rbpf`: the original Solana eBPF VM with the official test suite, we additionlly build a `interpreter_step` for micro-benchmark testing.
-- `data`: all benchmarks and data
-
-```shell
-ocamlc -c interp_test.ml
-ocamlc -o test interp_test.cmo test.ml
-./test
-```
-
-### step test
-
-首先将step.ml中的文件路径改为正确的路径
-
-```
-let test_cases = read_test_cases "../data/ocaml_in2.json" in
-```
-
-ocaml_in2用于单个测试，ocaml_in1用于多个测试
-
-执行以下：
-
-```
-opam install ocamlfind
-opam install yojson
-eval $(opam env)
-
-ocamlc -c step_test.ml
-ocamlfind ocamlc -o step -package yojson -linkpkg step_test.cmo step.ml
-./step
-```
 
 
+## Folder Structure
 
-#### rbpf
+- **`./rbpf`**: Contains the original Solana eBPF VM and custom  mechanism for program (`interpreter_test`) and instruction-level (`step_test`) testing.
+- **`./data`**: Stores all benchmarks and test data.
 
-step_test_fixed单个指令测试
+-  **`./exec-semantics`**: holds the OCaml code extracted from Isabelle proofs and associated glue code.
 
-step_test_random会生成多个指令并执行测试
 
- 
+## Make Commands
+
+- **`make generator`**: Generate random instruction test cases.
+  - Use `make generator num=X` to specify the number of cases.
+- **`make micro-test`**: Compiles and runs instruction-level tests using the generated cases.
+- **`make macro-test`**: Compiles and runs program-level tests using the Solana official test suite in `./rbpf/tests/execution.rs`.
+- **`make clean`**: Removes all build artifacts.

@@ -14,6 +14,8 @@ let green = "\027[32m"  (* ANSI green *)
 let red = "\027[31m"    (* ANSI red *)
 let reset = "\027[0m"   (* Reset color *)
 let n = ref 0
+let passed = ref 0
+let failed = ref 0
 
 let run_test_case test_case =
   let v = Interp_test.int_of_standard_int test_case.v in
@@ -25,6 +27,11 @@ let run_test_case test_case =
   let result = Interp_test.bpf_interp_test lp lm lc v fuel res in
   let color = if result then green else red in
   n := !n + 1;
+  if result then (
+    passed := !passed + 1;
+  ) else (
+    failed := !failed + 1;
+  );
   Printf.printf "%s%d %-40s result: %s%b%s\n" color !n test_case.dis color result reset
   
 let test_cases = [
@@ -2317,20 +2324,7 @@ exit
 ]
 
 let () =
-  List.iter run_test_case test_cases
-
-  (*
-    mov32 r0, 1
-    mov32 r1, 0
-    mod32 r0, r1
-    exit
-*)
-(*{
-  dis = "test_div";
-  lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x9cL; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
-  lm_std = [];
-  lc_std = [];
-  v = 1L;
-  fuel = 3L;
-  result_expected = 0x0L;
-};
+  List.iter run_test_case test_cases;
+  Printf.printf "\nSummary:\n";
+  Printf.printf "%sPassed: %d%s\n" green !passed reset;
+  Printf.printf "%sFailed: %d%s\n" red !failed reset

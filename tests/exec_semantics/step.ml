@@ -18,6 +18,8 @@ let green = "\027[32m"  (* ANSI green *)
 let red = "\027[31m"    (* ANSI red *)
 let reset = "\027[0m"   (* Reset color *)
 let n = ref 0
+let passed = ref 0
+let failed = ref 0
 
 let run_test_case test_case =
   let v = Step_test.int_of_standard_int test_case.v in
@@ -31,6 +33,11 @@ let run_test_case test_case =
   let lc = Step_test.int_list_of_standard_int_list test_case.lc_std in
   let result = Step_test.step_test lp lr lm lc v fuel ipc index res in
   let color = if result then green else red in
+  if result then (
+    passed := !passed + 1;
+  ) else (
+    failed := !failed + 1;
+  );
   n := !n + 1;
   Printf.printf "%s%d %-40s result: %s%b%s\n" color !n test_case.dis color result reset
 
@@ -67,5 +74,8 @@ let read_test_cases filename =
   | _ -> failwith "Expected a list of test cases"
 
 let () =
-  let test_cases = read_test_cases "../data/ocaml_in2.json" in
-  List.iter run_test_case test_cases
+  let test_cases = read_test_cases "../data/ocaml_in.json" in
+  List.iter run_test_case test_cases;
+  Printf.printf "\nSummary:\n";
+  Printf.printf "%sPassed: %d%s\n" green !passed reset;
+  Printf.printf "%sFailed: %d%s\n" red !failed reset
