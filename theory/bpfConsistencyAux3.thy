@@ -404,7 +404,7 @@ proof-
   have b2_6:"(last xins) = (xins!3)" using a0 by (metis One_nat_def Suc_eq_plus1 Suc_numeral add_2_eq_Suc diff_Suc_1' last_conv_nth length_Suc_conv list.simps(3) list.size(3) list_consists_4 semiring_norm(5))
   have b2_7: "(butlast xins) = [xins!0]@[xins!1]@[xins!2]" using a0 b2_6 by simp
   have b2_8:"butlast xins = take 3 xins" using a0 b2_7 by simp
-  have b2_9:"Next reg3 m3 = interp3 (butlast xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using a0 b2_4 b2_8 interp3_length4_aux4 b0_0 a1 sorry(* by (metis a1 outcome.inject)*)
+  have b2_9:"Next reg3 m3 = interp3 (butlast xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using a0 b2_4 b2_8 interp3_length4_aux4 b0_0 a1 by (metis a1 outcome.inject)
   have b2_10:"Next reg3 m3 = interp3 (take 3 xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using b2_9 b2_8 by simp
   have b2:"\<forall> r . r \<notin> {(bpf_to_x64_reg dst), x64Syntax.RCX} \<longrightarrow> reg3 (IR r) = reg2 (IR r)" using a0 b1_2
     using b2_2 shr_subgoal_rr_aux4_4 shl_subgoal_rr_aux4_4 sar_subgoal_rr_aux4_4 a2 by auto
