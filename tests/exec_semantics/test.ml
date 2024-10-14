@@ -8,14 +8,13 @@ type test_case = {
   v : int64;
   fuel : int64;
   result_expected : int64;
+  isok : bool;
 }
 
 let green = "\027[32m"  (* ANSI green *)
 let red = "\027[31m"    (* ANSI red *)
 let reset = "\027[0m"   (* Reset color *)
 let n = ref 0
-let passed = ref 0
-let failed = ref 0
 
 let run_test_case test_case =
   let v = Interp_test.int_of_standard_int test_case.v in
@@ -24,14 +23,9 @@ let run_test_case test_case =
   let lp = Interp_test.int_list_of_standard_int_list test_case.lp_std in
   let lm = Interp_test.int_list_of_standard_int_list test_case.lm_std in
   let lc = Interp_test.int_list_of_standard_int_list test_case.lc_std in
-  let result = Interp_test.bpf_interp_test lp lm lc v fuel res in
+  let result = Interp_test.bpf_interp_test lp lm lc v fuel res test_case.isok in
   let color = if result then green else red in
   n := !n + 1;
-  if result then (
-    passed := !passed + 1;
-  ) else (
-    failed := !failed + 1;
-  );
   Printf.printf "%s%d %-40s result: %s%b%s\n" color !n test_case.dis color result reset
   
 let test_cases = [
@@ -44,6 +38,7 @@ let test_cases = [
     lp_std = [180L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 188L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0x01L;
@@ -56,6 +51,7 @@ let test_cases = [
     lp_std = [180L; 0L; 0L; 0L; 255L; 255L; 255L; 255L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 2L;
     result_expected = 0xffffffffL;
@@ -69,6 +65,7 @@ let test_cases = [
     lp_std = [180L; 1L; 0L; 0L; 255L; 255L; 255L; 255L; 188L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0xffffffffL;
@@ -86,6 +83,7 @@ let test_cases = [
     lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 191L; 6L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 103L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 120L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 137L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x01L;
@@ -101,6 +99,7 @@ let test_cases = [
       lp_std = [180L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 2L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 12L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
       lm_std = [];
       lc_std = [];
+    isok = true;
       v = 2L;
       fuel = 5L;
       result_expected = 0x3L;
@@ -130,6 +129,7 @@ let test_cases = [
       lp_std = [180L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 180L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 180L; 3L; 0L; 0L; 3L; 0L; 0L; 0L; 180L; 4L; 0L; 0L; 4L; 0L; 0L; 0L; 180L; 5L; 0L; 0L; 5L; 0L; 0L; 0L; 180L; 6L; 0L; 0L; 6L; 0L; 0L; 0L; 180L; 7L; 0L; 0L; 7L; 0L; 0L; 0L; 180L; 8L; 0L; 0L; 8L; 0L; 0L; 0L; 180L; 9L; 0L; 0L; 9L; 0L; 0L; 0L; 20L; 0L; 0L; 0L; 13L; 0L; 0L; 0L; 28L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 23L; 0L; 0L; 0L; 12L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 134L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 142L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 70L; 0L; 0L; 0L; 2L; 0L; 0L; 0L; 78L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
       lm_std = [];
       lc_std = [];
+    isok = true;
       v = 2L;
       fuel = 19L;
       result_expected = 110L;
@@ -159,6 +159,7 @@ let test_cases = [
       lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 183L; 3L; 0L; 0L; 3L; 0L; 0L; 0L; 183L; 4L; 0L; 0L; 4L; 0L; 0L; 0L; 183L; 5L; 0L; 0L; 5L; 0L; 0L; 0L; 183L; 6L; 0L; 0L; 6L; 0L; 0L; 0L; 183L; 7L; 0L; 0L; 7L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 8L; 0L; 0L; 0L; 183L; 9L; 0L; 0L; 9L; 0L; 0L; 0L; 23L; 0L; 0L; 0L; 13L; 0L; 0L; 0L; 31L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 23L; 0L; 0L; 0L; 15L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 150L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 158L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 86L; 0L; 0L; 0L; 2L; 0L; 0L; 0L; 94L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
       lm_std = [];
       lc_std = [];
+    isok = true;
       v = 2L;
       fuel = 19L;
       result_expected = 110L;
@@ -211,6 +212,7 @@ let test_cases = [
     lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 30L; 0L; 0L; 0L; 183L; 3L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 4L; 0L; 0L; 20L; 0L; 0L; 0L; 183L; 5L; 0L; 0L; 0L; 0L; 0L; 0L; 158L; 67L; 0L; 0L; 0L; 0L; 0L; 0L; 158L; 37L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 53L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 119L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 191L; 67L; 0L; 0L; 0L; 0L; 0L; 0L; 119L; 3L; 0L; 0L; 32L; 0L; 0L; 0L; 191L; 54L; 0L; 0L; 0L; 0L; 0L; 0L; 158L; 6L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 101L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 4L; 0L; 0L; 32L; 0L; 0L; 0L; 119L; 4L; 0L; 0L; 32L; 0L; 0L; 0L; 191L; 70L; 0L; 0L; 0L; 0L; 0L; 0L; 158L; 6L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 32L; 0L; 0L; 0L; 119L; 2L; 0L; 0L; 32L; 0L; 0L; 0L; 158L; 36L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 119L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 15L; 96L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 6L; 0L; 0L; 0L; 0L; 0L; 0L; 119L; 6L; 0L; 0L; 32L; 0L; 0L; 0L; 15L; 101L; 0L; 0L; 0L; 0L; 0L; 0L; 158L; 35L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 119L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 15L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 119L; 2L; 0L; 0L; 32L; 0L; 0L; 0L; 15L; 37L; 0L; 0L; 0L; 0L; 0L; 0L; 123L; 81L; 8L; 0L; 0L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 103L; 4L; 0L; 0L; 32L; 0L; 0L; 0L; 119L; 4L; 0L; 0L; 32L; 0L; 0L; 0L; 79L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 123L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L]; 
     lm_std = [0L; 16L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 42L;
     result_expected = 600L;
@@ -242,6 +244,7 @@ let test_cases = [
     lp_std = [180L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 180L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 180L; 3L; 0L; 0L; 3L; 0L; 0L; 0L; 180L; 4L; 0L; 0L; 4L; 0L; 0L; 0L; 180L; 5L; 0L; 0L; 5L; 0L; 0L; 0L; 180L; 6L; 0L; 0L; 6L; 0L; 0L; 0L; 180L; 7L; 0L; 0L; 7L; 0L; 0L; 0L; 180L; 8L; 0L; 0L; 8L; 0L; 0L; 0L; 76L; 80L; 0L; 0L; 0L; 0L; 0L; 0L; 68L; 0L; 0L; 0L; 160L; 0L; 0L; 0L; 84L; 0L; 0L; 0L; 163L; 0L; 0L; 0L; 180L; 9L; 0L; 0L; 145L; 0L; 0L; 0L; 92L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 100L; 0L; 0L; 0L; 22L; 0L; 0L; 0L; 108L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 116L; 0L; 0L; 0L; 19L; 0L; 0L; 0L; 124L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 164L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 172L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L]; 
     lm_std = [0L; 16L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 21L;
     result_expected = 0x11L;
@@ -275,6 +278,7 @@ let test_cases = [
     lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 2L; 0L; 0L; 0L; 183L; 3L; 0L; 0L; 3L; 0L; 0L; 0L; 183L; 4L; 0L; 0L; 4L; 0L; 0L; 0L; 183L; 5L; 0L; 0L; 5L; 0L; 0L; 0L; 183L; 6L; 0L; 0L; 6L; 0L; 0L; 0L; 183L; 7L; 0L; 0L; 7L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 8L; 0L; 0L; 0L; 79L; 80L; 0L; 0L; 0L; 0L; 0L; 0L; 71L; 0L; 0L; 0L; 160L; 0L; 0L; 0L; 87L; 0L; 0L; 0L; 163L; 0L; 0L; 0L; 183L; 9L; 0L; 0L; 145L; 0L; 0L; 0L; 95L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 22L; 0L; 0L; 0L; 111L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 119L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 119L; 0L; 0L; 0L; 19L; 0L; 0L; 0L; 127L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 167L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 175L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L]; 
     lm_std = [0L; 16L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 23L;
     result_expected = 0x11L;
@@ -290,6 +294,7 @@ let test_cases = [
     lp_std = [183L; 0L; 0L; 0L; 8L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 247L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 204L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 5L;
     result_expected = 0x4L;   
@@ -304,6 +309,7 @@ let test_cases = [
     lp_std = [180L; 0L; 0L; 0L; 248L; 0L; 0L; 0L; 100L; 0L; 0L; 0L; 28L; 0L; 0L; 0L; 196L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0xffff8000L;   
@@ -319,6 +325,7 @@ let test_cases = [
     lp_std = [180L; 0L; 0L; 0L; 248L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 16L; 0L; 0L; 0L; 100L; 0L; 0L; 0L; 28L; 0L; 0L; 0L; 204L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 5L;
     result_expected = 0xffff8000L;   
@@ -335,6 +342,7 @@ let test_cases = [
     lp_std = [180L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 63L; 0L; 0L; 0L; 199L; 0L; 0L; 0L; 55L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 5L; 0L; 0L; 0L; 207L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 6L;
     result_expected = 0xfffffffffffffff8L;    
@@ -349,6 +357,7 @@ let test_cases = [
     lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 183L; 7L; 0L; 0L; 4L; 0L; 0L; 0L; 111L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 64L;
     result_expected = 0x10L;   
@@ -363,6 +372,7 @@ let test_cases = [
     lp_std = [175L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 255L; 255L; 255L; 255L; 116L; 0L; 0L; 0L; 8L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0x00ffffffL;   
@@ -377,6 +387,7 @@ let test_cases = [
     lp_std = [183L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 183L; 7L; 0L; 0L; 4L; 0L; 0L; 0L; 127L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0x1L;   
@@ -390,6 +401,7 @@ let test_cases = [
     lp_std = [105L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x1122L;   
@@ -403,6 +415,7 @@ let test_cases = [
     lp_std = [121L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x1122L;   
@@ -416,6 +429,7 @@ let test_cases = [
     lp_std = [97L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x11223344L;   
@@ -429,6 +443,7 @@ let test_cases = [
     lp_std = [121L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x11223344L;   
@@ -442,6 +457,7 @@ let test_cases = [
     lp_std = [121L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 64L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x1122334455667788L;   
@@ -455,6 +471,7 @@ let test_cases = [
     lp_std = [247L; 0L; 0L; 0L; 64L; 48L; 32L; 16L; 247L; 0L; 0L; 0L; 4L; 3L; 2L; 1L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0x1122334400000000L;   
@@ -467,6 +484,7 @@ let test_cases = [
     lp_std = [113L; 16L; 2L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0xaaL; 0xbbL; 0x11L; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 2L;
     result_expected = 0x11L;   
@@ -479,6 +497,7 @@ let test_cases = [
     lp_std = [105L; 16L; 2L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0xaaL; 0xbbL; 0x11L; 0x22L; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 2L;
     result_expected = 0x2211L;   
@@ -491,6 +510,7 @@ let test_cases = [
     lp_std = [97L; 16L; 2L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0xaaL; 0xbbL; 0x11L; 0x22L; 0x33L; 0x44L; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 2L;
     result_expected = 0x44332211L;   
@@ -505,6 +525,7 @@ let test_cases = [
     lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 106L; 0L; 0L; 0L; 52L; 18L; 0L; 0L; 105L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0xffL; 0xffL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0x1234L;   
@@ -517,6 +538,7 @@ let test_cases = [
     lp_std = [121L; 16L; 2L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0xaaL; 0xbbL; 0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 2L;
     result_expected = 0x8877665544332211L;   
@@ -558,6 +580,7 @@ let test_cases = [
     lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 113L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 103L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 113L; 8L; 1L; 0L; 0L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 4L; 0L; 0L; 0L; 113L; 7L; 2L; 0L; 0L; 0L; 0L; 0L; 103L; 7L; 0L; 0L; 8L; 0L; 0L; 0L; 113L; 6L; 3L; 0L; 0L; 0L; 0L; 0L; 103L; 6L; 0L; 0L; 12L; 0L; 0L; 0L; 113L; 5L; 4L; 0L; 0L; 0L; 0L; 0L; 103L; 5L; 0L; 0L; 16L; 0L; 0L; 0L; 113L; 4L; 5L; 0L; 0L; 0L; 0L; 0L; 103L; 4L; 0L; 0L; 20L; 0L; 0L; 0L; 113L; 3L; 6L; 0L; 0L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 24L; 0L; 0L; 0L; 113L; 2L; 7L; 0L; 0L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 28L; 0L; 0L; 0L; 113L; 1L; 8L; 0L; 0L; 0L; 0L; 0L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 113L; 0L; 9L; 0L; 0L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 36L; 0L; 0L; 0L; 79L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 80L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 96L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x00L; 0x01L; 0x02L; 0x03L; 0x04L; 0x05L; 0x06L; 0x07L; 0x08L; 0x09L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 31L;
     result_expected = 0x9876543210L;   
@@ -609,6 +632,7 @@ let test_cases = [
     lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 9L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 8L; 2L; 0L; 0L; 0L; 0L; 0L; 220L; 8L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 4L; 0L; 0L; 0L; 105L; 7L; 4L; 0L; 0L; 0L; 0L; 0L; 220L; 7L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 7L; 0L; 0L; 8L; 0L; 0L; 0L; 105L; 6L; 6L; 0L; 0L; 0L; 0L; 0L; 220L; 6L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 6L; 0L; 0L; 12L; 0L; 0L; 0L; 105L; 5L; 8L; 0L; 0L; 0L; 0L; 0L; 220L; 5L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 5L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 4L; 10L; 0L; 0L; 0L; 0L; 0L; 220L; 4L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 4L; 0L; 0L; 20L; 0L; 0L; 0L; 105L; 3L; 12L; 0L; 0L; 0L; 0L; 0L; 220L; 3L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 3L; 0L; 0L; 24L; 0L; 0L; 0L; 105L; 2L; 14L; 0L; 0L; 0L; 0L; 0L; 220L; 2L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 2L; 0L; 0L; 28L; 0L; 0L; 0L; 105L; 1L; 16L; 0L; 0L; 0L; 0L; 0L; 220L; 1L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 105L; 0L; 18L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 36L; 0L; 0L; 0L; 79L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 80L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 96L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x02L; 0x00L; 0x03L; 0x00L; 0x04L; 0x00L; 0x05L; 0x00L; 0x06L; 0x00L; 0x07L; 0x00L; 0x08L; 0x00L; 0x09L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 41L;
     result_expected = 0x9876543210L;   
@@ -650,6 +674,7 @@ let test_cases = [
     lp_std = [191L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 105L; 9L; 0L; 0L; 0L; 0L; 0L; 0L; 220L; 9L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 8L; 2L; 0L; 0L; 0L; 0L; 0L; 220L; 8L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 7L; 4L; 0L; 0L; 0L; 0L; 0L; 220L; 7L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 6L; 6L; 0L; 0L; 0L; 0L; 0L; 220L; 6L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 5L; 8L; 0L; 0L; 0L; 0L; 0L; 220L; 5L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 4L; 10L; 0L; 0L; 0L; 0L; 0L; 220L; 4L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 3L; 12L; 0L; 0L; 0L; 0L; 0L; 220L; 3L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 2L; 14L; 0L; 0L; 0L; 0L; 0L; 220L; 2L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 1L; 16L; 0L; 0L; 0L; 0L; 0L; 220L; 1L; 0L; 0L; 16L; 0L; 0L; 0L; 105L; 0L; 18L; 0L; 0L; 0L; 0L; 0L; 220L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 79L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 48L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 64L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 80L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 96L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 79L; 144L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x00L; 0x01L; 0x00L; 0x02L; 0x00L; 0x04L; 0x00L; 0x08L; 0x00L; 0x10L; 0x00L; 0x20L; 0x00L; 0x40L; 0x00L; 0x80L; 0x01L; 0x00L; 0x02L; 0x00L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 31L;
     result_expected = 0x3ffL;   
@@ -696,6 +721,7 @@ let test_cases = [
       0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0x08L; 0x00L;
       0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 31L;
     result_expected = 0x030f0fL;   
@@ -710,6 +736,7 @@ let test_cases = [
     lp_std = [114L; 1L; 2L; 0L; 17L; 0L; 0L; 0L; 113L; 16L; 2L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0x11L;
@@ -724,6 +751,7 @@ let test_cases = [
     lp_std = [0x6aL; 0x01L; 0x02L; 0x00L; 0x11L; 0x22L; 0x00L; 0x00L; 0x69L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0x2211L;
@@ -738,6 +766,7 @@ let test_cases = [
     lp_std = [0x62L; 0x01L; 0x02L; 0x00L; 0x11L; 0x22L; 0x33L; 0x44L; 0x61L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xffL; 0xffL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0x44332211L;
@@ -752,6 +781,7 @@ let test_cases = [
   lp_std = [0x7aL; 0x01L; 0x02L; 0x00L; 0x11L; 0x22L; 0x33L; 0x44L; 0x79L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
   lm_std = [0xaaL; 0xbbL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xccL; 0xddL];
   lc_std = [];
+    isok = true;
   v = 2L;
   fuel = 3L;
   result_expected = 0x44332211L;
@@ -767,6 +797,7 @@ let test_cases = [
     lp_std = [0xb4L; 0x02L; 0x00L; 0x00L; 0x11L; 0x00L; 0x00L; 0x00L; 0x73L; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0x11L;
@@ -782,6 +813,7 @@ let test_cases = [
     lp_std = [0xb4L; 0x02L; 0x00L; 0x00L; 0x11L; 0x22L; 0x00L; 0x00L; 0x6bL; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x69L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0x2211L;
@@ -797,6 +829,7 @@ let test_cases = [
     lp_std = [0xb4L; 0x02L; 0x00L; 0x00L; 0x11L; 0x22L; 0x33L; 0x44L; 0x63L; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x61L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xffL; 0xffL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 0x44332211L;
@@ -814,6 +847,7 @@ let test_cases = [
     lp_std = [0xb7L; 0x02L; 0x00L; 0x00L; 0x55L; 0x66L; 0x77L; 0x88L; 0x67L; 0x02L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x47L; 0x02L; 0x00L; 0x00L; 0x11L; 0x22L; 0x33L; 0x44L; 0x7bL; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x79L; 0x10L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xaaL; 0xbbL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xccL; 0xddL];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 6L;
     result_expected = 0x8877665544332211L;
@@ -844,6 +878,7 @@ let test_cases = [
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0xf0L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0xf2L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x03L; 0x00L; 0x00L; 0xf3L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x04L; 0x00L; 0x00L; 0xf4L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x05L; 0x00L; 0x00L; 0xf5L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x06L; 0x00L; 0x00L; 0xf6L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x07L; 0x00L; 0x00L; 0xf7L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x08L; 0x00L; 0x00L; 0xf8L; 0x00L; 0x00L; 0x00L; 0x73L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x31L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x41L; 0x03L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x51L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x61L; 0x05L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x71L; 0x06L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x81L; 0x07L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x79L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xdcL; 0x00L; 0x00L; 0x00L; 0x40L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL; 0xffL];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 19L;
     result_expected = 0xf0f2f3f4f5f6f7f8L;
@@ -863,6 +898,7 @@ let test_cases = [
     lp_std = [0xbfL; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xf1L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x09L; 0x00L; 0x00L; 0xf9L; 0x00L; 0x00L; 0x00L; 0x73L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x90L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x69L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xdcL; 0x00L; 0x00L; 0x00L; 0x10L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0xffL; 0xffL];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 8L;
     result_expected = 0xf1f9L;
@@ -895,6 +931,7 @@ let test_cases = [
     lp_std = [0xbfL; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x09L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x90L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x08L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x80L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x07L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x70L; 0x03L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x06L; 0x03L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x60L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x05L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x50L; 0x05L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x04L; 0x05L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x40L; 0x06L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x03L; 0x06L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x30L; 0x07L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x02L; 0x07L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x20L; 0x08L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x01L; 0x08L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x73L; 0x10L; 0x09L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x71L; 0x00L; 0x09L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0x2aL; 0x0L; 0x0L; 0x0L; 0x0L; 0x0L; 0x0L; 0x0L; 0x0L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 21L;
     result_expected = 0x2aL;
@@ -907,6 +944,7 @@ exit
     lp_std = [0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 1L;
     result_expected = 0x0L;
@@ -920,6 +958,7 @@ exit
       lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
       lm_std = [];
       lc_std = [];
+    isok = true;
       v = 2L;
       fuel = 2L;
       result_expected = 0x0L;
@@ -935,6 +974,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x03L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 2L;
     result_expected = 0x3L;
@@ -950,6 +990,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x05L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 3L;
     result_expected = 0x1L;
@@ -969,6 +1010,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0x15L; 0x01L; 0x04L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x15L; 0x01L; 0x01L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -990,6 +1032,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x02L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x1dL; 0x21L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x1dL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x1L;
@@ -1009,6 +1052,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0x35L; 0x01L; 0x04L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0cL; 0x00L; 0x00L; 0x00L; 0x35L; 0x01L; 0x01L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1030,6 +1074,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x02L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x3dL; 0x21L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x3dL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x1L;
@@ -1050,6 +1095,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0xb5L; 0x01L; 0x01L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0xb5L; 0x01L; 0x01L; 0x00L; 0x06L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb5L; 0x01L; 0x01L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1072,6 +1118,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x03L; 0x00L; 0x00L; 0x06L; 0x00L; 0x00L; 0x00L; 0xbdL; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xbdL; 0x11L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xbdL; 0x31L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 9L;
     result_expected = 0x1L;
@@ -1091,6 +1138,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0x25L; 0x01L; 0x02L; 0x00L; 0x06L; 0x00L; 0x00L; 0x00L; 0x25L; 0x01L; 0x01L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0x25L; 0x01L; 0x01L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1112,6 +1160,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0x06L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x03L; 0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0x2dL; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x2dL; 0x11L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x2dL; 0x31L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 9L;
     result_expected = 0x1L;
@@ -1131,6 +1180,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0xa5L; 0x01L; 0x02L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0xa5L; 0x01L; 0x01L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0xa5L; 0x01L; 0x01L; 0x00L; 0x06L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1152,6 +1202,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0x05L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x03L; 0x00L; 0x00L; 0x06L; 0x00L; 0x00L; 0x00L; 0xadL; 0x21L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xadL; 0x11L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xadL; 0x31L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 9L;
     result_expected = 0x1L;
@@ -1171,6 +1222,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x55L; 0x01L; 0x04L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0x55L; 0x01L; 0x01L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1191,6 +1243,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0xb4L; 0x02L; 0x00L; 0x00L; 0x0bL; 0x00L; 0x00L; 0x00L; 0x5dL; 0x21L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0x5dL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x1L;
@@ -1210,6 +1263,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x07L; 0x00L; 0x00L; 0x00L; 0x45L; 0x01L; 0x04L; 0x00L; 0x08L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x09L; 0x00L; 0x00L; 0x00L; 0x45L; 0x01L; 0x01L; 0x00L; 0x08L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1230,6 +1284,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x07L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x02L; 0x00L; 0x00L; 0x08L; 0x00L; 0x00L; 0x00L; 0x4dL; 0x21L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x09L; 0x00L; 0x00L; 0x00L; 0x4dL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x1L;
@@ -1250,6 +1305,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0x75L; 0x01L; 0x05L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0x75L; 0x01L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0x75L; 0x01L; 0x01L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x1L;
@@ -1272,6 +1328,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xb7L; 0x02L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0xb4L; 0x03L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x7dL; 0x21L; 0x05L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x7dL; 0x31L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xbfL; 0x21L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x7dL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 10L;
     result_expected = 0x1L;
@@ -1292,6 +1349,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xd5L; 0x01L; 0x01L; 0x00L; 0xfdL; 0xffL; 0xffL; 0xffL; 0xd5L; 0x01L; 0x01L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xd5L; 0x01L; 0x01L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1315,6 +1373,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0xb7L; 0x02L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xb4L; 0x03L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xddL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xddL; 0x31L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xbfL; 0x21L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xddL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 10L;
     result_expected = 0x1L;
@@ -1334,6 +1393,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0x65L; 0x01L; 0x04L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x65L; 0x01L; 0x01L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1354,6 +1414,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xb7L; 0x02L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0x6dL; 0x21L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x6dL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x1L;
@@ -1373,6 +1434,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xc5L; 0x01L; 0x02L; 0x00L; 0xfdL; 0xffL; 0xffL; 0xffL; 0xc5L; 0x01L; 0x01L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xc5L; 0x01L; 0x01L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x1L;
@@ -1394,6 +1456,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x01L; 0x00L; 0x00L; 0xfeL; 0xffL; 0xffL; 0xffL; 0xb7L; 0x02L; 0x00L; 0x00L; 0xfdL; 0xffL; 0xffL; 0xffL; 0xb7L; 0x03L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0xcdL; 0x11L; 0x02L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xcdL; 0x21L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xcdL; 0x31L; 0x01L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb4L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 9L;
     result_expected = 0x1L;
@@ -1414,6 +1477,7 @@ exit
     lp_std = [0xb7L; 0x01L; 0x00L; 0x00L; 0x33L; 0x00L; 0x00L; 0x00L; 0x7aL; 0x0aL; 0xf0L; 0xffL; 0xabL; 0x00L; 0x00L; 0x00L; 0x7aL; 0x0aL; 0xf8L; 0xffL; 0xcdL; 0x00L; 0x00L; 0x00L; 0x57L; 0x01L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x67L; 0x01L; 0x00L; 0x00L; 0x03L; 0x00L; 0x00L; 0x00L; 0xbfL; 0xa2L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x12L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x79L; 0x20L; 0xf0L; 0xffL; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 9L;
     result_expected = 0xcdL;
@@ -1435,6 +1499,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x07L; 0x00L; 0x00L; 0x00L; 0x07L; 0x01L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0x67L; 0x01L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x77L; 0x01L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x15L; 0x01L; 0x04L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x07L; 0x00L; 0x00L; 0x00L; 0x96L; 0x00L; 0x00L; 0x00L; 0x07L; 0x00L; 0x00L; 0x00L; 0x07L; 0x01L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0xffL; 0x55L; 0x01L; 0xfdL; 0xffL; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 37L;
     result_expected = 0x75db9c97L;
@@ -1462,6 +1527,7 @@ exit
     lp_std = [0xb7L; 0x01L; 0x00L; 0x00L; 0x43L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x25L; 0x01L; 0x04L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x05L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x07L; 0x02L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x3dL; 0x12L; 0x07L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xbfL; 0x13L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x5eL; 0x23L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x9eL; 0x23L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xbfL; 0x14L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x1fL; 0x34L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x55L; 0x04L; 0xf6L; 0xffL; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 655L;
     result_expected = 0x1L;
@@ -1487,6 +1553,7 @@ exit
     lp_std = [0xb7L; 0x02L; 0x00L; 0x00L; 0x0eL; 0x00L; 0x00L; 0x00L; 0x69L; 0x13L; 0x0cL; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x55L; 0x03L; 0x02L; 0x00L; 0x81L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x02L; 0x00L; 0x00L; 0x12L; 0x00L; 0x00L; 0x00L; 0x69L; 0x13L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x57L; 0x03L; 0x00L; 0x00L; 0xffL; 0xffL; 0x00L; 0x00L; 0x55L; 0x03L; 0x05L; 0x00L; 0x08L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x21L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x01L; 0x00L; 0x00L; 0x00L; 0x61L; 0x11L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x57L; 0x01L; 0x00L; 0x00L; 0xffL; 0xffL; 0xffL; 0x00L; 0x15L; 0x01L; 0x01L; 0x00L; 0xc0L; 0xa8L; 0x01L; 0x00L; 0xb7L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0x0L; 0x0L; 0xc0L; 0x9fL; 0xa0L; 0x97L; 0x0L; 0xa0L; 0xccL; 0x3bL; 0xbfL; 0xfaL; 0x8L; 0x0L; 0x45L; 0x10L; 0x0L; 0x3cL; 0x46L; 0x3cL; 0x40L; 0x0L; 0x40L; 0x6L; 0x73L; 0x1cL; 0xc0L; 0xa8L; 0x1L; 0x2L; 0xc0L; 0xa8L; 0x1L; 0x1L; 0x6L; 0xeL; 0x0L; 0x17L; 0x99L; 0xc5L; 0xa0L; 0xecL; 0x0L; 0x0L; 0x0L; 0x0L; 0xa0L; 0x2L; 0x7dL; 0x78L; 0xe0L; 0xa3L; 0x0L; 0x0L; 0x2L; 0x4L; 0x5L; 0xb4L; 0x4L; 0x2L; 0x8L; 0xaL; 0x0L; 0x9cL; 0x27L; 0x24L; 0x0L; 0x0L; 0x0L; 0x0L; 0x1L; 0x3L; 0x3L; 0x0L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 11L;
     result_expected = 0x1L;
@@ -1500,6 +1567,7 @@ exit
     lp_std = [24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 2L;
     result_expected = 0x1122334455667788L;
@@ -1513,6 +1581,7 @@ exit
     lp_std = [24L; 0L; 0L; 0L; 0L; 0L; 0L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 2L;
     result_expected = 0x80000000L;
@@ -1534,6 +1603,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 5L; 0L; 2L; 0L; 0L; 0L; 0L; 0L; 24L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 2L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 9L;
     result_expected = 0x2L;
@@ -1548,6 +1618,7 @@ exit
     lp_std = [105L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 212L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x22L; 0x11L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x1122L;
@@ -1562,6 +1633,7 @@ exit
     lp_std = [121L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 212L; 0L; 0L; 0L; 16L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x2211L;
@@ -1576,6 +1648,7 @@ exit
     lp_std = [0x61L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xd4L; 0x00L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0x44L; 0x33L; 0x22L; 0x11L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x11223344L;
@@ -1590,6 +1663,7 @@ exit
     lp_std = [0x79L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xd4L; 0x00L; 0x00L; 0x00L; 0x20L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x44332211L;
@@ -1604,6 +1678,7 @@ exit
     lp_std = [0x79L; 0x10L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xd4L; 0x00L; 0x00L; 0x00L; 0x40L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [0x88L; 0x77L; 0x66L; 0x55L; 0x44L; 0x33L; 0x22L; 0x11L];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x1122334455667788L;
@@ -1618,6 +1693,7 @@ exit
     lp_std = [0xb4L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x84L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0xfffffffeL;
@@ -1632,6 +1708,7 @@ exit
     lp_std = [0xb7L; 0x00L; 0x00L; 0x00L; 0x02L; 0x00L; 0x00L; 0x00L; 0x87L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0xfffffffffffffffeL;
@@ -1646,6 +1723,7 @@ exit
     lp_std = [180L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 20L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x2L;
@@ -1660,6 +1738,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 23L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x2L;
@@ -1674,6 +1753,7 @@ exit
   lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 36L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
   lm_std = [];
   lc_std = [];
+    isok = true;
   v = 1L;
   fuel = 3L;
   result_expected = 0xcL;
@@ -1689,6 +1769,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 44L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 4L;
     result_expected = 0xcL;
@@ -1704,6 +1785,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 64L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 44L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 4L;
     result_expected = 0x4L;
@@ -1718,6 +1800,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 64L; 39L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x100000004L;
@@ -1733,6 +1816,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 64L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 47L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 4L;
     result_expected = 0x100000004L;
@@ -1747,6 +1831,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 255L; 255L; 255L; 255L; 36L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0xFFFFFFFFFFFFFFFCL;
@@ -1762,6 +1847,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 24L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 60L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 4L;
     result_expected = 0x3L;
@@ -1776,6 +1862,7 @@ exit
     lp_std = [24L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 52L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x3L;
@@ -1791,6 +1878,7 @@ exit
     lp_std = [24L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 60L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 4L;
     result_expected = 0x3L;
@@ -1806,6 +1894,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 55L; 0L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 4L;
     result_expected = 0x300000000L;
@@ -1822,6 +1911,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 4L; 0L; 0L; 0L; 63L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 5L;
     result_expected = 0x300000000L;
@@ -1838,6 +1928,7 @@ exit
     lp_std = [180L; 0L; 0L; 0L; 116L; 22L; 0L; 0L; 148L; 0L; 0L; 0L; 92L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 13L; 0L; 0L; 0L; 156L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 5L;
     result_expected = 0x5L;
@@ -1852,6 +1943,7 @@ exit
     lp_std = [24L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 148L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 3L;
     result_expected = 0x0L;
@@ -1872,6 +1964,7 @@ exit
     lp_std = [180L; 0L; 0L; 0L; 54L; 132L; 133L; 177L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 0L; 0L; 0L; 200L; 197L; 13L; 16L; 180L; 1L; 0L; 0L; 62L; 38L; 222L; 13L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 1L; 0L; 0L; 243L; 247L; 190L; 60L; 159L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 151L; 0L; 0L; 0L; 120L; 23L; 143L; 101L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 1L;
     fuel = 9L;
     result_expected = 0x30ba5a04L;
@@ -1889,6 +1982,7 @@ exit
     lp_std = [133L; 16L; 0L; 0L; 2L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 160L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 4L;
     result_expected = 8590196736L;
@@ -1907,6 +2001,7 @@ exit
     lp_std = [7L; 11L; 0L; 0L; 248L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 160L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 5L;
     result_expected = 8590196728L;
@@ -1924,6 +2019,7 @@ exit
     lp_std = [0x07L; 0x0bL; 0x00L; 0x00L; 0xf8L; 0xffL; 0xffL; 0xffL; 0x85L; 0x10L; 0x00L; 0x00L; 0x04L; 0x00L; 0x00L; 0x00L; 0xbfL; 0xa0L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 5L;
     result_expected = 8590196736L;
@@ -1942,6 +2038,7 @@ exit
     lp_std =  [133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 12L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 5L;
     result_expected = 42L;
@@ -1958,6 +2055,7 @@ exit
     lp_std = [133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 133L; 16L; 0L; 0L; 3L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x0L;
@@ -1974,6 +2072,7 @@ exit
     lp_std = [113L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 254L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 21L; 1L; 2L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 255L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [64L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 254L;
     result_expected = 0x0L;
@@ -2001,6 +2100,7 @@ exit
     lp_std = [0xb7L; 0x06L; 0x00L; 0x00L; 0x11L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x07L; 0x00L; 0x00L; 0x22L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x08L; 0x00L; 0x00L; 0x44L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x09L; 0x00L; 0x00L; 0x88L; 0x00L; 0x00L; 0x00L; 0x85L; 0x10L; 0x00L; 0x00L; 0x0aL; 0x00L; 0x00L; 0x00L; 0xbfL; 0x60L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x70L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x80L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x0fL; 0x90L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x06L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x07L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x08L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0xb7L; 0x09L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x95L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L; 0x00L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 15L;
     result_expected = 0xffL;
@@ -2043,6 +2143,7 @@ exit
               0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 
               0x44L; 0x44L; 0x44L; 0x44L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 17L;
     result_expected = 0x01L;
@@ -2085,6 +2186,7 @@ exit
               0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
               0x44L; 0x44L; 0x44L; 0x44L;];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
     result_expected = 0x0L;
@@ -2127,6 +2229,7 @@ exit
               0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L; 0x44L;
               0x44L; 0x44L; 0x44L; 0x44L;];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 9L;
     result_expected = 0x0L;
@@ -2191,6 +2294,7 @@ exit
               0x9eL; 0x27L; 0x01L; 0x01L; 0x05L; 0x0aL; 0xa3L; 0xc4L; 
               0xcaL; 0x28L; 0xa3L; 0xc4L; 0xcfL; 0xd0L;];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 79L;
     result_expected = 0x01L;
@@ -2254,6 +2358,7 @@ exit
                 0x08L; 0x0aL; 0x00L; 0x17L; 0x95L; 0x6fL; 0x8dL; 0x9dL; 
                 0x9eL; 0x27L];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 55L;
     result_expected = 0x0L;
@@ -2274,6 +2379,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 48L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x2aL;
@@ -2294,6 +2400,7 @@ exit
     lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 48L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 8L;
     result_expected = 0x2aL;
@@ -2317,14 +2424,26 @@ exit
     lp_std = [133L; 16L; 0L; 0L; 4L; 4L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 15L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 16L; 0L; 0L; 0L; 247L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 141L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
     lm_std = [];
     lc_std = [];
+    isok = true;
     v = 2L;
     fuel = 7L;
+    result_expected = 0x0L;
+  };
+(*
+    ldxdw r0, [r1+6]
+    exit
+*)
+  {
+    dis = "test_err_ldxdw_oob";
+    lp_std = [121L; 16L; 6L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [0xaaL; 0xbbL; 0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L; 0xccL; 0xddL;];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 1L;
     result_expected = 0x0L;
   };
 ]
 
 let () =
-  List.iter run_test_case test_cases;
-  Printf.printf "\nSummary:\n";
-  Printf.printf "%sPassed: %d%s\n" green !passed reset;
-  Printf.printf "%sFailed: %d%s\n" red !failed reset
+  List.iter run_test_case test_cases
