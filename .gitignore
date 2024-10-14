@@ -1,7 +1,6 @@
-*/*.thy~
-*/#*.thy#
+*.thy~
+#*.thy#
 *.log
-*/*.cmi
-*/test
-*/*.cmo
+*.cmi
+*.cmo
 theory/IsabelleTutorialExample.thy
