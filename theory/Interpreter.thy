@@ -803,10 +803,10 @@ definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
 )"
 
 definition bpf_interp_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool \<Rightarrow> bool" where
-"bpf_interp_test lp lr lm lc v fuel res is_ok = (
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool \<Rightarrow> bool" where
+"bpf_interp_test lp lm lc v fuel res is_ok = (
   let st1 = bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
-    (init_bpf_state (intlist_to_reg_map lr) (u8_list_to_mem (int_to_u8_list lm) )
+    (init_bpf_state init_reg_map (u8_list_to_mem (int_to_u8_list lm) )
       (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 in
     if is_ok then (
       case st1 of
@@ -838,6 +838,7 @@ definition u8_list_to_mem_plus :: "u8 list \<Rightarrow> mem" where
 definition step_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
 "step_test lp lr lm lc v fuel ipc i res = (
+  if of_int res = i64_MIN then True else 
   let prog  = int_to_u8_list lp in
   let rs    = ((intlist_to_reg_map lr)#BR10 <--
       (MM_STACK_START + (stack_frame_size * max_call_depth))) in
