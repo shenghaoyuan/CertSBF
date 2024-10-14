@@ -803,13 +803,19 @@ definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
 )"
 
 definition bpf_interp_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
-"bpf_interp_test lp lr lm lc v fuel res = (
-  case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool \<Rightarrow> bool" where
+"bpf_interp_test lp lr lm lc v fuel res is_ok = (
+  let st1 = bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
     (init_bpf_state (intlist_to_reg_map lr) (u8_list_to_mem (int_to_u8_list lm) )
-      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
-  BPF_Success v \<Rightarrow> v = of_int res |
-  _ \<Rightarrow> False
+      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 in
+    if is_ok then (
+      case st1 of
+      BPF_Success v \<Rightarrow> v = of_int res |
+      _ \<Rightarrow> False )
+    else (
+      case st1 of
+      BPF_EFlag \<Rightarrow> True |
+      _ \<Rightarrow> False)
 )"
 
 definition int_to_bpf_ireg :: "int \<Rightarrow> bpf_ireg" where
