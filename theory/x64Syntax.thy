@@ -217,6 +217,7 @@ datatype instruction =
   | Pimulq_r ireg
   | Pdivl_r ireg
   | Pdivq_r ireg
+  | Pmodq_r ireg
   | Pidivl_r ireg
   | Pidivq_r ireg
 
@@ -230,7 +231,7 @@ datatype instruction =
   | Pxorq_rr ireg ireg
   | Pxorl_ri ireg u32
   | Pshll_ri ireg u8
-  | Pshlq_ri ireg u8
+  | Pshlq_ri ireg u8                         
   | Pshll_r ireg
   | Pshlq_r ireg
   | Pshrl_ri ireg u8

@@ -1025,5 +1025,51 @@ value "bitfield_insert_u8 3 1 0 0" (**r src = 0 *)
 value "bitfield_insert_u8 3 1  3 0" (**r dst = 3 *)
 value "ireg_of_u8 0" (**r Some RAX *)
 value "ireg_of_u8 3" (**r Some RBX *) *)
+(*
+fun x64_decodes_aux ::  "nat \<Rightarrow> x64_bin list \<Rightarrow> (nat * instruction) option list " where
+"x64_decodes_aux _ [] = [None]" |
+"x64_decodes_aux pc (h#t) = (if pc \<le> length (h#t) then let ins' = x64_decode pc h in 
+                              (case ins' of None \<Rightarrow> [None] |
+                                 Some (len, v) \<Rightarrow> [Some (len, v) ] @ x64_decodes_aux pc t)
+                            else [None])"
+
+fun x64_decodes_aux ::  "nat \<Rightarrow> x64_bin list \<Rightarrow> (nat * instruction) option list " where
+"x64_decodes_aux _ [] = [None]" |
+"x64_decodes_aux pc (h#t) = (if pc \<le> length (h#t) then let ins' = x64_decode pc h in 
+                              (case ins' of None \<Rightarrow> [None] |
+                                 Some (len, v) \<Rightarrow> [Some (len, v) ] @ x64_decodes_aux pc t)
+                            else [None])"
+*)
+
+fun x64_decodes_aux ::  "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruction) option list " where
+"x64_decodes_aux _ [] = [None]" |
+"x64_decodes_aux pc xs = (if pc < length xs then let xs' = drop pc xs; ins' = x64_decode 0 xs' in 
+                              (case ins' of None \<Rightarrow> [None] |
+                                 Some (len, v) \<Rightarrow> [Some (len, v)] @ x64_decodes_aux (len-1) (drop 1 xs'))
+                            else [None])"
+
+definition x64_decodes:: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruction) list option" where
+"x64_decodes pc xs = (let x = x64_decodes_aux pc xs in if x = [None] then None  
+                   else Some (map Option.the (butlast x)))"
+
+(*definition x64_encodes_aux :: "instruction \<Rightarrow> x64_bin \<Rightarrow> x64_bin option" where
+"x64_encodes_aux ins l_bin = (
+  case x64_encode ins of
+  None    \<Rightarrow> None |
+  Some l  \<Rightarrow> Some (l_bin@l))"
+
+fun x64_encodes :: "instruction list \<Rightarrow> x64_bin \<Rightarrow> x64_bin option" where
+"x64_encodes [] l_bin = []" |
+"x64_encodes h#xs l_bin = 
+  (case x64_encode h of
+  None    \<Rightarrow> None |
+  Some l  \<Rightarrow> Some (l_bin@l))"
+*)
+value "x64_decode 0 [0x90]"
+value "x64_decodes_aux 0 [0x90,00001111]"
+value "x64_decodes 0 [0x90,00001111]"
+
+
+
 
 end
