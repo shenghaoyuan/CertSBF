@@ -108,6 +108,23 @@ definition bpf_to_x64_reg:: "bpf_ireg \<Rightarrow> ireg" where
   BR10 \<Rightarrow> x64Syntax.RBP
 )"
 
+lemma bpf_to_x64_reg_corr2[simp]:" bpf_to_x64_reg r1 \<noteq> bpf_to_x64_reg r2  \<longrightarrow> r1 \<noteq> r2 "
+  apply(unfold bpf_to_x64_reg_def)
+  apply(rule impI)
+  apply(cases r1)
+    apply(cases r2, simp_all)
+           apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+         apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+       apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+  apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+  apply(cases r2, simp_all)
+    apply(cases r2, simp_all)
+  done
+
 lemma bpf_to_x64_reg_corr[simp]:" r1 \<noteq> r2 \<longrightarrow> bpf_to_x64_reg r1 \<noteq> bpf_to_x64_reg r2 "
   apply(unfold bpf_to_x64_reg_def)
   apply(rule impI)
