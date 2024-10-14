@@ -3,5 +3,5 @@
 *.log
 *.cmi
 *.cmo
-**/*.json
+tests/data/ocaml_in.json
 theory/IsabelleTutorialExample.thy
