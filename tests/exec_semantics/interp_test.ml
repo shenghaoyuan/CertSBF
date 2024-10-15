@@ -10,12 +10,39 @@ module Interp_test : sig
   type 'a stack_state_ext
   type bpf_state
   val bpf_interp_test :
-    myint list -> myint list -> myint list -> myint -> myint -> myint -> bool
+    myint list -> myint list -> myint list -> myint -> myint -> myint -> bool -> bool
   val int_of_standard_int : int64 -> myint
   val int_list_of_standard_int_list : int64 list -> myint list
-  end = struct
+end = struct
 
 type num = One | Bit0 of num | Bit1 of num;;
+
+let rec equal_num x0 x1 = match x0, x1 with Bit0 x2, Bit1 x3 -> false
+                    | Bit1 x3, Bit0 x2 -> false
+                    | One, Bit1 x3 -> false
+                    | Bit1 x3, One -> false
+                    | One, Bit0 x2 -> false
+                    | Bit0 x2, One -> false
+                    | Bit1 x3, Bit1 y3 -> equal_num x3 y3
+                    | Bit0 x2, Bit0 y2 -> equal_num x2 y2
+                    | One, One -> true;;
+
+type myint = Zero_int | Pos of num | Neg of num;;
+
+let rec equal_inta x0 x1 = match x0, x1 with Neg k, Neg l -> equal_num k l
+                     | Neg k, Pos l -> false
+                     | Neg k, Zero_int -> false
+                     | Pos k, Neg l -> false
+                     | Pos k, Pos l -> equal_num k l
+                     | Pos k, Zero_int -> false
+                     | Zero_int, Neg l -> false
+                     | Zero_int, Pos l -> false
+                     | Zero_int, Zero_int -> true;;
+
+type 'a equal = {equal : 'a -> 'a -> bool};;
+let equal _A = _A.equal;;
+
+let equal_int = ({equal = equal_inta} : myint equal);;
 
 let rec plus_num
   x0 x1 = match x0, x1 with Bit1 m, Bit1 n -> Bit0 (plus_num (plus_num m n) One)
@@ -36,8 +63,6 @@ let rec times_num
     | Bit0 m, Bit0 n -> Bit0 (Bit0 (times_num m n))
     | One, n -> n
     | m, One -> m;;
-
-type myint = Zero_int | Pos of num | Neg of num;;
 
 let rec times_inta k l = match k, l with Neg m, Neg n -> Pos (times_num m n)
                      | Neg m, Pos n -> Neg (times_num m n)
@@ -321,32 +346,13 @@ type 'a zero_neq_one =
 let rec of_bool _A = function true -> one _A.one_zero_neq_one
                      | false -> zero _A.zero_zero_neq_one;;
 
-let rec equal_num x0 x1 = match x0, x1 with Bit0 x2, Bit1 x3 -> false
-                    | Bit1 x3, Bit0 x2 -> false
-                    | One, Bit1 x3 -> false
-                    | Bit1 x3, One -> false
-                    | One, Bit0 x2 -> false
-                    | Bit0 x2, One -> false
-                    | Bit1 x3, Bit1 y3 -> equal_num x3 y3
-                    | Bit0 x2, Bit0 y2 -> equal_num x2 y2
-                    | One, One -> true;;
-
-let rec equal_int x0 x1 = match x0, x1 with Neg k, Neg l -> equal_num k l
-                    | Neg k, Pos l -> false
-                    | Neg k, Zero_int -> false
-                    | Pos k, Neg l -> false
-                    | Pos k, Pos l -> equal_num k l
-                    | Pos k, Zero_int -> false
-                    | Zero_int, Neg l -> false
-                    | Zero_int, Pos l -> false
-                    | Zero_int, Zero_int -> true;;
-
 let zero_neq_one_int =
   ({one_zero_neq_one = one_int; zero_zero_neq_one = zero_int} :
     myint zero_neq_one);;
 
 let rec adjust_div
-  (q, r) = plus_inta q (of_bool zero_neq_one_int (not (equal_int r Zero_int)));;
+  (q, r) =
+    plus_inta q (of_bool zero_neq_one_int (not (equal_inta r Zero_int)));;
 
 let rec divide_inta
   k ka = match k, ka with Neg m, Neg n -> fst (divmod_int m n)
@@ -366,7 +372,7 @@ let divide_int = ({divide = divide_inta} : myint divide);;
 let rec snd (x1, x2) = x2;;
 
 let rec adjust_mod
-  l r = (if equal_int r Zero_int then Zero_int else minus_inta (Pos l) r);;
+  l r = (if equal_inta r Zero_int then Zero_int else minus_inta (Pos l) r);;
 
 let rec modulo_inta
   k ka = match k, ka with Neg m, Neg n -> uminus_inta (snd (divmod_int m n))
@@ -442,6 +448,14 @@ let ring_1_int =
      semiring_1_cancel_ring_1 = semiring_1_cancel_int}
     : myint ring_1);;
 
+type 'a semiring_no_zero_divisors =
+  {semiring_0_semiring_no_zero_divisors : 'a semiring_0};;
+
+type 'a semiring_1_no_zero_divisors =
+  {semiring_1_semiring_1_no_zero_divisors : 'a semiring_1;
+    semiring_no_zero_divisors_semiring_1_no_zero_divisors :
+      'a semiring_no_zero_divisors};;
+
 type 'a ab_semigroup_mult =
   {semigroup_mult_ab_semigroup_mult : 'a semigroup_mult};;
 
@@ -457,9 +471,34 @@ type 'a comm_semiring_0_cancel =
   {comm_semiring_0_comm_semiring_0_cancel : 'a comm_semiring_0;
     semiring_0_cancel_comm_semiring_0_cancel : 'a semiring_0_cancel};;
 
-type 'a comm_ring =
-  {comm_semiring_0_cancel_comm_ring : 'a comm_semiring_0_cancel;
-    ring_comm_ring : 'a ring};;
+type 'a comm_monoid_mult =
+  {ab_semigroup_mult_comm_monoid_mult : 'a ab_semigroup_mult;
+    monoid_mult_comm_monoid_mult : 'a monoid_mult;
+    dvd_comm_monoid_mult : 'a dvd};;
+
+type 'a comm_semiring_1 =
+  {comm_monoid_mult_comm_semiring_1 : 'a comm_monoid_mult;
+    comm_semiring_0_comm_semiring_1 : 'a comm_semiring_0;
+    semiring_1_comm_semiring_1 : 'a semiring_1};;
+
+type 'a comm_semiring_1_cancel =
+  {comm_semiring_0_cancel_comm_semiring_1_cancel : 'a comm_semiring_0_cancel;
+    comm_semiring_1_comm_semiring_1_cancel : 'a comm_semiring_1;
+    semiring_1_cancel_comm_semiring_1_cancel : 'a semiring_1_cancel};;
+
+type 'a semidom =
+  {comm_semiring_1_cancel_semidom : 'a comm_semiring_1_cancel;
+    semiring_1_no_zero_divisors_semidom : 'a semiring_1_no_zero_divisors};;
+
+let semiring_no_zero_divisors_int =
+  ({semiring_0_semiring_no_zero_divisors = semiring_0_int} :
+    myint semiring_no_zero_divisors);;
+
+let semiring_1_no_zero_divisors_int =
+  ({semiring_1_semiring_1_no_zero_divisors = semiring_1_int;
+     semiring_no_zero_divisors_semiring_1_no_zero_divisors =
+       semiring_no_zero_divisors_int}
+    : myint semiring_1_no_zero_divisors);;
 
 let ab_semigroup_mult_int =
   ({semigroup_mult_ab_semigroup_mult = semigroup_mult_int} :
@@ -480,31 +519,6 @@ let comm_semiring_0_cancel_int =
      semiring_0_cancel_comm_semiring_0_cancel = semiring_0_cancel_int}
     : myint comm_semiring_0_cancel);;
 
-let comm_ring_int =
-  ({comm_semiring_0_cancel_comm_ring = comm_semiring_0_cancel_int;
-     ring_comm_ring = ring_int}
-    : myint comm_ring);;
-
-type 'a comm_monoid_mult =
-  {ab_semigroup_mult_comm_monoid_mult : 'a ab_semigroup_mult;
-    monoid_mult_comm_monoid_mult : 'a monoid_mult;
-    dvd_comm_monoid_mult : 'a dvd};;
-
-type 'a comm_semiring_1 =
-  {comm_monoid_mult_comm_semiring_1 : 'a comm_monoid_mult;
-    comm_semiring_0_comm_semiring_1 : 'a comm_semiring_0;
-    semiring_1_comm_semiring_1 : 'a semiring_1};;
-
-type 'a comm_semiring_1_cancel =
-  {comm_semiring_0_cancel_comm_semiring_1_cancel : 'a comm_semiring_0_cancel;
-    comm_semiring_1_comm_semiring_1_cancel : 'a comm_semiring_1;
-    semiring_1_cancel_comm_semiring_1_cancel : 'a semiring_1_cancel};;
-
-type 'a comm_ring_1 =
-  {comm_ring_comm_ring_1 : 'a comm_ring;
-    comm_semiring_1_cancel_comm_ring_1 : 'a comm_semiring_1_cancel;
-    ring_1_comm_ring_1 : 'a ring_1};;
-
 let comm_monoid_mult_int =
   ({ab_semigroup_mult_comm_monoid_mult = ab_semigroup_mult_int;
      monoid_mult_comm_monoid_mult = monoid_mult_int;
@@ -522,6 +536,25 @@ let comm_semiring_1_cancel_int =
      comm_semiring_1_comm_semiring_1_cancel = comm_semiring_1_int;
      semiring_1_cancel_comm_semiring_1_cancel = semiring_1_cancel_int}
     : myint comm_semiring_1_cancel);;
+
+let semidom_int =
+  ({comm_semiring_1_cancel_semidom = comm_semiring_1_cancel_int;
+     semiring_1_no_zero_divisors_semidom = semiring_1_no_zero_divisors_int}
+    : myint semidom);;
+
+type 'a comm_ring =
+  {comm_semiring_0_cancel_comm_ring : 'a comm_semiring_0_cancel;
+    ring_comm_ring : 'a ring};;
+
+let comm_ring_int =
+  ({comm_semiring_0_cancel_comm_ring = comm_semiring_0_cancel_int;
+     ring_comm_ring = ring_int}
+    : myint comm_ring);;
+
+type 'a comm_ring_1 =
+  {comm_ring_comm_ring_1 : 'a comm_ring;
+    comm_semiring_1_cancel_comm_ring_1 : 'a comm_semiring_1_cancel;
+    ring_1_comm_ring_1 : 'a ring_1};;
 
 let comm_ring_1_int =
   ({comm_ring_comm_ring_1 = comm_ring_int;
@@ -563,6 +596,53 @@ let divide_trivial_int =
      divide_divide_trivial = divide_int}
     : myint divide_trivial);;
 
+type 'a semiring_no_zero_divisors_cancel =
+  {semiring_no_zero_divisors_semiring_no_zero_divisors_cancel :
+     'a semiring_no_zero_divisors};;
+
+type 'a semidom_divide =
+  {divide_trivial_semidom_divide : 'a divide_trivial;
+    semidom_semidom_divide : 'a semidom;
+    semiring_no_zero_divisors_cancel_semidom_divide :
+      'a semiring_no_zero_divisors_cancel};;
+
+let semiring_no_zero_divisors_cancel_int =
+  ({semiring_no_zero_divisors_semiring_no_zero_divisors_cancel =
+      semiring_no_zero_divisors_int}
+    : myint semiring_no_zero_divisors_cancel);;
+
+let semidom_divide_int =
+  ({divide_trivial_semidom_divide = divide_trivial_int;
+     semidom_semidom_divide = semidom_int;
+     semiring_no_zero_divisors_cancel_semidom_divide =
+       semiring_no_zero_divisors_cancel_int}
+    : myint semidom_divide);;
+
+type 'a semiring_modulo_trivial =
+  {divide_trivial_semiring_modulo_trivial : 'a divide_trivial;
+    semiring_modulo_semiring_modulo_trivial : 'a semiring_modulo};;
+
+type 'a algebraic_semidom =
+  {semidom_divide_algebraic_semidom : 'a semidom_divide};;
+
+type 'a semidom_modulo =
+  {algebraic_semidom_semidom_modulo : 'a algebraic_semidom;
+    semiring_modulo_trivial_semidom_modulo : 'a semiring_modulo_trivial};;
+
+let semiring_modulo_trivial_int =
+  ({divide_trivial_semiring_modulo_trivial = divide_trivial_int;
+     semiring_modulo_semiring_modulo_trivial = semiring_modulo_int}
+    : myint semiring_modulo_trivial);;
+
+let algebraic_semidom_int =
+  ({semidom_divide_algebraic_semidom = semidom_divide_int} :
+    myint algebraic_semidom);;
+
+let semidom_modulo_int =
+  ({algebraic_semidom_semidom_modulo = algebraic_semidom_int;
+     semiring_modulo_trivial_semidom_modulo = semiring_modulo_trivial_int}
+    : myint semidom_modulo);;
+
 type nat = Zero_nat | Suc of nat;;
 
 let rec inc = function One -> Bit0 One
@@ -583,20 +663,11 @@ let rec bit_int
     | Neg One, n -> true
     | Zero_int, n -> false;;
 
-type 'a semiring_modulo_trivial =
-  {divide_trivial_semiring_modulo_trivial : 'a divide_trivial;
-    semiring_modulo_semiring_modulo_trivial : 'a semiring_modulo};;
-
 type 'a semiring_bits =
   {semiring_parity_semiring_bits : 'a semiring_parity;
     semiring_modulo_trivial_semiring_bits : 'a semiring_modulo_trivial;
     bit : 'a -> nat -> bool};;
 let bit _A = _A.bit;;
-
-let semiring_modulo_trivial_int =
-  ({divide_trivial_semiring_modulo_trivial = divide_trivial_int;
-     semiring_modulo_semiring_modulo_trivial = semiring_modulo_int}
-    : myint semiring_modulo_trivial);;
 
 let semiring_bits_int =
   ({semiring_parity_semiring_bits = semiring_parity_int;
@@ -988,9 +1059,6 @@ let rec equal_bpf_irega x0 x1 = match x0, x1 with BR9, BR10 -> false
                           | BR2, BR2 -> true
                           | BR1, BR1 -> true
                           | BR0, BR0 -> true;;
-
-type 'a equal = {equal : 'a -> 'a -> bool};;
-let equal _A = _A.equal;;
 
 let equal_bpf_ireg = ({equal = equal_bpf_irega} : bpf_ireg equal);;
 
@@ -1459,7 +1527,7 @@ let rec loadv
                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                    (Pos (Bit1 (Bit1 One)))))));;
 
-let rec equal_word _A v w = equal_int (the_int _A v) (the_int _A w);;
+let rec equal_word _A v w = equal_inta (the_int _A v) (the_int _A w);;
 
 let rec drop_bit_word _A n w = Word (drop_bit_int n (the_int _A w));;
 
@@ -2212,14 +2280,16 @@ let rec eval_pqr64_2
                 (eval_snd_op_u64 sop rs)
               in
             let dv_i =
-              cast (len_signed
-                     (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                (len_bit0
+              signed_cast
+                (len_signed
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                (len_signed
+                  (len_bit0
+                    (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                 (signed_cast
                   (len_bit0
                     (len_bit0
@@ -2231,14 +2301,16 @@ let rec eval_pqr64_2
                   (eval_reg dst rs))
               in
             let sv_i =
-              cast (len_signed
-                     (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                (len_bit0
+              signed_cast
+                (len_signed
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                (len_signed
+                  (len_bit0
+                    (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                 (signed_cast
                   (len_bit0
                     (len_bit0
@@ -2247,28 +2319,29 @@ let rec eval_pqr64_2
                     (len_bit0
                       (len_bit0
                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                  (eval_reg dst rs))
+                  (eval_snd_op_u64 sop rs))
               in
              (match pop2
                with BPF_UHMUL ->
                  OKS (fun_upd equal_bpf_ireg rs dst
-                       (drop_bit_word
+                       (cast (len_bit0
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0
+                                     (len_bit0
+                                       (len_bit0 (len_bit0 len_num1)))))))
                          (len_bit0
                            (len_bit0
                              (len_bit0
                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (nat_of_num
-                           (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
-                         (cast (len_bit0
-                                 (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0
- (len_bit0 (len_bit0 len_num1)))))))
+                         (drop_bit_word
                            (len_bit0
                              (len_bit0
                                (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                                 (len_bit0
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                           (nat_of_num
+                             (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
                            (times_worda
                              (len_bit0
                                (len_bit0
@@ -2279,30 +2352,35 @@ let rec eval_pqr64_2
                              dv_u sv_u))))
                | BPF_SHMUL ->
                  OKS (fun_upd equal_bpf_ireg rs dst
-                       (drop_bit_word
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (nat_of_num
-                           (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
-                         (cast (len_bit0
+                       (cast (len_signed
+                               (len_bit0
                                  (len_bit0
                                    (len_bit0
                                      (len_bit0
                                        (len_bit0
- (len_bit0 (len_bit0 len_num1)))))))
+ (len_bit0 (len_bit0 len_num1))))))))
+                         (len_bit0
                            (len_bit0
                              (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           (times_worda
+                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                         (drop_bit_word
+                           (len_signed
                              (len_bit0
                                (len_bit0
                                  (len_bit0
                                    (len_bit0
                                      (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
+                                       (len_bit0 (len_bit0 len_num1))))))))
+                           (nat_of_num
+                             (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
+                           (times_worda
+                             (len_signed
+                               (len_bit0
+                                 (len_bit0
+                                   (len_bit0
+                                     (len_bit0
+                                       (len_bit0
+ (len_bit0 (len_bit0 len_num1))))))))
                              dv_i sv_i)))))));;
 
 let rec eval_store
@@ -2339,9 +2417,6 @@ let rec eval_store
      let sv = eval_snd_op_u64 sop rs in
       storev chk mem vm_addr (memory_chunk_value_of_u64 chk sv));;
 
-let rec modulo_word _A
-  a b = of_int _A (modulo_inta (the_int _A a) (the_int _A b));;
-
 let rec eval_snd_op_i64
   x0 uu = match x0, uu with
     SOImm i, uu ->
@@ -2361,81 +2436,74 @@ let rec eval_snd_op_i64
               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
           (rs r);;
 
+let rec dvd (_A1, _A2)
+  a b = eq _A1
+          (modulo
+            _A2.semiring_modulo_trivial_semidom_modulo.semiring_modulo_semiring_modulo_trivial.modulo_semiring_modulo
+            b a)
+          (zero _A2.algebraic_semidom_semidom_modulo.semidom_divide_algebraic_semidom.semidom_semidom_divide.comm_semiring_1_cancel_semidom.comm_semiring_1_comm_semiring_1_cancel.semiring_1_comm_semiring_1.semiring_0_semiring_1.mult_zero_semiring_0.zero_mult_zero);;
+
+let rec rust_srem
+  a b = (if equal_inta b Zero_int then None
+          else (if dvd (equal_int, semidom_modulo_int) b a then Some Zero_int
+                 else (if less_int Zero_int a && less_int b Zero_int
+                        then Some (modulo_inta a (uminus_inta b))
+                        else (if less_int a Zero_int && less_int Zero_int b
+                               then Some (uminus_inta
+   (modulo_inta (uminus_inta a) b))
+                               else Some (modulo_inta a b)))));;
+
+let rec rust_sdiv
+  a b = (if equal_inta b Zero_int then None
+          else (if dvd (equal_int, semidom_modulo_int) b a
+                 then Some (divide_inta a b)
+                 else (let c = divide_inta a b in
+                        (if less_eq_int Zero_int c then Some c
+                          else Some (plus_inta c one_inta)))));;
+
 let rec eval_pqr64_aux2
   pop dst sop rs =
     (let dv =
-       signed_cast
+       the_signed_int
          (len_bit0
            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+         (eval_reg dst rs)
+       in
+     let sv =
+       the_signed_int
          (len_signed
            (len_bit0
              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-         (eval_reg dst rs)
+         (eval_snd_op_i64 sop rs)
        in
-     let sv = eval_snd_op_i64 sop rs in
       (match pop with BPF_LMUL -> OKN | BPF_UDIV -> OKN | BPF_UREM -> OKN
         | BPF_SDIV ->
-          (if equal_word
-                (len_signed
-                  (len_bit0
-                    (len_bit0
-                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                sv (zero_word
-                     (len_signed
-                       (len_bit0
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+          (if equal_inta sv Zero_int
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
-                               (len_bit0
-                                 (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (divide_word
-                           (len_signed
+            else (match rust_sdiv dv sv with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
                              (len_bit0
                                (len_bit0
                                  (len_bit0
-                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                           dv sv))))
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                             res))))
         | BPF_SREM ->
-          (if equal_word
-                (len_signed
-                  (len_bit0
-                    (len_bit0
-                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                sv (zero_word
-                     (len_signed
-                       (len_bit0
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+          (if equal_inta sv Zero_int
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
-                               (len_bit0
-                                 (len_bit0
-                                   (len_bit0
-                                     (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (modulo_word
-                           (len_signed
+            else (match rust_srem dv sv with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
                              (len_bit0
                                (len_bit0
                                  (len_bit0
-                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                           dv sv))))));;
+                                   (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                             res))))));;
+
+let rec modulo_word _A
+  a b = of_int _A (modulo_inta (the_int _A a) (the_int _A b));;
 
 let rec eval_pqr64_aux1
   pop dst sop rs =
@@ -2633,21 +2701,29 @@ let rec eval_pqr32_aux1
                        (len_bit0
                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
+            else (match
+                   rust_sdiv
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       dv)
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       sv)
+                   with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
+                             (len_bit0
                                (len_bit0
                                  (len_bit0
                                    (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (divide_word
-                           (len_signed
-                             (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           dv sv))))
+                             res))))
         | BPF_SREM ->
           (if equal_word
                 (len_signed
@@ -2658,21 +2734,29 @@ let rec eval_pqr32_aux1
                        (len_bit0
                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
             then (match sop with SOImm _ -> NOK | SOReg _ -> OKN)
-            else OKS (fun_upd equal_bpf_ireg rs dst
-                       (cast (len_signed
+            else (match
+                   rust_srem
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       dv)
+                     (the_signed_int
+                       (len_signed
+                         (len_bit0
+                           (len_bit0
+                             (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                       sv)
+                   with None -> NOK
+                   | Some res ->
+                     OKS (fun_upd equal_bpf_ireg rs dst
+                           (of_int
+                             (len_bit0
                                (len_bit0
                                  (len_bit0
                                    (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (modulo_word
-                           (len_signed
-                             (len_bit0
-                               (len_bit0
-                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                           dv sv))))));;
+                             res))))));;
 
 let rec eval_pqr32
   pop dst sop rs is_v1 =
@@ -4277,6 +4361,11 @@ let rec unsigned_bitfield_extract_u8
         (one_worda (len_bit0 (len_bit0 (len_bit0 len_num1)))))
       (drop_bit_word (len_bit0 (len_bit0 (len_bit0 len_num1))) pos n);;
 
+let rec less_nat m x1 = match m, x1 with m, Suc n -> less_eq_nat m n
+                   | n, Zero_nat -> false
+and less_eq_nat x0 n = match x0, n with Suc m, n -> less_nat m n
+                  | Zero_nat, n -> true;;
+
 let rec rbpf_decoder
   opc dv sv off imm =
     (if equal_word (len_bit0 (len_bit0 (len_bit0 len_num1))) opc
@@ -4891,81 +4980,85 @@ let rec bpf_find_instr
        unsigned_bitfield_extract_u8 (nat_of_num (Bit0 (Bit0 One)))
          (nat_of_num (Bit0 (Bit0 One))) reg
        in
-      (match
-        u16_of_u8_list
-          [nth l (plus_nat npc (nat_of_num (Bit0 One)));
-            nth l (plus_nat npc (nat_of_num (Bit1 One)))]
-        with None -> None
-        | Some off_v ->
-          (match
-            u32_of_u8_list
-              [nth l (plus_nat npc (nat_of_num (Bit0 (Bit0 One))));
-                nth l (plus_nat npc (nat_of_num (Bit1 (Bit0 One))));
-                nth l (plus_nat npc (nat_of_num (Bit0 (Bit1 One))));
-                nth l (plus_nat npc (nat_of_num (Bit1 (Bit1 One))))]
-            with None -> None
-            | Some i1 ->
-              (let off =
-                 signed_cast
-                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))
-                   (len_signed
-                     (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
-                   off_v
-                 in
-               let imm =
-                 signed_cast
-                   (len_bit0
-                     (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
-                   (len_signed
-                     (len_bit0
-                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                   i1
-                 in
-                (if equal_word (len_bit0 (len_bit0 (len_bit0 len_num1))) op
-                      (of_int (len_bit0 (len_bit0 (len_bit0 len_num1)))
-                        (Pos (Bit0 (Bit0 (Bit0 (Bit1 One))))))
-                  then (match
-                         u32_of_u8_list
-                           [nth l (plus_nat npc
-                                    (nat_of_num (Bit0 (Bit0 (Bit1 One)))));
-                             nth l (plus_nat npc
-                                     (nat_of_num (Bit1 (Bit0 (Bit1 One)))));
-                             nth l (plus_nat npc
-                                     (nat_of_num (Bit0 (Bit1 (Bit1 One)))));
-                             nth l (plus_nat npc
-                                     (nat_of_num (Bit1 (Bit1 (Bit1 One)))))]
-                         with None -> None
-                         | Some i2 ->
-                           (let imm2 =
-                              signed_cast
-                                (len_bit0
-                                  (len_bit0
-                                    (len_bit0 (len_bit0 (len_bit0 len_num1)))))
-                                (len_signed
-                                  (len_bit0
-                                    (len_bit0
-                                      (len_bit0
-(len_bit0 (len_bit0 len_num1))))))
-                                i2
-                              in
-                             (match
-                               u4_to_bpf_ireg
-                                 (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
-                                   (len_bit0 (len_bit0 len_num1)) dst)
-                               with None -> None
-                               | Some dst_r ->
-                                 Some (BPF_LD_IMM (dst_r, imm, imm2)))))
-                  else rbpf_decoder op
-                         (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
-                           (len_bit0 (len_bit0 len_num1)) dst)
-                         (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
-                           (len_bit0 (len_bit0 len_num1)) src)
-                         off imm)))));;
+      (if less_nat (size_list l) (plus_nat npc (nat_of_num (Bit1 (Bit1 One))))
+        then None
+        else (match
+               u16_of_u8_list
+                 [nth l (plus_nat npc (nat_of_num (Bit0 One)));
+                   nth l (plus_nat npc (nat_of_num (Bit1 One)))]
+               with None -> None
+               | Some off_v ->
+                 (match
+                   u32_of_u8_list
+                     [nth l (plus_nat npc (nat_of_num (Bit0 (Bit0 One))));
+                       nth l (plus_nat npc (nat_of_num (Bit1 (Bit0 One))));
+                       nth l (plus_nat npc (nat_of_num (Bit0 (Bit1 One))));
+                       nth l (plus_nat npc (nat_of_num (Bit1 (Bit1 One))))]
+                   with None -> None
+                   | Some i1 ->
+                     (let off =
+                        signed_cast
+                          (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))
+                          (len_signed
+                            (len_bit0
+                              (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+                          off_v
+                        in
+                      let imm =
+                        signed_cast
+                          (len_bit0
+                            (len_bit0
+                              (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+                          (len_signed
+                            (len_bit0
+                              (len_bit0
+                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                          i1
+                        in
+                       (if equal_word (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                             op (of_int
+                                  (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                                  (Pos (Bit0 (Bit0 (Bit0 (Bit1 One))))))
+                         then (if less_nat (size_list l)
+                                    (plus_nat npc
+                                      (nat_of_num (Bit1 (Bit1 (Bit1 One)))))
+                                then None
+                                else (match
+                                       u32_of_u8_list
+ [nth l (plus_nat npc (nat_of_num (Bit0 (Bit0 (Bit1 One)))));
+   nth l (plus_nat npc (nat_of_num (Bit1 (Bit0 (Bit1 One)))));
+   nth l (plus_nat npc (nat_of_num (Bit0 (Bit1 (Bit1 One)))));
+   nth l (plus_nat npc (nat_of_num (Bit1 (Bit1 (Bit1 One)))))]
+                                       with None -> None
+                                       | Some i2 ->
+ (let imm2 =
+    signed_cast (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+      (len_signed
+        (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+      i2
+    in
+   (match
+     u4_to_bpf_ireg
+       (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+         (len_bit0 (len_bit0 len_num1)) dst)
+     with None -> None | Some dst_r -> Some (BPF_LD_IMM (dst_r, imm, imm2))))))
+                         else rbpf_decoder op
+                                (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                                  (len_bit0 (len_bit0 len_num1)) dst)
+                                (cast (len_bit0 (len_bit0 (len_bit0 len_num1)))
+                                  (len_bit0 (len_bit0 len_num1)) src)
+                                off imm))))));;
 
-let rec less_nat m x1 = match m, x1 with m, Suc n -> less_eq_nat m n
-                   | n, Zero_nat -> false
-and less_eq_nat x0 n = match x0, n with Suc m, n -> less_nat m n
-                  | Zero_nat, n -> true;;
+let i64_MIN
+  = (Neg (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));;
 
 let rec num_to_int (n: num) : int64 =
   match n with
@@ -4988,7 +5081,9 @@ let rec num_of_int (n: int64) =
 let int_of_standard_int (n: int64) =
   if n = 0L then Zero_int
   else if n > 0L then  Pos (num_of_int (n))
+  else if n = 0x8000000000000000L then i64_MIN
   else Neg (num_of_int (Int64.sub 0L n))
+
 
 let int_list_of_standard_int_list lst =
   List.map int_of_standard_int lst
@@ -5018,7 +5113,7 @@ let print_bpf_state st =
 
 let rec bpf_interp
   x0 uu uv uw ux = match x0, uu, uv, uw, ux with
-    Zero_nat, uu, uv, uw, ux -> let _ = print_endline ("hello 5") in BPF_EFlag
+    Zero_nat, uu, uv, uw, ux -> BPF_EFlag
     | Suc n, prog, st, enable_stack_frame_gaps, program_vm_addr ->
         (match st
           with BPF_OK (pc, rs, m, ss, sv, fm, cur_cu, remain_cu) ->
@@ -5037,7 +5132,7 @@ let rec bpf_interp
                              (len_bit0
                                (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                          remain_cu cur_cu
-                     then let _ = print_endline ("hello 6") in BPF_EFlag
+                     then BPF_EFlag
                      else (match
                             bpf_find_instr
                               (the_nat
@@ -5048,7 +5143,7 @@ let rec bpf_interp
 (len_bit0 (len_bit0 len_num1))))))
                                 pc)
                               prog
-                            with None -> let _ = print_endline ("hello 7") in BPF_EFlag
+                            with None -> BPF_EFlag
                             | Some ins ->
                               (let st1 =
                                  step pc ins rs m ss sv fm
@@ -5063,11 +5158,10 @@ let rec bpf_interp
  (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                                    remain_cu
                                  in
-                                 (*let _ = print_bpf_state st1 in*)
                                 bpf_interp n prog st1 enable_stack_frame_gaps
                                   program_vm_addr)))
-              else let _ = print_endline ("hello 8") in BPF_EFlag)
-          | BPF_Success a -> BPF_Success a | BPF_EFlag -> let _ = print_endline ("hello 9") in BPF_EFlag
+              else BPF_EFlag)
+          | BPF_Success a -> BPF_Success a | BPF_EFlag -> BPF_EFlag
           | BPF_Err -> BPF_Err);;
 
 let rec create_list x0 uu = match x0, uu with Zero_nat, uu -> []
@@ -5129,12 +5223,12 @@ let init_stack_state : unit stack_state_ext
         ());;
 
 let rec init_bpf_state
-  m n v =
+  rs m n v =
     BPF_OK
       (zero_word
          (len_bit0
            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))),
-        fun_upd equal_bpf_ireg init_reg_map BR10
+        fun_upd equal_bpf_ireg rs BR10
           (plus_word
             (len_bit0
               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
@@ -5188,34 +5282,41 @@ let rec u8_list_to_mem
           else None));;
 
 let rec bpf_interp_test
-  lp lm lc v fuel res =
-    (match
-      bpf_interp (nat (plus_inta fuel one_inta)) (int_to_u8_list lp)
-        (init_bpf_state (u8_list_to_mem (int_to_u8_list lm))
-          (of_int
-            (len_bit0
-              (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-            (plus_inta fuel one_inta))
-          (if equal_int v one_inta then V1 else V2))
-        true
-        (of_int
-          (len_bit0
-            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-          (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
- (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
-     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
-   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
- (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))))))))))))))))))))))
-      with BPF_OK (_, _, _, _, _, _, _, _) -> false
-      | BPF_Success va ->
-        equal_word
-          (len_bit0
-            (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-          va (of_int
-               (len_bit0
-                 (len_bit0
-                   (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-               res)
-      | BPF_EFlag -> false | BPF_Err -> false);;
+  lp lm lc v fuel res is_ok =
+    (let st1 =
+       bpf_interp (nat (plus_inta fuel one_inta)) (int_to_u8_list lp)
+         (init_bpf_state init_reg_map (u8_list_to_mem (int_to_u8_list lm))
+           (of_int
+             (len_bit0
+               (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+             (plus_inta fuel one_inta))
+           (if equal_inta v one_inta then V1 else V2))
+         true
+         (of_int
+           (len_bit0
+             (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+           (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+(Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+    (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+  (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))))))))))))))))))))))
+       in
+      (if is_ok
+        then (match st1 with BPF_OK (_, _, _, _, _, _, _, _) -> false
+               | BPF_Success va ->
+                 equal_word
+                   (len_bit0
+                     (len_bit0
+                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                   va (of_int
+                        (len_bit0
+                          (len_bit0
+                            (len_bit0
+                              (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                        res)
+               | BPF_EFlag -> false | BPF_Err -> false)
+        else (match st1 with BPF_OK (_, _, _, _, _, _, _, _) -> false
+               | BPF_Success _ -> false | BPF_EFlag -> true
+               | BPF_Err -> false)));;
 
 end;; (*struct Interp_test*)

@@ -4164,9 +4164,9 @@ let rec step
                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))),
                     rsa, m, ss, sv, fm, cur_cu, remain_cu)
               | OKN -> BPF_EFlag)
-          | BPF_ALU64 (bop, d, sop) ->
+          | BPF_ALU64 (bop, d, sop) -> 
             (match eval_alu64 bop d sop rs is_v1 with NOK -> BPF_Err
-              | OKS rsa ->
+              | OKS rsa -> 
                 BPF_OK
                   (plus_word
                      (len_bit0
@@ -5204,10 +5204,21 @@ let rec num_of_int (n: int64) =
   else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
   else Bit1 (num_of_int (Int64.div n 2L))
 
+let i64_MIN
+  = (Neg (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));;
 
 let int_of_standard_int (n: int64) =
   if n = 0L then Zero_int
   else if n > 0L then  Pos (num_of_int (n))
+  else if n = 0x8000000000000000L then i64_MIN
   else Neg (num_of_int (Int64.sub 0L n))
 
 let int_list_of_standard_int_list lst =
@@ -5237,8 +5248,8 @@ let print_bpf_state st =
 
 
 let rec step_test
-  lp lr lm lc v fuel ipc i res =
-    (let prog = int_to_u8_list lp in
+  lp lr lm lc v fuel ipc i res = 
+    (let prog = int_to_u8_list lp in 
      let rs =
        fun_upd equal_bpf_ireg (intlist_to_reg_map lr) BR10
          (plus_word
@@ -5266,13 +5277,13 @@ let rec step_test
                  (len_bit0
                    (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                (Pos (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))
-       in
-     let m = u8_list_to_mem (int_to_u8_list lm) in
-     let stk = init_stack_state in
-     let sv = (if equal_inta v one_inta then V1 else V2) in
+       in 
+     let m = u8_list_to_mem (int_to_u8_list lm) in 
+     let stk = init_stack_state in 
+     let sv = (if equal_inta v one_inta then V1 else V2) in 
      let fm = init_func_map in
       (match bpf_find_instr Zero_nat prog with None -> false
-        | Some ins0 ->
+        | Some ins0 -> 
           (let st1 =
              step (zero_word
                     (len_bit0
@@ -5298,7 +5309,7 @@ let rec step_test
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                  (Pos (Bit1 One)))
              in
-            (* let _ = print_bpf_state st1 in*)
+             (*let _ = print_bpf_state st1 in*)
             (if equal_word (len_bit0 (len_bit0 (len_bit0 len_num1)))
                   (nth prog Zero_nat)
                   (of_int (len_bit0 (len_bit0 (len_bit0 len_num1)))

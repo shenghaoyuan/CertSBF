@@ -200,7 +200,11 @@ fn generate_and_process_test_cases(num_cases: usize) -> Vec<TestCase> {
             registers.push(value);
         }
 
-        let data_map: Vec<u8> = (0..110).collect();
+        let data_map: Vec<u8> = if istore | isload {
+            (0..110).collect::<Vec<u8>>()
+        }else {
+            Vec::new()
+        };
 
         let rx_index = rng.gen_range(0..10);
         let rx = format!("r{}", rx_index);
@@ -381,7 +385,8 @@ fn generate_and_process_test_cases(num_cases: usize) -> Vec<TestCase> {
     }
 
     test_cases
-}fn main() -> std::io::Result<()> {
+}
+fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let num_test_cases = args.get(1).map_or(100, |x| x.parse::<usize>().unwrap_or(100));
 
