@@ -1,6 +1,6 @@
 # A complete formal semantics of eBPF instruction set architecture for Solana
 
-# Environments
+Note that we only test on
 - Windows 11 + WSL2 (Ubuntu 22.04 LTS)
 - Ubuntu 22.04 LTS
 
@@ -11,7 +11,6 @@
 - [Isabelle AFP](https://www.isa-afp.org/download/) (unzip the AFP to your PATH, e.g. `/YOUR-PATH/afp`)
 
 ```shell
-
 # set PATH 
 cd ~
 vim. bashrc # export PATH=$PATH:/YOUR-PATH/Isabelle2024/bin:...
@@ -32,9 +31,11 @@ sudo apt-get install libxi6 libxtst6 libxrender1 fontconfig
 ```
 
 ## 1.2 Check the SBPF ISA semantics
+This command starts up the IDE of Isabelle/HOL (JEdit), opens the `Interpreter.thy` file, and checks the semantics automatically.
 ```shell
 make
 ```
+If you want to check another file, just click it on JEdit and the Isabelle/HOL checker then validates it automatically.
 
 ## 1.3 Link to paper
 
@@ -78,8 +79,7 @@ opam install ocamlfind yojson
 ## 2.2 Validate semantics
 - **`make macro-test`**: Compiles and runs program-level tests using the Solana official test suite in `tests/rbpf/tests/execution.rs`.
 - **`make micro-test`**: Compiles and runs instruction-level tests using the generated cases (100 tests by default).
-- **`make generator`**: Generate random instruction test cases (by default: 100).
-  - Use `make generator num=X` to specify the number of cases.
+We also provide **`make generator num=X`** to generate X random instruction test cases. For example, to do 100000 micro-test, just run `make generator num=100000; make micro-test`
 
 ## 2.3 Link to paper
 
