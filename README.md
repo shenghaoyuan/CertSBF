@@ -1,8 +1,8 @@
 # A complete formal semantics of eBPF instruction set architecture for Solana
 
 # Environments
-- Windows 11 + WSL2 (Ubuntu 22.04.3 LTS)
-- Ubuntu 22.04.4 LTS
+- Windows 11 + WSL2 (Ubuntu 22.04 LTS)
+- Ubuntu 22.04 LTS
 
 # 1. SBPF ISA Semantics
 ## 1.1 Install Isabelle/HOL and AFP
