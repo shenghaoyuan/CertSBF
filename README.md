@@ -27,7 +27,7 @@ cd /YOUR-PATH/CertSBF
 sudo apt-get install libxi6 libxtst6 libxrender1 fontconfig
 ```
 
-## 1.2 check the SBPF ISA semantics
+## 1.2 Check the SBPF ISA semantics
 ```shell
 make
 ```
@@ -38,11 +38,10 @@ make
 | ------------- | ------------- |
 | Syntax (Section 4.1, Fig 4) | [rBPFSyntax.thy](theory/rBPFSyntax.thy#L41) |
 | Semantics (Section 4.2) | [step](theory/Interpreter.thy#L510), [interpreter](theory/Interpreter.thy#L608) |
-| Validation Framework (Section 5.1) | [isabell/hol glue code1](theory/Interpreter.thy#L636), [isabell/hol glue code2](theory/Interpreter.thy#L636) |
 
-# Validation Framework
+# 2. Validation Framework
 
-1. install OCaml and related packages
+## 2.1 Install OCaml and related packages
 ```shell
 # install opam
 add-apt-repository ppa:avsm/ppa
@@ -69,23 +68,53 @@ which ocaml
 opam install ocamlfind yojson
 ```
 
-2. validate semantics
-- **`make macro-test`**: Compiles and runs program-level tests using the Solana official test suite in `./test/rbpf/tests/execution.rs`.
+## 2.2 Validate semantics
+- **`make macro-test`**: Compiles and runs program-level tests using the Solana official test suite in `tests/rbpf/tests/execution.rs`.
 - **`make micro-test`**: Compiles and runs instruction-level tests using the generated cases (100 tests by default).
-- **`make generator`**: Generate random instruction test cases.
+- **`make generator`**: Generate random instruction test cases (by default: 100).
   - Use `make generator num=X` to specify the number of cases.
 
+## 2.3 Link to paper
 
-# Code Statistics
-1. install the `cloc` tool
+| Paper      | Code      |
+| ------------- | ------------- |
+| Validation Framework (Section 5.1) | isabell/hol: [glue code1](theory/Interpreter.thy#L651) + [glue code2](theory/Interpreter.thy#L683) + [extraction declration](theory/bpf_generator.thy#L15), OCaml: [glue code](tests/exec_semantics/glue.ml), [interpreter_test](tests/exec_semantics/interp_test.ml), [step_test](tests/exec_semantics/step_test.ml) |
+
+# 3. Solana VM applications
+
+## 3.1 Solana Assembler and Disassembler (Section 6.1)
+
+| Paper      | Code      |
+| ------------- | ------------- |
+| Solana Assembler | [isabell/hol code](theory/Assembler.thy#L227) |
+| Solana Disassembler | [isabell/hol code](theory/Disassembler.thy#L515) |
+| Consistency Proof (Theorem 6.3) | [isabell/hol code](theory/ConsistencyProof.thy#L8) |
+
+
+## 3.2 Solana Verifier (Section 6.2)
+
+| Paper      | Code      |
+| ------------- | ------------- |
+| Solana Verifier | [isabell/hol code](theory/verifier.thy#L235) |
+| Solana Verifier Proof (Lemma 6.4) | [isabell/hol code](theory/VerifierSafety.thy#L13) |
+
+## 3.3 Solana x64 JIT Compiler (Section 6.3)
+
+| Paper      | Code      |
+| ------------- | ------------- |
+| x64 model | [x64 semantics](theory/x64Semantics.thy) |
+| x64 equivalence proof | [x64 x64_encode_decode_consistency](theory/x64DecodeProof.thy#L11): has sufficiently provided the infrastructure for proving the Solana JIT correctness |
+| Solana JIT | [isabell/hol code](theory/JITCommType.thy#L264) |
+| Solana JIT Proof | [isabell/hol code0](theory/bpfConsistencyAux.thy), [isabell/hol code1](theory/bpfConsistencyAux1.thy), [isabell/hol code2](theory/bpfConsistencyAux2.thy), [isabell/hol code3](theory/bpfConsistencyAux3.thy) |
+
+
+# 4. Code Statistics (Section 7.1)
+## 4.1 Install the `cloc` tool
 ```shell
 sudo apt-get install cloc
 ``` 
-2. run the following command to get the lines of code. Note that currently `cloc` doesn't support Isabelle/HOL now, we specify the lanuage to OCaml because both use `(* *)` as comments.
+## 4.2. Run the following command to get the lines of code 
+Note that currently `cloc` doesn't support Isabelle/HOL now, we specify the lanuage to OCaml because both use `(* *)` as comments.
 ```shell
 make code
 ```
-
-
-# x64 Reference
-As Solana rBPF has a x86_64 JIT compiler which involves of ISA instructions encoding formats, we refer to [x64 Manual](https://cdrdv2.intel.com/v1/dl/getContent/671200), and if you read the comment with `P123` in the isabelle/hol file, which means, the source text description could be found in the x64 Manual `Page 123`. Good Luck~
