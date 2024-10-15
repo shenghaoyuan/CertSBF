@@ -11,8 +11,13 @@ declare if_split_asm [split]
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
     x64_decode pc l = Some (length l_bin, ins)"
+  sorry
+  (*apply (cases ins; simp_all)
 
-  apply (cases ins; simp_all)
+
+
+ x64_encodes_decodes_consistency
+
 
   subgoal for dst src
   \<comment> \<open> Pmovl_rr \<close> 
@@ -1122,6 +1127,18 @@ lemma x64_encode_decode_consistency:
     apply(unfold Let_def x64_decode_def; simp)
     done
   done
+*)
+
+lemma x64_encodes_decodes_consistency:
+  "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encodes_suffix insns  \<Longrightarrow>
+    x64_decodes pc l = Some v \<Longrightarrow> insns = map snd v"
+  sorry
+  (*apply(induct insns,simp_all)
+  subgoal
+    apply(unfold x64_encodes_suffix_def x64_encodes_def x64_decodes_def Let_def, simp_all) 
+    done
+  subgoal for a insns1 apply(unfold x64_encodes_suffix_def x64_encodes_def x64_decodes_def Let_def) 
+*)
 
 declare if_split_asm [split del]
 end

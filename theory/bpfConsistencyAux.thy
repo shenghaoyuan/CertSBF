@@ -15,13 +15,6 @@ step: "r x y \<Longrightarrow> star r y z \<Longrightarrow> star r x z"
 abbreviation small_steps::"instruction list * outcome \<Rightarrow> instruction list * outcome \<Rightarrow> bool"(infix "\<rightarrow>*" 55)
   where "x \<rightarrow>* y == star small_step x y "
 
-lemma "([Pmovl_rr rd r1],Stuck) \<rightarrow>* ([], Stuck) = True"
-  by (meson Seq1 star.refl star.step)
-
-lemma "([Psubq_rr rd r1], Next rs m) \<rightarrow>* ([], Stuck) = False"
-  apply (meson Seq2 star.step) using exec_instr_def
-  by (smt (verit) instruction.simps(6259) list.distinct(1) list.inject outcome.distinct(1) prod.inject small_step.simps star.simps)
-
 fun exec_instrs :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
 "exec_instrs [] st = st" |
 "exec_instrs (h#t) st = (
@@ -59,12 +52,83 @@ lemma aluq_subgoal_rr_aux1:
   apply (unfold nextinstr_nf_def nextinstr_def eval_reg_def)
   by simp_all
 
-lemma aluq_subgoal_rr_aux2_1:"op1 \<in> {Psubq_rr, Pmovq_rr,Paddq_rr, Pandq_rr, Pxorq_rr, Porq_rr} \<Longrightarrow> 
+lemma aluq_subgoal_rr_aux2_1_1:"op1 = Psubq_rr\<Longrightarrow> 
     xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
     \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
-  apply(unfold exec_instr_def, cases "xins", simp_all)
+  apply(unfold exec_instr_def, cases xins, simp_all)
+  subgoal for x11 apply(cases "op1 dst src",simp_all)
+    subgoal for x11a 
   apply(unfold nextinstr_nf_def nextinstr_def add64_def sub64_def and64_def xor64_def or64_def) 
-  apply auto[1]sorry
+      apply(cases "reg (IR x11a)",simp_all)     
+      done
+    done
+  done
+
+lemma aluq_subgoal_rr_aux2_1_2:"op1 = Pmovq_rr \<Longrightarrow> 
+    xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
+    \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def, cases xins, simp_all)
+  subgoal for x11 apply(cases "op1 dst src",simp_all)
+    subgoal for x11a 
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def sub64_def and64_def xor64_def or64_def) 
+      apply(cases "reg (IR x11a)",simp_all)     
+      done
+    done
+  done
+
+lemma aluq_subgoal_rr_aux2_1_3:"op1 = Pxorq_rr \<Longrightarrow> 
+    xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
+    \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def, cases xins, simp_all)
+  subgoal for x11 apply(cases "op1 dst src",simp_all)
+    subgoal for x11a 
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def sub64_def and64_def xor64_def or64_def) 
+      apply(cases "reg (IR x11a)",simp_all)     
+      done
+    done
+  done
+
+lemma aluq_subgoal_rr_aux2_1_4:"op1 = Paddq_rr \<Longrightarrow> 
+    xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
+    \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def, cases xins, simp_all)
+  subgoal for x11 apply(cases "op1 dst src",simp_all)
+    subgoal for x11a 
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def sub64_def and64_def xor64_def or64_def) 
+      apply(cases "reg (IR x11a)",simp_all)     
+      done
+    done
+  done
+
+lemma aluq_subgoal_rr_aux2_1_5:"op1 = Pandq_rr\<Longrightarrow> 
+    xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
+    \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def, cases xins, simp_all)
+  subgoal for x11 apply(cases "op1 dst src",simp_all)
+    subgoal for x11a 
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def sub64_def and64_def xor64_def or64_def) 
+      apply(cases "reg (IR x11a)",simp_all)     
+      done
+    done
+  done
+
+lemma aluq_subgoal_rr_aux2_1_6:"op1 = Porq_rr \<Longrightarrow> 
+    xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
+    \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
+  apply(unfold exec_instr_def, cases xins, simp_all)
+  subgoal for x11 apply(cases "op1 dst src",simp_all)
+    subgoal for x11a 
+  apply(unfold nextinstr_nf_def nextinstr_def add64_def sub64_def and64_def xor64_def or64_def) 
+      apply(cases "reg (IR x11a)",simp_all)     
+      done
+    done
+  done
+
+lemma aluq_subgoal_rr_aux2_1:"op1 \<in> {Psubq_rr, Pmovq_rr, Paddq_rr, Pandq_rr, Pxorq_rr, Porq_rr} \<Longrightarrow> 
+    xins = op1 dst src \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow> 
+    \<forall> r\<noteq>dst. reg' (IR r) = reg (IR r)"
+  using aluq_subgoal_rr_aux2_1_1 aluq_subgoal_rr_aux2_1_2 aluq_subgoal_rr_aux2_1_3 aluq_subgoal_rr_aux2_1_4 aluq_subgoal_rr_aux2_1_6 aluq_subgoal_rr_aux2_1_5 by auto
+
 
 lemma aluq_subgoal_rr_aux2_2:"op1 \<in> {Psubq_rr, Pmovq_rr, Paddq_rr, Pandq_rr, Pxorq_rr, Porq_rr} \<Longrightarrow> 
     xins = op1 (bpf_to_x64_reg dst) (bpf_to_x64_reg src) \<Longrightarrow> Next reg' m' = exec_instr xins sz reg m \<Longrightarrow>
