@@ -1,7 +1,7 @@
 # A complete formal semantics of eBPF instruction set architecture for Solana
 
-# SBPF ISA Semantics
-1. install Isabelle/HOL and AFP
+# 1. SBPF ISA Semantics
+## 1.1 Install Isabelle/HOL and AFP
 - [Isabelle/HOL 2024](https://isabelle.in.tum.de/) (please set your PATH with e.g. `/YOUR-PATH/Isabelle2024`)
 
 - [Isabelle AFP](https://www.isa-afp.org/download/) (unzip the AFP to your PATH, e.g. `/YOUR-PATH/afp`)
@@ -27,10 +27,17 @@ cd /YOUR-PATH/CertSBF
 sudo apt-get install libxi6 libxtst6 libxrender1 fontconfig
 ```
 
-2. check the SBPF ISA semantics
+## 1.2 check the SBPF ISA semantics
 ```shell
 make
 ```
+
+## 1.3 Link to paper
+
+| Paper      | Code      |
+| ------------- | ------------- |
+| Syntax (Section 4.1, Fig 4) | [rBPFSyntax.thy](theory/rBPFSyntax.thy#L41) |
+| Semantics (Section 4.2) | [step](theory/Interpreter.thy#L510), [interpreter](theory/Interpreter.thy#L608) |
 
 # Validation Framework
 
