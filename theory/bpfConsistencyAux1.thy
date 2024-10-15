@@ -254,7 +254,7 @@ proof-
        by (metis One_nat_def Suc_1 append_Cons append_Nil b1_2 b5_1 butlast.simps(2) interp3_list_aux1 list.simps(3) nth_Cons_Suc outcome.exhaust)
      then obtain reg3 m3 where b6_2:"Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" by auto
      have b6_3:"take 3 xins = [xins!0]@[xins!1]@[xins!2]" using a0 
-       by (simp add: One_nat_def Suc_1 add_One numeral_3_eq_3 numeral_nat(2) take_Suc_conv_app_nth)
+       by (simp add: add_One numeral_3_eq_3 numeral_nat(2) take_Suc_conv_app_nth)
      have b6_3:"Next reg3 m3 = interp3 (take 3 xins) (Next reg m)" using a0 b5 b6_2 b6_3 
        by (metis (no_types, lifting) append_Cons append_Nil b2_6 b3_4 b4 interp3.simps(2) interp3_list_aux3 outcome.case(1))
      have b6_4:"[xins!0]@[xins!1]@[xins!2]@[last xins] = xins"
@@ -349,25 +349,26 @@ proof -
   have b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR tmpreg))" using exec_instr_def by (simp add: a0 a1)
   have b1:"Next reg' m' =
     (case sub64 (reg (IR SP)) (vlong_of_memory_chunk M32) of
-     Vlong addr \<Rightarrow>
+     Vlong addr \<Rightarrow> (
        case storev M32 m addr (reg (IR tmpreg)) of None \<Rightarrow> Stuck
        | Some (x::64 word \<Rightarrow> 8 word option) \<Rightarrow>
            Next
             ((undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))))
              (RIP := add64 (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))) RIP) (Vlong ((1::64 word) + (1::64 word)))))
-            x
+            x)
      | _ \<Rightarrow> Stuck) " using b0 nextinstr_nf_def nextinstr_def exec_push_def by metis
   let "?xins" = "(xins!0)"
   have b2_0:"?xins = Ppushl_r tmpreg" using a0 by simp
   have b2_1:"(exec_instr (xins!0) 1 reg m) = Next reg' m' \<longrightarrow> storev M32 m addr (reg (IR tmpreg)) \<noteq> None" using push_pop_subgoal_rr_aux1 a0 a1 a4
-     b1 option.case(1) outcome.simps(3)
+     b1 outcome.simps(3)
     by (metis a3 list.sel(1) nth_Cons_0)
   have b2_2:"storev M32 m addr (reg (IR tmpreg)) \<noteq> None" using b2_1 a1 by simp
   have b2:"storev M32 m addr (reg (IR tmpreg)) = Some m'" using b1 b2_2 a4 
     by (smt (verit, ccfv_threshold) option.case_eq_if option.distinct(1) option.expand option.sel outcome.inject val.simps(29))
   have b3:"reg' (IR SP) = sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)" using b2 a4 push_pop_subgoal_rr_aux2_1_1 b2_0 using a1 by blast
   let "?sp" = "reg' (IR SP)"
-  have b4:"storev M32 m addr (reg (IR tmpreg)) = Some m'" using b2 b3 by (metis a4 val.inject(4))
+  have b4:"storev M32 m addr (reg (IR tmpreg)) = Some m'" using b2 b3 try
+    by simp
   have c0:"Next reg'' m'' = exec_pop (1::64 word) M32 m' reg' (IR tmpreg)" using exec_instr_def by (simp add: a0 a2)
   have c2:"loadv M32 m' addr = Some (reg (IR tmpreg))" using b4 store_load_consistency by simp
   let "?v" = " (reg (IR tmpreg))"
@@ -416,13 +417,13 @@ proof-
   then obtain addr where b0_3:"Vlong addr = sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)" by auto
   have b1:"Next reg' m' =
     (case sub64 (reg (IR SP)) (vlong_of_memory_chunk M32) of
-     Vlong (addr::64 word) \<Rightarrow>
+     Vlong (addr::64 word) \<Rightarrow> (
        case storev M32 m addr (reg (IR tmpreg)) of None \<Rightarrow> Stuck
        | Some (x::64 word \<Rightarrow> 8 word option) \<Rightarrow>
            Next
             ((undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))))
              (RIP := add64 (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))) RIP) (Vlong ((1::64 word) + (1::64 word)))))
-            x
+            x)
      | _ \<Rightarrow> Stuck) " using b0 nextinstr_nf_def nextinstr_def exec_push_def by metis
   have "xins \<noteq> []" using b0_1 by auto
   hence b3_1:"hd xins = (xins!0)" using a0 List.hd_conv_nth by blast

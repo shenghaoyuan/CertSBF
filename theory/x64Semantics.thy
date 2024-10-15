@@ -391,9 +391,9 @@ fun interp4 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" wh
         interp4 l (exec_instr2 ins st)
 )"
 
-
+(*
 value "interp2 3 [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX] s"
-value "interp2 0 [] s"
+value "interp2 0 [] s" *)
 
 
 fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where

@@ -9,8 +9,11 @@ begin
 
 subsubsection  \<open> Interpreter State \<close>
 
-(*
-type_synonym reg_map = "bpf_ireg \<Rightarrow> u64" *)
+record stack_state = 
+call_depth :: u64
+stack_pointer :: u64
+call_frames :: "CallFrame list"
+
 
 definition eval_reg :: "dst_ty \<Rightarrow> reg_map \<Rightarrow> u64" where
 "eval_reg dst rs = rs dst"
@@ -21,10 +24,6 @@ syntax "_upd_reg" :: "'a => 'b => 'c => 'a" ("_ # _ <-- _" [1000, 1000, 1000] 1)
 translations
   "_upd_reg a b c" => "a(b := c)"
 
-record stack_state = 
-call_depth :: u64
-stack_pointer :: u64
-call_frames :: "CallFrame list"
 
 fun create_list :: "nat \<Rightarrow> 'a \<Rightarrow> 'a list" where
 "create_list 0 _ = []" |
@@ -59,7 +58,7 @@ datatype bpf_state =
 definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
-definition init_bpf_state :: "reg_map \<Rightarrow>mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
+definition init_bpf_state :: "reg_map \<Rightarrow> mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
 "init_bpf_state rs m n v =
   BPF_OK 0
     (rs#BR10 <--
@@ -280,118 +279,16 @@ definition eval_hor64 :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Ri
 
 subsection  \<open> PQR \<close>
 
-(*
-value "sint (0x99addc7fdd190ac8::i64)"
-value "sint (0x543727b::i64)"
-value "(sint (0x99addc7fdd190ac8::i64)) div sint (0x543727b::i64)"
-value "0x1d32844580::i64"
-value "0xFFFFFFEC8F679312::i64" 
-
-value "(-(11::int)) div (10::int)"
-value "(-(19::int)) div (10::int)"
-value "(11::int) div (-(10::int))"
-value "(19::int) div (-(10::int))"
-
-value "(-(11::i16)) div (10::i16)"
-value "(-(19::i16)) div (10::i16)"
-value "(11::i16) div (-(10::i16))"
-value "(19::i16) div (-(10::i16))"
-
-
-value "(-(11::int)) mod (10::int)"
-value "(-(19::int)) mod (10::int)"
-value "(11::int) mod (-(10::int))"
-value "(19::int) mod (-(10::int))"
-
-
-value "(-(11::i16)) mod (10::i16)"
-value "(-(19::i16)) mod (10::i16)"
-value "(11::i16) mod (-(10::i16))"
-value "(19::i16) mod (-(10::i16))"
-
-
-
-
-value "sint (6552::i16)"
-
-value "(-(15::int)) div (10::int)"
-value "(-(19::int)) div (10::int)"
-value "((11::int)) div (10::int)"
-value "((11::int)) div (10::int)"
-value "((15::int)) div (10::int)"
-value "((19::int)) div (10::int)"
-
-value "((-20::int)) mod (10::int)"
-value "(-(11::int)) mod (10::int)"
-value "(-(15::int)) mod (10::int)"
-value "(0::int) mod (10::int)"
-value "(0::int) mod (-10::int)"
-value "(-(19::int)) mod (10::int)"
-value "((19::int)) mod (-10::int)"
-value "(-(19::int)) mod (0::int)"
-value "((19::int)) mod (-0::int)"
-value "((11::int)) mod (10::int)"
-value "((11::int)) mod (10::int)"
-value "((15::int)) mod (10::int)"
-value "((19::int)) mod (10::int)"
-value "((-20::int)) mod (10::int)" *) 
-
-definition rust_sdiv :: "int \<Rightarrow> int \<Rightarrow> int option" where
-"rust_sdiv a b = (
-  if b = 0 then None
-  else if b dvd a then
-    Some (a div b)
-  else 
-    let c = a div b in
-      if c \<ge> 0 then Some c else Some (c + 1))"
-
-definition rust_srem :: "int \<Rightarrow> int \<Rightarrow> int option" where
-"rust_srem a b = (
-  if b = 0 then None
-  else if (b dvd a) then
-    Some 0
-  else if a > 0 \<and> b < 0 then
-    Some (a mod (-b))
-  else if a < 0 \<and> b > 0 then
-    Some (- ((-a) mod b))
-  else
-    Some (a mod b))"
-
-(*
-value "sint (0xCD1050586212C918::u64)"
-value "rust_sdiv (sint (0xCD1050586212C918::u64)) (sint (0x9A3C2820F029C171::u64))"
-value "rust_sdiv (-3) (-7)"
-value " (-3 ::int) div (-7::int)"
-
-value "rust_srem 0x69968B6226C9B0EC 0x2C1C8C65"
-value "0x25C77666::int" *)
-
 definition eval_pqr32_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_pqr32_aux1 pop dst sop rs  = (
   let dv :: i32 = scast (eval_reg dst rs) in (
   let sv :: i32 = eval_snd_op_i32 sop rs in (
   case pop of
   BPF_LMUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv * sv))) |
-  BPF_SDIV \<Rightarrow>
-    if sv = 0 then (
-      case sop of
-      SOImm _ \<Rightarrow> NOK |
-      _ \<Rightarrow> OKN)
-    else (
-      case rust_sdiv (sint dv) (sint sv) of
-      None \<Rightarrow> NOK |
-      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))
-    ) |
-  BPF_SREM \<Rightarrow> 
-    if sv = 0 then (
-      case sop of
-      SOImm _ \<Rightarrow> NOK |
-      _ \<Rightarrow> OKN)
-    else (
-      case rust_srem (sint dv) (sint sv) of
-      None \<Rightarrow> NOK |
-      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))
-    ) |
+  BPF_SDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
+                        else OKS (rs#dst <-- (ucast (dv div sv))) |
+  BPF_SREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
+                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
   _ \<Rightarrow> OKN
 )))"
 
@@ -433,27 +330,13 @@ definition eval_pqr64_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
 
 definition eval_pqr64_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_pqr64_aux2 pop dst sop rs = (
-  let dv :: int = sint (eval_reg dst rs) in (
-  let sv :: int = sint (eval_snd_op_i64 sop rs) in (
+  let dv :: i64 = scast (eval_reg dst rs) in (
+  let sv :: i64 = eval_snd_op_i64 sop rs in (
   case pop of
-  BPF_SDIV \<Rightarrow>
-    if sv = 0 then (
-      case sop of
-      SOImm _ \<Rightarrow> NOK |
-      _ \<Rightarrow> OKN)
-    else (
-      case rust_sdiv dv sv of
-      None \<Rightarrow> NOK |
-      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))) | 
-  BPF_SREM \<Rightarrow>
-    if sv = 0 then (
-      case sop of
-      SOImm _ \<Rightarrow> NOK |
-      _ \<Rightarrow> OKN)
-    else (
-      case rust_srem dv sv of
-      None \<Rightarrow> NOK |
-      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))) |
+  BPF_SDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
+                        else OKS (rs#dst <-- (ucast (dv div sv))) | 
+  BPF_SREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
+                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
   _ \<Rightarrow> OKN  
 )))"
 
@@ -473,33 +356,12 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
   if is_v1 then OKN else(
   let dv_u :: u128 = ucast (eval_reg dst rs) in (
   let sv_u :: u128 = ucast (eval_snd_op_u64 sop rs) in (
-  let dv_i :: i128 = scast (scast (eval_reg dst rs)::i64) in (
-  let sv_i :: i128 = scast (scast (eval_snd_op_u64 sop rs)::i64) in (
+  let dv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
+  let sv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
   case pop2 of
-  BPF_UHMUL \<Rightarrow> OKS (rs#dst <-- (ucast ((dv_u * sv_u)>>64))) |
-  BPF_SHMUL \<Rightarrow> OKS (rs#dst <-- (ucast ((dv_i * sv_i)>>64))) 
+  BPF_UHMUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv_u * sv_u)>>64)) |
+  BPF_SHMUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv_i * sv_i)>>64)) 
 ))))))"
-
-(*
-value "case eval_pqr64_2 BPF_SHMUL BR6 (SOImm 0xFFFFFFFF83BF73F0)
-  (\<lambda> r. if r= BR6 then 0x34220E9BED66DA39 else 0) False of OKS rs \<Rightarrow> Some (eval_reg BR6 rs)"
-
-value "(ucast (0x2279FA6F3D837D10::u64))::u128"
-value "(ucast (0xAFC69F6CFF431C0A::u64))::u128"
-value "((ucast (0x2279FA6F3D837D10::u64))::u128)* ((ucast (0xAFC69F6CFF431C0A::u64))::u128)"
-value "(((ucast (0x2279FA6F3D837D10::u64))::u128)* ((ucast (0xAFC69F6CFF431C0A::u64))::u128))>>64"
-value "(ucast ((((ucast (0x2279FA6F3D837D10::u64))::u128)* ((ucast (0xAFC69F6CFF431C0A::u64))::u128))>>64))::u64"
-
-value "(ucast ((scast (0x34220E9BED66DA39::u64))::i64))::u128"
-value "(ucast ((scast ((scast (0xFFFFFFFF83BF73F0::i32))::i64))::i64))::u128"
-value "(ucast ((scast (0xFFFFFFFF83BF73F0::i32))::i64))::u128"
-value "((ucast ((scast (0x34220E9BED66DA39::u64))::i64))::u128) * ((ucast ((scast (0xFFFFFFFF83BF73F0::u64))::i64))::u128)"
-
-value "((ucast ((scast (0x34220E9BED66DA39::u64))::i64))::u128) * ((ucast ((scast (0xFFFFFFFF83BF73F0::u64))::i64))::u128) >> 64"
-
-value "(ucast (((ucast ((scast (0x34220E9BED66DA39::u64))::i64))::u128) * ((ucast ((scast (0xFFFFFFFF83BF73F0::u64))::i64))::u128) >> 64))::u64"
-*)
-
 
 subsection  \<open> MEM \<close>
 
@@ -654,109 +516,93 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
     case eval_alu32 bop d sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_ALU64 bop d sop \<Rightarrow> (
     case eval_alu64 bop d sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_ADD_STK i \<Rightarrow> (
     case eval_add64_imm_R10 i ss is_v1 of
     None \<Rightarrow> BPF_Err |
-    Some ss' \<Rightarrow> BPF_OK (pc+1) rs m ss' sv fm cur_cu remain_cu) |
-
+    Some ss' \<Rightarrow> BPF_OK (pc+1) rs m ss' sv fm (cur_cu+1) remain_cu ) |
   BPF_LE dst imm \<Rightarrow> (
     case eval_le dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_BE dst imm \<Rightarrow> (
     case eval_be dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_NEG32_REG dst \<Rightarrow> (
     case eval_neg32 dst rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_NEG64_REG dst \<Rightarrow> (
     case eval_neg64 dst rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) | 
   BPF_LDX chk dst sop off \<Rightarrow> (
     case eval_load chk dst sop off rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    Some rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_ST chk dst sop off \<Rightarrow> (
     case eval_store chk dst sop off rs m of
     None \<Rightarrow> BPF_EFlag |
-    Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv fm cur_cu remain_cu) |
-
+    Some m' \<Rightarrow> BPF_OK (pc+1) rs m' ss sv fm (cur_cu+1) remain_cu) |
   BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
     let rs' = eval_load_imm dst imm1 imm2 rs in
-      BPF_OK (pc+2) rs' m ss sv fm cur_cu remain_cu) |
-
+      BPF_OK (pc+2) rs' m ss sv fm (cur_cu+1) remain_cu) |
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_PQR64 pop dst sop \<Rightarrow> (
     case eval_pqr64 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_PQR2 pop dst sop \<Rightarrow> (
     case eval_pqr64_2 pop dst sop rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
-
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu ) |
   BPF_HOR64_IMM dst imm \<Rightarrow> (
     case eval_hor64 dst imm rs is_v1 of
     NOK \<Rightarrow> BPF_Err |
     OKN \<Rightarrow> BPF_EFlag |
-    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm cur_cu remain_cu) |
+    OKS rs' \<Rightarrow> BPF_OK (pc+1) rs' m ss sv fm (cur_cu+1) remain_cu) |
 
   BPF_JA off  \<Rightarrow>
-    BPF_OK (pc + scast off + 1) rs m ss sv fm cur_cu remain_cu |
+    BPF_OK (pc + scast off + 1) rs m ss sv fm (cur_cu+1) remain_cu |
 
   BPF_JUMP cond bpf_ireg snd_op off  \<Rightarrow> (
     if eval_jmp cond bpf_ireg snd_op rs  then
-      BPF_OK (pc + scast off + 1) rs m ss sv fm cur_cu remain_cu
+      BPF_OK (pc + scast off + 1) rs m ss sv fm (cur_cu+1) remain_cu
     else
-      BPF_OK (pc + 1) rs m ss sv fm cur_cu remain_cu) |
-
+      BPF_OK (pc + 1) rs m ss sv fm (cur_cu+1) remain_cu) |
   BPF_CALL_IMM src imm \<Rightarrow> (
     case eval_call_imm pc src imm rs ss is_v1 fm enable_stack_frame_gaps of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu
-    ) |
-
+    Some (pc, rs', ss') \<Rightarrow> BPF_OK pc rs' m ss' sv fm (cur_cu+1) remain_cu ) |
   BPF_CALL_REG src imm \<Rightarrow> (
     case eval_call_reg src imm rs ss is_v1 pc fm enable_stack_frame_gaps program_vm_addr of
     None \<Rightarrow> BPF_EFlag |
-    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu) |
+    Some (pc', rs', ss') \<Rightarrow> BPF_OK pc' rs' m ss' sv fm (cur_cu+1) remain_cu ) |
   BPF_EXIT \<Rightarrow> (
     if call_depth ss = 0 then
-      if cur_cu > remain_cu then
+      if cur_cu >  remain_cu then
         BPF_EFlag
       else
         BPF_Success (rs BR0)
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
-        BPF_OK pc' rs' m ss' sv fm cur_cu remain_cu))
+        BPF_OK pc' rs' m ss' sv fm (cur_cu+1) remain_cu)) 
 )"
 
 fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarrow> bool \<Rightarrow> u64 \<Rightarrow> bpf_state" where
@@ -767,14 +613,14 @@ fun bpf_interp :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_state \<Rightarro
   BPF_Err \<Rightarrow> BPF_Err |
   BPF_Success v \<Rightarrow> BPF_Success v |
   BPF_OK pc rs m ss sv fm cur_cu remain_cu \<Rightarrow> (
-    if unat pc*8 < length prog then
+    if INSN_SIZE*unat pc < length prog then
       if cur_cu \<ge> remain_cu then
         BPF_EFlag
       else
         case bpf_find_instr (unat pc) prog of
         None \<Rightarrow> BPF_EFlag |
         Some ins \<Rightarrow>
-          let st1 = step pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr (cur_cu+1) remain_cu in 
+          let st1 = step pc ins rs m ss sv fm enable_stack_frame_gaps program_vm_addr cur_cu remain_cu in 
           bpf_interp n prog st1
             enable_stack_frame_gaps program_vm_addr
     else BPF_EFlag))"
@@ -785,141 +631,23 @@ definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
 
 (**r the initial state of R1 should be MM_INPUT_START, so here should be (MM_INPUT_START + i), we set MM_INPUT_START = 0 in this model *)
 definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
-"u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!(unat i)) else None)"
-
-definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
-" intlist_to_reg_map l = ( \<lambda> r.
-    case r of BR0 \<Rightarrow> of_int (l!0) |
-              BR1 \<Rightarrow> of_int (l!1) |
-              BR2 \<Rightarrow> of_int (l!2) |
-              BR3 \<Rightarrow> of_int (l!3) |
-              BR4 \<Rightarrow> of_int (l!4) |
-              BR5 \<Rightarrow> of_int (l!5) |
-              BR6 \<Rightarrow> of_int (l!6) |
-              BR7 \<Rightarrow> of_int (l!7) |
-              BR8 \<Rightarrow> of_int (l!8) |
-              BR9 \<Rightarrow> of_int (l!9) |
-              BR10\<Rightarrow> of_int (l!10)
-)"
+"u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
 definition bpf_interp_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
-"bpf_interp_test lp lr lm lc v fuel res = (
-  case bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
-    (init_bpf_state (intlist_to_reg_map lr) (u8_list_to_mem (int_to_u8_list lm) )
-      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 of
-  BPF_Success v \<Rightarrow> v = of_int res |
-  _ \<Rightarrow> False
+  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool \<Rightarrow> bool" where
+"bpf_interp_test lp lm lc v fuel res is_ok = (
+  let st1 = bpf_interp (nat (fuel+1)) (int_to_u8_list lp)
+    (init_bpf_state init_reg_map (u8_list_to_mem (int_to_u8_list lm) )
+      (of_int (fuel+1)) (if v = 1 then V1 else V2)) True 0x100000000 in
+    if is_ok then (
+      case st1 of
+      BPF_Success v \<Rightarrow> v = of_int res |
+      _ \<Rightarrow> False )
+    else (
+      case st1 of
+      BPF_EFlag \<Rightarrow> True |
+      _ \<Rightarrow> False)
 )"
-
-definition int_to_bpf_ireg :: "int \<Rightarrow> bpf_ireg" where
-"int_to_bpf_ireg i = (
-  case u4_to_bpf_ireg (of_int i) of
-  None \<Rightarrow> BR0 |
-  Some v \<Rightarrow> v
-)"
-
-(*
-definition u8_list_to_mem_plus :: "u8 list \<Rightarrow> mem" where
-"u8_list_to_mem_plus l = (\<lambda> i.
-  if (unat i) < 0x400000000 then
-    None
-  else if (unat i) - 0x400000000 < length(l) then
-    Some (l!(unat i))
-  else
-    None)" *)
-
-definition step_test ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
-"step_test lp lr lm lc v fuel ipc i res = (
-  let prog  = int_to_u8_list lp in
-  let rs    = ((intlist_to_reg_map lr)#BR10 <--
-      (MM_STACK_START + (stack_frame_size * max_call_depth))) in
-  let m     = u8_list_to_mem (int_to_u8_list lm) in
-  let stk   = init_stack_state in
-  let sv    = if v = 1 then V1 else V2 in
-  let fm    = init_func_map in (
-    case bpf_find_instr 0 prog of
-    None \<Rightarrow> False |
-    Some ins0 \<Rightarrow> 
-      let st1 = step 0 ins0 rs m stk sv fm True 0x100000000 0 3 in
-        if prog!(0) = 0x18 \<or> length lp = 8 then ( \<comment> \<open> for ALU,branch, memory load \<close>
-          case st1 of
-          BPF_OK pc1 rs1 _ _ _ _ _ _ \<Rightarrow> (pc1 = of_int ipc) \<and> (rs1 (int_to_bpf_ireg i) = of_int res) |
-          _ \<Rightarrow> False )
-        else if length lp = 16 then ( \<comment> \<open> for memory store \<close>
-          case st1 of
-          BPF_OK pc1 rs1 m1 ss1 sv1 fm1 cur_cu1 remain_cu1 \<Rightarrow> (
-            case bpf_find_instr 1 prog of
-            None \<Rightarrow> False |
-            Some ins1 \<Rightarrow> (
-              case step pc1 ins1 rs1 m1 ss1 sv1 fm1 True 0x100000000 1 2 of
-              BPF_OK pc2 rs2 _ _ _ _ _ _ \<Rightarrow> (pc2 = of_int ipc) \<and> (rs2 (int_to_bpf_ireg i) = of_int res) |
-              _ \<Rightarrow> False ) ) |
-          _ \<Rightarrow> False )
-        else False )
-)"
-
-(*
-definition step_test1 ::
-  "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> (u64 * u64) option" where
-"step_test1 lp lr lm lc v fuel ipc i = (
-  let prog  = int_to_u8_list lp in
-  let rs    = ((intlist_to_reg_map lr)#BR10 <--
-      (MM_STACK_START + (stack_frame_size * max_call_depth))) in
-  let m     = u8_list_to_mem (int_to_u8_list lm) in
-  let stk   = init_stack_state in
-  let sv    = if v = 1 then V1 else V2 in
-  let fm    = init_func_map in (
-    case bpf_find_instr 0 prog of
-    None \<Rightarrow> None |
-    Some ins0 \<Rightarrow> 
-      let st1 = step 0 ins0 rs m stk sv fm True 0x100000000 0 3 in
-        if prog!(0) = 0x18 \<or> length lp = 8 then ( \<comment> \<open> for ALU,branch, memory load \<close>
-          case st1 of
-          BPF_OK pc1 rs1 _ _ _ _ _ _ \<Rightarrow> Some (pc1, rs1 (int_to_bpf_ireg i)) |
-          _ \<Rightarrow> None )
-        else if length lp = 16 then ( \<comment> \<open> for memory store \<close>
-          case st1 of
-          BPF_OK pc1 rs1 m1 ss1 sv1 fm1 cur_cu1 remain_cu1 \<Rightarrow> (
-            case bpf_find_instr 1 prog of
-            None \<Rightarrow> None |
-            Some ins1 \<Rightarrow> (
-              case step pc1 ins1 rs1 m1 ss1 sv1 fm1 True 0x100000000 1 2 of
-              BPF_OK pc2 rs2 _ _ _ _ _ _ \<Rightarrow> Some (pc2, rs2 (int_to_bpf_ireg i)) |
-              _ \<Rightarrow> None ) ) |
-          _ \<Rightarrow> None )
-        else None )
-)"
-value "step_test1
-  [ 0x18, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78,
-    0x00, 0x00, 0x00, 0x00, 0x9a, 0xbc, 0xde, 0xf0]
-  [ 0x0000000000000000, 0xB93C732C3C25264D, 0x7BED36F9786AA8FF, 0x23A0682F7E883EB9,
-    0x343330A3A66902F7, 0x0D74ED1EBAD8DF8E, 0x5012F6BEC353AAC1, 0x4509C87940AB1BDE,
-    0x9C443012D4B72741, 0xB5D25DFEA9184088]
-  []
-  [] 2 2 2 0" *)
-
-(*
-value "step_test
-  [ 0x63, 0x90, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x79, 0x08, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00]
-  [ 0x0000000000000000, 0xB93C732C3C25264D, 0x7BED36F9786AA8FF, 0x23A0682F7E883EB9,
-    0x343330A3A66902F7, 0x0D74ED1EBAD8DF8E, 0x5012F6BEC353AAC1, 0x4509C87940AB1BDE,
-    0x9C443012D4B72741, 0xB5D25DFEA9184088]
-  [ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
-    0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
-    0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B,
-    0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
-    0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41,
-    0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C,
-    0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
-    0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, 0x60, 0x61, 0x62,
-    0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D]
-  [] 2 2 2 8 0x3B3A3938A9184088"
-
-*)
 
 (*
 value "(of_int (-8613303245920329199::int)::u64)"
@@ -997,6 +725,7 @@ value "case storev M16 init_mem 0 (Vshort 0x1122) of None \<Rightarrow> None | S
 *)
 
 
+
 lemma "((ucast ((ucast (i::i32))::u64)) :: u32) = ((ucast (i::i32))::u32)"
 proof-
 
@@ -1036,80 +765,5 @@ proof-
 qed
 
 
-(*
-value "ucast (-1::i8)::u8"
-value "-1::u8"
-value "-1::i8"
-value "scast(-1::u8)::i8" *)
-
-lemma "\<exists> x y. ((scast(x::u8))::i8) + ((scast(y::u8))::i8) = (scast(x+y)::i8)"
-  by (metis (no_types, lifting) of_int_add scast_nop1)
-
-lemma "\<forall> x y. ((scast(x::u8))::i8) + ((scast(y::u8))::i8) = (scast(x+y)::i8)"
-  by (metis (mono_tags, opaque_lifting) of_int_add of_int_sint scast_id scast_nop2 scast_scast_id(2))
-
-lemma "\<exists> x y. ((ucast(x::i8))::u8) + ((ucast(y::i8))::u8) = (ucast(x+y)::u8)"
-  by (metis add_0 unsigned_0)
-
-(*
-value "((ucast(-1::i8))::u64) + ((ucast(-2::i8))::u64) "
-value "(ucast(-3::i8)::u8)"
-
-lemma "((ucast(-1::i8))::u8) + ((ucast(-2::i8))::u8) \<noteq> (ucast(-3::i8)::u8)"
-  try
-
-lemma "\<exists> x y. ((ucast(x::i8))::u8) + ((ucast(y::i8))::u8) \<noteq> (ucast(x+y)::u8)"
-  try
-
-value "of_nat 101::nat"
-
-value "take_bit 64 (uint (1111111111111111111111111111111111111111::u32)) "
-value "take_bit 32 (uint (1111111111111111111111111111111111111111::u32))"
-value "signed_take_bit 32 3::u32"
-
-value "(ucast(-1::u32)::u64) + ucast(-2::u32)::u64"
-value "(ucast(-3::u32)::u64)"
-
-value "(ucast(-1::i32)::u64) + ucast(-2::i32)::u64"
-value "(ucast(-3::i32)::u64)"
-
-value "(ucast(-1::i32)::u32) + ucast(-2::i32)::u32"
-value "(ucast(-3::i32)::u32)"
-
-value "(scast(-1::u32)::i64) + scast(-2::u32)::i64"
-value "(scast(-3::u32)::i64)"
-
-
-
-value "(scast(-1::i32)::i8) + scast(-2::i32)::i8"
-
-value "(scast(-3::u32)::i8)"
-
-value "(scast(-1::u32)::u64)" *)
-
-
-lemma cast_lemma1_1:"(uint((scast((ucast (n1::u32))::u64))::i32)) = uint((ucast (n1::u32))::u64)"
-  sorry
-
-lemma cast_lemma1:"(n3::u32)=(n1::u32) +(n2::u32)\<Longrightarrow> ((ucast n3)::u64) = ((ucast ((scast((ucast n1)::u64)::i32) +scast((ucast n2)::u64)::i32))::u64)"
-  sorry
-
-
-lemma cast_lemma2:"n3 = n1 + ucast (n2) \<Longrightarrow> ucast n3 = ucast (scast(ucast n1 )+ n2)"
-  sorry
-
-lemma cast_lemma3:"(x::u32) = (ucast(x::u32)::u32)"
-  by simp
-
-lemma cast_lemma4:"ucast off = scast (ucast off)"
-  sorry
-
-
-lemma cast_lemma6:" const = scast const"
-  sorry
-
-
-(*lemma cast_lemma6:"Vlong  = Vint const "*)
-  
 
 end

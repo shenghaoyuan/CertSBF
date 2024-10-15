@@ -28,21 +28,27 @@ macro-test:
 	./test
 
 code:
-	@echo "Analyzing Coq statistics"
+	@echo "Analyzing code statistics"
+	@echo "Solana VM (excluded JIT)"
+	cd tests/rbpf/src && cloc assembler.rs disassembler.rs ebpf.rs verifier.rs lib.rs program.rs vm.rs
+	@echo "Solana JIT Compiler"
+	cd tests/rbpf/src && cloc jit.rs x86.rs
 	@echo "SBPF Syntax"
 	cd theory && cloc --force-lang="OCaml" Mem.thy Val.thy ebpf.thy rBPFCommType.thy rBPFSyntax.thy vm_state.thy
 	@echo "SBPF Semantics"
-	cd theory && cloc --force-lang="OCaml" Interpreter.thy InterpreterSafety.thy rBPFDecoder.thy
+	cd theory && cloc --force-lang="OCaml" Interpreter.thy rBPFDecoder.thy
 	@echo "SBPF Verifier"
 	cd theory && cloc --force-lang="OCaml" vm.thy verifier.thy VerifierSafety.thy
 	@echo "SBPF Assembler-Disassembler"
 	cd theory && cloc --force-lang="OCaml" Assembler.thy ConsistencyCommProof.thy ConsistencyProof.thy ConsistencyProof1.thy ConsistencyProof2.thy Disassembler.thy
 	@echo "SBPF JIT"
-	cd theory && cloc --force-lang="OCaml" JIT.thy JITCommType.thy bpfConsistency.thy bpfConsistencyAux.thy rustCommType.thy x86.thy x86CommType.thy
+	cd theory && cloc --force-lang="OCaml" JIT.thy JITCommType.thy rustCommType.thy x86.thy x86CommType.thy
+	@echo "SBPF JIT Proof"
+	cd theory && cloc --force-lang="OCaml" bpfConsistencyAux.thy bpfConsistencyAux1.thy bpfConsistencyAux2.thy bpfConsistencyAux3.thy
 	@echo "SBPF x64 Model"
 	cd theory && cloc --force-lang="OCaml" x64Assembler.thy x64Syntax.thy x64Semantics.thy x64Disassembler.thy
 	@echo "SBPF x64 Proof"
-	cd theory && cloc --force-lang="OCaml" BitsOpMore.thy BitsOpMore2.thy BitsOpMore3.thy BitsOpMore4.thy x64C*.thy x64De*.thy  x64E*.thy  x64P*.thy  x64_*.thy
+	cd theory && cloc --force-lang="OCaml" BitsOpMore.thy BitsOpMore2.thy BitsOpMore3.thy BitsOpMore4.thy x64C*.thy x64De*.thy  x64E*.thy  x64_*.thy
 	@echo "SBPF Validation  Framework"
 	cd tests && cloc exec_semantics/glue.ml rbpf/step_test_random/src/*.rs rbpf/step_test_fixed/src/*.rs
 	@echo "SBPF Executable Semantics"
