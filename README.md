@@ -1,5 +1,9 @@
 # A complete formal semantics of eBPF instruction set architecture for Solana
 
+# Environments
+- Windows 11 + WSL2 (Ubuntu 22.04.3 LTS)
+- Ubuntu 22.04.4 LTS
+
 # 1. SBPF ISA Semantics
 ## 1.1 Install Isabelle/HOL and AFP
 - [Isabelle/HOL 2024](https://isabelle.in.tum.de/) (please set your PATH with e.g. `/YOUR-PATH/Isabelle2024`)
@@ -41,7 +45,10 @@ make
 
 # 2. Validation Framework
 
-## 2.1 Install OCaml and related packages
+## 2.1 Install Rust, OCaml and related packages
+
+First, check the Official [Rust web](https://www.rust-lang.org/tools/install) to install Rust.
+The following instructions explains how to install OCaml + packages
 ```shell
 # install opam
 add-apt-repository ppa:avsm/ppa
