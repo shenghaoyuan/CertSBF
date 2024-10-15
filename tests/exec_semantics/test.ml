@@ -2450,6 +2450,536 @@ exit
     fuel = 1L;
     result_expected = 0x0L;
   };
+(*
+    mov32 r0, 1
+    mov32 r7, 0
+    mod32 r0, r7
+    exit
+*)
+  {
+    dis = "test_divide_by_zero_1";
+    lp_std = [180L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 180L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 156L; 112L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  };
+(*
+    mov32 r0, 1
+    mov32 r1, 0
+    mod r0, r1
+    exit
+*)
+  {
+    dis = "test_divide_by_zero_2";
+    lp_std = [180L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 159L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  };
+  (*
+    mov32 r0, 1
+    mov32 r1, 0
+    div r0, r1
+    exit
+*)
+  {
+    dis = "test_divide_by_zero_3";
+    lp_std = [180L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 63L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  };
+(*
+    mov32 r0, 1
+    mov32 r1, 0
+    div32 r0, r1
+    exit
+*)
+  {
+    dis = "test_divide_by_zero_4";
+    lp_std = [180L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 180L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 60L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  };
+(*
+    mov r0, 0
+    lddw r1, 0x1
+    mov r2, 0
+    exit
+*)
+{
+  dis = "test_lddw_err_exceeded_1";
+  lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+  lm_std = [];
+  lc_std = [];
+  isok = false;
+  v = 1L;
+  fuel = 2L;
+  result_expected = 0x0L;
+};
+(*
+    lddw r1, 0x100000038
+    callx r1
+    mov r0, r0
+    mov r0, r0
+    exit
+    lddw r0, 0x1122334455667788
+    exit
+*)
+  {
+    dis = "test_lddw_err_unsupport_1";
+    lp_std = [24L; 1L; 0L; 0L; 56L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 141L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 1L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r1, 0x1
+    lsh64 r1, 0x20
+    or64 r1, 0x38
+    callx r1
+    mov r0, r0
+    mov r0, r0
+    lddw r0, 0x1122334455667788
+    exit
+*)
+  {
+    dis = "test_lddw_err_unsupport_2";
+    lp_std = [183L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 1L; 0L; 0L; 56L; 0L; 0L; 0L; 141L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 1L;
+    fuel = 5L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r8, 0x1
+    lsh64 r8, 0x20
+    or64 r8, 0x28
+    callx r8
+    lddw r0, 0x1122334455667788
+    exit
+*)
+  {
+    dis = "test_lddw_err_unsupport_3";
+    lp_std = [183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 40L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 1L;
+    fuel = 5L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r8, 0x1
+    lsh64 r8, 0x20
+    or64 r8, 0x28
+    callx r8
+    lddw r0, 0x1122334455667788
+    exit
+*)
+  {
+    dis = "test_lddw_err_exceeded_2";
+    lp_std = [183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 40L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 24L; 0L; 0L; 0L; 136L; 119L; 102L; 85L; 0L; 0L; 0L; 0L; 68L; 51L; 34L; 17L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 1L;
+    fuel = 4L;
+    result_expected = 0x0L;
+  };
+(*
+    stb [r10-0x4000], 0
+    exit
+*)
+  {
+    dis = "test_err_fixed_stack_out_of_bound";
+    lp_std = [114L; 10L; 0L; 192L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 1L;
+    fuel = 1L;
+    result_expected = 0x0L;
+  };
+  (*
+    mov64 r1, 0x1
+    lsh64 r1, 0x20
+    or64 r1, 0x28
+    callx r1
+    exit
+    function_foo:
+    exit
+*)
+  {
+    dis = "test_err_exit_capped_1";
+    lp_std = [183L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 1L; 0L; 0L; 40L; 0L; 0L; 0L; 141L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 5L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r1, 0x1
+    lsh64 r1, 0x20
+    or64 r1, 0x28
+    callx r1
+    exit
+    function_foo:
+    mov r0, r0
+    exit
+*)
+  {
+    dis = "test_err_exit_capped_2";
+    lp_std = [183L; 1L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 1L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 1L; 0L; 0L; 40L; 0L; 0L; 0L; 141L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 6L;
+    result_expected = 0x0L;
+  };
+(*
+    call 1
+    exit
+    mov r0, r0
+    exit
+*)
+  {
+    dis = "test_err_exit_capped_3";
+    lp_std = [133L; 16L; 0L; 0L; 2L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 3L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r1, 0x0
+    mov64 r2, 0x0
+    add64 r0, 0x0
+    add64 r0, 0x0
+    udiv64 r1, r2
+    add64 r0, 0x0
+    exit
+*)
+  {
+    dis = "test_err_capped_before_exception_1";
+    lp_std = [183L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 94L; 33L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 4L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r1, 0x0
+    mov64 r2, 0x0
+    add64 r0, 0x0
+    add64 r0, 0x0
+    callx r2
+    add64 r0, 0x0
+    exit
+*)
+  {
+    dis = "test_err_capped_before_exception_2";
+    lp_std = [183L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 141L; 32L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 4L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r1, 0x0
+    mov64 r2, 0x0
+    add64 r0, 0x0
+    add64 r0, 0x0
+    callx r2
+    add64 r0, 0x0
+    exit
+*)
+  {
+    dis = "test_non_terminate_early";
+    lp_std = [183L; 6L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 1L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 2L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 3L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 4L; 0L; 0L; 0L; 0L; 0L; 0L; 191L; 101L; 0L; 0L; 0L; 0L; 0L; 0L; 141L; 96L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 6L; 0L; 0L; 1L; 0L; 0L; 0L; 5L; 0L; 248L; 255L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 7L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r8, 0x1
+    lsh64 r8, 0x20
+    or64 r8, 0x28
+    call function_foo
+    exit
+    function_foo:
+    mov64 r3, 0x41414141
+    callx r8
+    exit
+*)
+  {
+    dis = "test_tight_infinite_recursion_callx";
+    lp_std = [183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 40L; 0L; 0L; 0L; 133L; 16L; 0L; 0L; 5L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 3L; 0L; 0L; 65L; 65L; 65L; 65L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 8L;
+    result_expected = 0x0L;
+  };
+(*
+    entrypoint:
+    mov64 r3, 0x41414141
+    call entrypoint
+    exit
+*)
+  {
+    dis = "test_tight_infinite_recursion";
+    lp_std = [183L; 3L; 0L; 0L; 65L; 65L; 65L; 65L; 133L; 16L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 4L;
+    result_expected = 0x0L;
+  };
+(*
+    jsge r0, r0, -1
+    exit
+*)
+  {
+    dis = "test_tight_infinite_loop_conditional";
+    lp_std = [125L; 0L; 255L; 255L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 4L;
+    result_expected = 0x0L;
+  };
+(*
+    ja -1
+    exit
+*)
+  {
+    dis = "test_tight_infinite_loop_unconditional";
+    lp_std = [5L; 0L; 255L; 255L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 4L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r0, 0x1
+    lsh64 r0, 0x20
+    callx r0
+    exit
+*)
+  {
+    dis = "test_err_reg_stack_depth";
+    lp_std = [183L; 0L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 141L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 192L;
+    result_expected = 0x0L;
+  };
+(*
+    ldxb r1, [r1]
+    add64 r1, -2
+    call function_foo
+    exit
+    function_foo:
+    jeq r1, 0, +2
+    add64 r1, -1
+    call function_foo
+    exit
+*)
+  {
+    dis = "test_bpf_to_bpf_depth_err";
+    lp_std = [113L; 17L; 0L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 254L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 21L; 1L; 2L; 0L; 0L; 0L; 0L; 0L; 7L; 1L; 0L; 0L; 255L; 255L; 255L; 255L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 192L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r0, 0x0
+    mov64 r8, 0x1
+    lsh64 r8, 0x20
+    or64 r8, 0x30
+    callx r8
+    exit
+    mov64 r0, 0x2A
+    exit
+*)
+  {
+    dis = "test_err_callx_unregistered";
+    lp_std = [183L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 8L; 0L; 0L; 1L; 0L; 0L; 0L; 103L; 8L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 8L; 0L; 0L; 48L; 0L; 0L; 0L; 141L; 128L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 183L; 0L; 0L; 0L; 42L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 6L;
+    result_expected = 0x0L;
+  };
+(*
+    mov64 r0, 0x3
+    callx r0
+    exit
+*)
+  {
+    dis = "test_err_callx_oob_low";
+    lp_std = [183L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 141L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 2L;
+    result_expected = 0x0L;
+  };
+
+(*
+    entrypoint:
+    call function_foo
+    exit
+    function_foo:
+    call function_bar
+    exit
+    function_bar:
+    exit
+*)
+  {
+    dis = "test_stack_call_depth_tracking_err";
+    lp_std = [133L; 16L; 0L; 0L; 2L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 133L; 16L; 0L; 0L; 4L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 2L;
+    result_expected = 0x0L;
+  };
+(*
+    add r11, -0x7FFFFFFF
+    add r11, -0x7FFFFFFF
+    add r11, -0x7FFFFFFF
+    add r11, -0x7FFFFFFF
+    add r11, -0x40005
+    call function_foo
+    exit
+    function_foo:
+    stb [r10], 0
+    exit
+*)
+  {
+    dis = "test_err_dynamic_stack_ptr_overflow";
+    lp_std = [7L; 11L; 0L; 0L; 1L; 0L; 0L; 128L; 7L; 11L; 0L; 0L; 1L; 0L; 0L; 128L; 7L; 11L; 0L; 0L; 1L; 0L; 0L; 128L; 7L; 11L; 0L; 0L; 1L; 0L; 0L; 128L; 7L; 11L; 0L; 0L; 251L; 255L; 251L; 255L; 133L; 16L; 0L; 0L; 7L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 114L; 10L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 7L;
+    result_expected = 0x0L;
+  };
+(*
+    stb [r10-0x3001], 0
+    exit
+*)
+  {
+    dis = "test_err_dynamic_stack_out_of_bound";
+    lp_std =  [114L; 10L; 255L; 207L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 1L;
+    result_expected = 0x0L;
+  };
+(*
+    stb [r10], 0
+    exit
+*)
+  {
+    dis = "test_err_dynamic_stack_out_of_bound";
+    lp_std = [114L; 10L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 1L;
+    result_expected = 0x0L;
+  };
+(*
+    exit
+*)
+  {
+    dis = "test_exit_capped";
+    lp_std = [149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 0L;
+    result_expected = 0x0L;
+  };
+(*
+    ldxdw r0, [r1+6]
+    exit
+*)
+  {
+    dis = "test_err_ldxdw_nomem";
+    lp_std = [121L; 16L; 6L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+    lm_std = [];
+    lc_std = [];
+    isok = false;
+    v = 2L;
+    fuel = 1L;
+    result_expected = 0x0L;
+  };
+(*
+    ldxdw r0, [r1+6]
+    exit
+*)
+{
+  dis = "test_err_ldxdw_oob";
+  lp_std = [121L; 16L; 6L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+  lm_std = [0xaaL; 0xbbL; 0x11L; 0x22L; 0x33L; 0x44L; 0x55L; 0x66L; 0x77L; 0x88L; 0xccL; 0xddL];
+  lc_std = [];
+  isok = false;
+  v = 2L;
+  fuel = 1L;
+  result_expected = 0x0L;
+};
 ]
 
 let () =
@@ -2457,3 +2987,21 @@ let () =
   Printf.printf "\nSummary:\n";
   Printf.printf "%sPassed: %d%s\n" green !passed reset;
   Printf.printf "%sFailed: %d%s\n" red !failed reset
+  
+  (*
+  mov64 r0, -0x1
+  lsh64 r0, 0x20
+  or64 r0, 0x3
+  callx r0
+  exit
+
+{
+  dis = "test_err_callx_oob_high";
+  lp_std = [183L; 0L; 0L; 0L; 255L; 255L; 255L; 255L; 103L; 0L; 0L; 0L; 32L; 0L; 0L; 0L; 71L; 0L; 0L; 0L; 3L; 0L; 0L; 0L; 141L; 0L; 0L; 0L; 0L; 0L; 0L; 0L; 149L; 0L; 0L; 0L; 0L; 0L; 0L; 0L];
+  lm_std = [];
+  lc_std = [];
+  isok = false;
+  v = 2L;
+  fuel = 4L;
+  result_expected = 0x0L;
+};*)
