@@ -4,3 +4,9 @@
 *.cmi
 *.cmo
 theory/IsabelleTutorialExample.thy
+tests/exec_semantics/step
+tests/exec_semantics/test
+tests/rbpf/step_test_random/target/*
+tests/rbpf/step_test_random/target/.rustc_info.json
+tests/rbpf/step_test_random/target/debug/step_test
+tests/rbpf/step_test_random/target/debug/step_test.d
