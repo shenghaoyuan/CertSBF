@@ -308,10 +308,10 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
   Pidivq_r  r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vlong q, Vlong r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vlong q)) in 
-                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
+                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) | \<comment>\<open> 
   Pmodq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vlong q, Vlong r) \<Rightarrow> (
-                         let rs1= (rs#(IR RDX) <- (Vlong r)) in  \<comment>\<open> added for ebpf correspondence \<close>
-                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
+                         let rs1= (rs#(IR RDX) <- (Vlong r)) in added for ebpf correspondence
+                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) | \<close>
   Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
   Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl64  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
   Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32  (rs (IR rd)) (rs(IR RCX))))) m |

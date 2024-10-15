@@ -12,9 +12,8 @@ Note that we only test on
 
 ```shell
 # set PATH 
-cd ~
-vim. bashrc # export PATH=$PATH:/YOUR-PATH/Isabelle2024/bin:...
-source .bashrc
+vim  ~/.bashrc # export PATH=$PATH:/YOUR-PATH/Isabelle2024/bin:...
+source ~/.bashrc
 
 # test isabelle/hol
 isabelle version # Isabelle2024
@@ -52,7 +51,11 @@ First, check the Official [Rust web](https://www.rust-lang.org/tools/install) to
 The following instructions explains how to install OCaml + packages
 ```shell
 # install opam
+
+# Note that you may need to focal source 
 add-apt-repository ppa:avsm/ppa
+
+
 apt update
 apt install opam
 

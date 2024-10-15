@@ -3,6 +3,7 @@
 *.log
 *.cmi
 *.cmo
+*.lock
 theory/IsabelleTutorialExample.thy
 tests/exec_semantics/step
 tests/exec_semantics/test
