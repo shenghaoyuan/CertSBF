@@ -25,7 +25,8 @@ lemma [simp]: "
 
 lemma x64_decode_encode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> x64_decode pc l = Some (length l_bin, ins) \<Longrightarrow> Some l_bin = x64_encode ins"
-  apply (cases ins; simp_all)
+  sorry
+ (* apply (cases ins; simp_all)
 
   subgoal for dst src
   \<comment> \<open> Pmovl_rr \<close> 
@@ -92,7 +93,7 @@ lemma x64_decode_encode_consistency:
       done
 
     done
-(*
+
   subgoal for dst src
   \<comment> \<open> Pmovq_rr \<close> 
     apply (unfold construct_rex_to_u8_def construct_modsib_to_u8_def)

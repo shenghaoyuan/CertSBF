@@ -299,16 +299,19 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
                      Next (nextinstr_nf sz (rs1#(IR RDX)<-(Val.mulhs32 (rs (IR RAX))(rs (IR r1))))) m |
   Pdivl_r   r1    \<Rightarrow> (case Val.divmod32u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vint q)) in 
-                     Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
-  Pdivq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
+                     Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
+  Pdivq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vlong q, Vlong r) \<Rightarrow> (
+                         let rs1= (rs#(IR RAX) <- (Vlong q)) in 
+                     Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) | \<comment>\<open> no need for #(IR RDX) <- (Vlong r) \<close>
+  Pidivl_r  r1    \<Rightarrow> (case Val.divmod32u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
                          let rs1= (rs#(IR RAX) <- (Vint q)) in 
-                     Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
-  Pidivl_r  r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
-                         let rs1= (rs#(IR RAX) <- (Vint q)) in 
-                     Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
-  Pidivq_r  r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vint q, Vint r) \<Rightarrow> (
-                         let rs1= (rs#(IR RAX) <- (Vint q)) in 
-                     Next (nextinstr_nf sz (rs#(IR RDX) <- (Vint r)) ) m) | _  \<Rightarrow> Stuck ) |
+                     Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
+  Pidivq_r  r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vlong q, Vlong r) \<Rightarrow> (
+                         let rs1= (rs#(IR RAX) <- (Vlong q)) in 
+                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
+  Pmodq_r   r1    \<Rightarrow> (case Val.divmod64u (rs (IR RDX)) (rs (IR RAX)) (rs (IR r1)) of Some (Vlong q, Vlong r) \<Rightarrow> (
+                         let rs1= (rs#(IR RDX) <- (Vlong r)) in  \<comment>\<open> added for ebpf correspondence \<close>
+                      Next (nextinstr_nf sz rs1)m) | _  \<Rightarrow> Stuck ) |
   Pshll_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
   Pshlq_ri  rd n  \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl64  (rs (IR rd)) (Vbyte n)))) m |  \<comment>\<open> imm8 \<close>
   Pshll_r   rd    \<Rightarrow> Next (nextinstr_nf sz (rs#(IR rd) <- (Val.shl32  (rs (IR rd)) (rs(IR RCX))))) m |
@@ -358,22 +361,39 @@ definition exec_instr :: "instruction \<Rightarrow> u64 \<Rightarrow> regset \<R
 )"
 
 
-(*n interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where
-"interp 0 _ _ = Stuck" |
-"interp (Suc n) l st = (
+fun interp2 :: "nat \<Rightarrow> instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp2 _ [] s = s" |
+"interp2 0 _ _ = Stuck" |
+"interp2 (Suc n) (ins#l) st = (
   case st of
   Stuck \<Rightarrow> Stuck |
   Next rs m \<Rightarrow> (
-    case rs PC of
-    Vlong v \<Rightarrow> (
-      case x64_decode (unat v) l of
-      None \<Rightarrow> Stuck |
-      Some (sz, ins) \<Rightarrow>
-        interp n l (exec_instr ins (of_nat sz) rs m)
-      ) |
-    _ \<Rightarrow> Stuck)
+        interp2 n l (exec_instr ins 1 rs m)
+))"
+
+
+fun interp3 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp3 [] s = s" |
+"interp3 (ins#l) st = (
+  case st of
+  Stuck \<Rightarrow> Stuck |
+  Next rs m \<Rightarrow> (
+        interp3 l (exec_instr ins 1 rs m)
+))"
+
+
+definition exec_instr2::"instruction \<Rightarrow> outcome \<Rightarrow> outcome" where
+"exec_instr2 ins st = st"
+
+fun interp4 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
+"interp4 [] s = s" |
+"interp4 (ins#l) st = (
+        interp4 l (exec_instr2 ins st)
 )"
-*)
+
+
+value "interp2 3 [Ppushl_r x64Syntax.RCX, Ppopl x64Syntax.RCX] s"
+value "interp2 0 [] s"
 
 
 fun interp :: "nat \<Rightarrow> x64_bin \<Rightarrow> outcome \<Rightarrow> outcome" where

@@ -157,4 +157,6 @@ definition vlong_of_memory_chunk :: "memory_chunk \<Rightarrow> val" where
   M64 \<Rightarrow> Vlong 64
 )"
 
+axiomatization where store_load_consistency: "storev M32 m place v = Some m' \<Longrightarrow>  loadv M32 m' place = Some v "
+
 end

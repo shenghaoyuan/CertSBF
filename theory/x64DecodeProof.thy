@@ -11,7 +11,6 @@ declare if_split_asm [split]
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
     x64_decode pc l = Some (length l_bin, ins)"
-
   apply (cases ins; simp_all)
 
   subgoal for dst src
