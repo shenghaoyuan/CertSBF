@@ -40,8 +40,8 @@ make
 
 | Paper      | Code      |
 | ------------- | ------------- |
-| Syntax (Section 4.1, Fig 4) | [rBPFSyntax.thy](theory/rBPFSyntax.thy#L41) |
-| Semantics (Section 4.2) | [step](theory/Interpreter.thy#L510), [interpreter](theory/Interpreter.thy#L608) |
+| Syntax (Section 4.1, Fig 4) | `theory/rBPFSyntax.thy#L41` |
+| Semantics (Section 4.2) | `theory/Interpreter.thy#L510`, `theory/Interpreter.thy#L608` |
 
 # 2. Validation Framework
 
@@ -85,7 +85,7 @@ opam install ocamlfind yojson
 
 | Paper      | Code      |
 | ------------- | ------------- |
-| Validation Framework (Section 5.1) | isabell/hol: [glue code1](theory/Interpreter.thy#L651) + [glue code2](theory/Interpreter.thy#L683) + [extraction declration](theory/bpf_generator.thy#L15), OCaml: [glue code](tests/exec_semantics/glue.ml), [interpreter_test](tests/exec_semantics/interp_test.ml), [step_test](tests/exec_semantics/step_test.ml) |
+| Validation Framework (Section 5.1) | isabell/hol: glue code1 `theory/Interpreter.thy#L651` + glue code2 `theory/Interpreter.thy#L683` + extraction declration `theory/bpf_generator.thy#L15`, OCaml: glue code `tests/exec_semantics/glue.ml`, interpreter_test `tests/exec_semantics/interp_test.ml`, step_test `tests/exec_semantics/step_test.ml` |
 
 # 3. Solana VM applications
 
@@ -93,26 +93,26 @@ opam install ocamlfind yojson
 
 | Paper      | Code      |
 | ------------- | ------------- |
-| Solana Assembler | [isabell/hol code](theory/Assembler.thy#L227) |
-| Solana Disassembler | [isabell/hol code](theory/Disassembler.thy#L515) |
-| Consistency Proof (Theorem 6.3) | [isabell/hol code](theory/ConsistencyProof.thy#L8) |
+| Solana Assembler | `theory/Assembler.thy#L227` |
+| Solana Disassembler | `theory/Disassembler.thy#L515` |
+| Consistency Proof (Theorem 6.3) | `theory/ConsistencyProof.thy#L8` |
 
 
 ## 3.2 Solana Verifier (Section 6.2)
 
 | Paper      | Code      |
 | ------------- | ------------- |
-| Solana Verifier | [isabell/hol code](theory/verifier.thy#L235) |
-| Solana Verifier Proof (Lemma 6.4) | [isabell/hol code](theory/VerifierSafety.thy#L13) |
+| Solana Verifier | `theory/verifier.thy#L235` |
+| Solana Verifier Proof (Lemma 6.4) | `theory/VerifierSafety.thy#L13` |
 
 ## 3.3 Solana x64 JIT Compiler (Section 6.3)
 
 | Paper      | Code      |
 | ------------- | ------------- |
-| x64 model | [x64 semantics](theory/x64Semantics.thy) |
-| x64 equivalence proof | [x64 x64_encode_decode_consistency](theory/x64DecodeProof.thy#L11): has sufficiently provided the infrastructure for proving the Solana JIT correctness |
-| Solana JIT | [isabell/hol code](theory/JITCommType.thy#L264) |
-| Solana JIT Proof | [isabell/hol code0](theory/bpfConsistencyAux.thy), [isabell/hol code1](theory/bpfConsistencyAux1.thy), [isabell/hol code2](theory/bpfConsistencyAux2.thy), [isabell/hol code3](theory/bpfConsistencyAux3.thy) |
+| x64 model | `theory/x64Semantics.thy` |
+| x64 equivalence proof | `theory/x64DecodeProof.thy#L11`: has sufficiently provided the infrastructure for proving the Solana JIT correctness |
+| Solana JIT | `theory/JITCommType.thy#L264` |
+| Solana JIT Proof | `theory/bpfConsistencyAux.thy`, `theory/bpfConsistencyAux1.thy`, `theory/bpfConsistencyAux2.thy`, `theory/bpfConsistencyAux3.thy` |
 
 
 # 4. Code Statistics (Section 7.1)
