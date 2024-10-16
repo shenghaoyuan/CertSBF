@@ -11,13 +11,13 @@ declare if_split_asm [split]
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
     x64_decode pc l = Some (length l_bin, ins)"
-
   apply (cases ins; simp_all)
 
   subgoal for dst src
   \<comment> \<open> Pmovl_rr \<close> 
     apply (unfold Let_def)
-    apply (cases "construct_rex_to_u8 False (and (u8_of_ireg src) 8 \<noteq> 0) False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64"; simp_all add: construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
+    apply (cases "construct_rex_to_u8 False (and (u8_of_ireg src) 8 \<noteq> 0) False (and (u8_of_ireg dst) 8 \<noteq> 0) = 64";
+        simp_all add: construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
@@ -25,7 +25,7 @@ lemma x64_encode_decode_consistency:
   subgoal for dst src
   \<comment> \<open> Pmovq_rr \<close> 
     apply (unfold Let_def construct_rex_to_u8_def construct_modsib_to_u8_def; erule conjE; erule conjE)
-    subgoal by (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
+    apply (cases src; cases dst; auto simp add: x64_decode_def bitfield_insert_u8_def Let_def ireg_of_u8_def)
     done
 
   subgoal for dst imm
@@ -1122,6 +1122,18 @@ lemma x64_encode_decode_consistency:
     apply(unfold Let_def x64_decode_def; simp)
     done
   done
+
+(* TODO: We may remove this later *)
+lemma x64_encodes_decodes_consistency:
+  "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encodes_suffix insns  \<Longrightarrow>
+    x64_decodes pc l = Some v \<Longrightarrow> insns = map snd v"
+  sorry
+  (*apply(induct insns,simp_all)
+  subgoal
+    apply(unfold x64_encodes_suffix_def x64_encodes_def x64_decodes_def Let_def, simp_all) 
+    done
+  subgoal for a insns1 apply(unfold x64_encodes_suffix_def x64_encodes_def x64_decodes_def Let_def) 
+*)
 
 declare if_split_asm [split del]
 end

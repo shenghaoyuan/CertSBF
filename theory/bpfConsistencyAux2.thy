@@ -168,32 +168,36 @@ qed
 lemma div_subgoal_rr_aux5:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg]" and 
     a1:"Next reg'' m'' = interp3 xins (Next reg m)" and 
-    a2:"tmpreg = x64Syntax.RDX" 
+    a2:"tmpreg = x64Syntax.RDX" and
+    a3:"Vlong n1 = reg (IR SP)"
   shows "reg'' (IR tmpreg) = reg (IR tmpreg)"
 proof-
   have a3:"hd xins = Ppushl_r tmpreg" using a0 by simp
   have a4:"last xins = Ppopl tmpreg" using a0 by simp
   have b0:"(butlast(tl xins)) = [Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src)]" using a0 by simp
-  let ?midlist = "[ Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src)]"
-  have b1:"\<exists> reg' m'. Next reg' m' = exec_push 1 M32 m reg (reg (IR tmpreg))" using exec_instr_def a0 
-    using a1 exec_push_def a0 
-    by (smt (verit, del_insts) instruction.simps(6295) interp3.simps(2) option.case_eq_if outcome.case(2) outcome.simps(4))
+  let ?midlist = "(butlast(tl xins))"
+  have b1_0:"?midlist = [Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src)]" using b0 by simp
+  have b1_1:"\<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m)" using a0 a1 
+    by (metis interp3_list_aux1 list.distinct(1) outcome.exhaust)
+  have b1:"\<exists> reg' m'. Next reg' m' = exec_push 1 M32 m reg (reg (IR tmpreg))" using exec_instr_def a0
+    using a1 exec_push_def b1_1 by auto
   then obtain reg' m' where b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR tmpreg))" by blast
   have b2_0:"length xins = 4" using a0 by simp
   have b2_1: "Next reg' m' = (exec_instr (xins!0) 1 reg m)" 
     by (simp add: a0 b0 exec_instr_def)
   have b2:"\<exists> reg2 m2. interp3 ?midlist (Next reg' m') = Next reg2 m2" using interp3_length4_aux5 b1 a0 a1 b2_0 b0 b2_1 by fastforce
   then obtain reg2 m2 where b3:"interp3 ?midlist (Next reg' m') = Next reg2 m2" by auto
-  have b4:"m2 = m'" using div_subgoal_rr_aux3 a2 by (metis b3)
-  have b5:"reg' (IR SP) =  reg2 (IR SP)" using div_subgoal_rr_aux4 a2 b3 by metis
+  have b4:"m2 = m'" using div_subgoal_rr_aux3 a2 b3 b1_0 by metis
+  have b5:"reg' (IR SP) =  reg2 (IR SP)" using div_subgoal_rr_aux4 a2 b3 b1_0 by metis
   have b6:"Next reg' m' = (exec_instr (xins!0) 1 reg m) " using a0 by (simp add: b0 exec_instr_def)
   have b7_1:"length xins \<ge> (2::nat)" using a0 by simp
   have b7_2:"Next reg2 m2 = interp3 (butlast xins) (Next reg m)" using b3 b0 a0 by (simp add: b6)
-  have b7:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m2)" using interp3_length4_aux4 b2_0 b7_1 b7_2 by (metis a1 outcome.inject)
-  have b8:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m')" using b7 b4 by simp
-  have b9:"\<exists> x. reg (IR SP) = Vlong x" using rsp_invariant by blast
-  thus ?thesis using a3 a4 b4 b5 b6 b8 a1 push_pop_subgoal_rr_aux2_3 rsp_invariant b9 rsp_invariant
-    by (metis a0 b3 butlast.simps(2) list.distinct(1) list.sel(3))
+  have b7:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m2)" using interp3_length4_aux4 b2_0 b7_1 b7_2 interp3_list_aux3 a1 outcome.inject
+    by (metis interp3_length4_aux6)
+  have b8:"Next reg'' m'' = (exec_instr (last xins) 1 reg2 m2)" using b7 b4 by simp
+  have b9:"tmpreg \<in> {x64Syntax.RDX, x64Syntax.RAX, x64Syntax.RCX}" using a2 by auto
+  thus ?thesis using a3 a4 b5 b6 b8 a1 push_pop_subgoal_rr_aux2_3 
+    using assms(4) b3 b4 by blast
 qed
 
 lemma div_subgoal_rr_aux6:
@@ -218,20 +222,25 @@ proof-
     by (metis append_Cons append_Nil interp3.simps(2) interp3_list_aux3 outcome.case(1))
   have b1_5:" Next reg2 m2 = interp3 (take 2 xins) (Next reg m) \<and> Next reg'' m'' = interp3 (drop 2 xins) (Next reg2 m2)" using interp3_length4_aux4 b0_0 a1 b1_4 by metis
   have b1:"\<forall> r . r \<notin> {x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg1 (IR r) = reg2 (IR r)" using a0 b1_2 a3
-    by (metis One_nat_def insertCI nth_Cons_0 nth_Cons_Suc div_subgoal_rr_aux2_2)
-  have b2_1:"\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" 
-    using a0 a3 a1 exec_instr_def 
-    by (smt (verit) Cons_nth_drop_Suc One_nat_def add.right_neutral add_Suc_right b0_0 b0_2 b1_5 drop0 interp3_length2_aux1 list.sel(3) list.size(3) list.size(4) nth_Cons_Suc numeral_2_eq_2 one_less_numeral_iff semiring_norm(76))
+    using div_subgoal_rr_aux2_1 a0
+    by (simp add: div_subgoal_rr_aux2_2_1)
+  have b2_0:"Next reg'' m'' = interp3 (drop 2 xins) (Next reg2 m2)" using b1_5 by auto
+  have "(drop 2 xins) = [xins!2]@ [xins!3]" using b0_0
+    by (metis Cons_eq_appendI append_take_drop_id b1_3 eq_Nil_appendI list_consists_4 numeral_1_eq_Suc_0 numeral_One same_append_eq)
+  hence "\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2) \<and>  Next reg'' m'' = (exec_instr (xins!3) 1 reg3 m3)" using interp3_length2_aux1 b2_0
+    by fastforce
+  hence b2_1:"\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" by auto
   then obtain reg3 m3 where b2_2:"Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" using b1_1 by auto
   have b2_3:"take 3 xins = [xins!0]@[xins!1]@[xins!2]" using a0 
-    by (simp add: One_nat_def Suc_1 add_One numeral_3_eq_3 numeral_nat(2) take_Suc_conv_app_nth)
+    by (simp add: add_One numeral_3_eq_3 numeral_nat(2) take_Suc_conv_app_nth)
   have b2_4:"Next reg3 m3 = interp3 (take 3 xins) (Next reg m)" using a0 b1_5 b2_3 b2_2
     using append_Cons append_Nil b0_4 b1_2 b1_4 interp3.simps(2) interp3_list_aux3 outcome.case(1) by metis
   have b2_5:"[xins!0]@[xins!1]@[xins!2]@[last xins] = xins" using append_butlast_last_id a0 by fastforce
-  have b2_6:"(last xins) = (xins!3)" using a0 by (metis One_nat_def Suc_eq_plus1 Suc_numeral add_2_eq_Suc diff_Suc_1' last_conv_nth length_Suc_conv list.simps(3) list.size(3) list_consists_4 semiring_norm(5))
+  have b2_6:"(last xins) = (xins!3)" using a0 by (metis One_nat_def Suc_eq_plus1 Suc_numeral add_2_eq_Suc diff_Suc_1' last_conv_nth length_Suc_conv list.simps(3) list.size(3) semiring_norm(5))
   have b2_7: "(butlast xins) = [xins!0]@[xins!1]@[xins!2]" using a0 b2_6 by simp
   have b2_8:"butlast xins = take 3 xins" using a0 b2_7 by simp
-  have b2_9:"Next reg3 m3 = interp3 (butlast xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using a0 b2_4 b2_8 interp3_length4_aux4 b0_0 a1 by (metis a1 outcome.inject)
+  have b2_9:"Next reg3 m3 = interp3 (butlast xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using a0 b2_4 b2_8 interp3_length4_aux4 b0_0 a1 interp3_length4_aux4 b0_0 a1 interp3_list_aux3 a1 outcome.inject
+    by (metis interp3_length4_aux6)
   have b2_10:"Next reg3 m3 = interp3 (take 3 xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using b2_9 b2_8 by simp
   have b2:"\<forall> r . (bpf_to_x64_reg r) \<notin> {x64Syntax.RAX, x64Syntax.RDX} \<longrightarrow> reg3 (IR (bpf_to_x64_reg r)) = reg2 (IR (bpf_to_x64_reg r))" using a0 b1_2
     using b2_2 div_subgoal_rr_aux2_3 a3 a0 by simp
@@ -249,10 +258,11 @@ lemma div_subgoal_rr_aux7:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg] " and
     a1:"Next reg'' m'' = interp3 xins (Next reg m) " and
     a2:"tmpreg = x64Syntax.RDX" and 
+    a4:"Vlong n1 = reg (IR SP)" and
     a3: "(bpf_to_x64_reg dst) = x64Syntax.RAX"
   shows" \<forall> r \<noteq> dst. reg'' (IR  (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))" 
 proof-
-  have b0:"reg'' (IR x64Syntax.RDX) = reg (IR x64Syntax.RDX)" using a0 a1 a2 div_subgoal_rr_aux5 by auto
+  have b0:"reg'' (IR x64Syntax.RDX) = reg (IR x64Syntax.RDX)" using a0 a1 a2 div_subgoal_rr_aux5 a4 by auto
   have b1:"\<forall> r . bpf_to_x64_reg r  \<notin> {x64Syntax.RAX, x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg'' (IR (bpf_to_x64_reg r )) = reg (IR (bpf_to_x64_reg r ))" using div_subgoal_rr_aux6 a0 a1 a2 by blast
   have b1_1:"\<forall> r. (bpf_to_x64_reg r) \<noteq> x64Syntax.RSP" using a0 reg_rsp_consist by simp
   have b2:"\<forall> r . bpf_to_x64_reg r  \<notin> {(bpf_to_x64_reg dst), x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg'' (IR (bpf_to_x64_reg r )) = reg (IR (bpf_to_x64_reg r ))" using b1 a3 by simp
@@ -540,27 +550,32 @@ proof-
   have b1_4:"Next reg2 m2 = interp3 (take 2 xins) (Next reg m)" using a0 b1_2 b1_3 b0_4 
    by (metis append_Cons append_Nil interp3.simps(2) interp3_list_aux3 outcome.case(1))
   have b1_5:" Next reg2 m2 = interp3 (take 2 xins) (Next reg m) \<and> Next reg'' m'' = interp3 (drop 2 xins) (Next reg2 m2)" using interp3_length4_aux4 b0_0 a1 b1_4 by metis
-  have b1:"reg2 (IR x64Syntax.RAX) = reg1 (IR x64Syntax.RAX)" using a0 b1_2 
-    using One_nat_def insertCI nth_Cons_0 nth_Cons_Suc div_subgoal_rr_aux2_2 
-    by (metis insert_absorb insert_iff insert_not_empty ireg.distinct(13) ireg.distinct(5))
+  have b1_6:"\<forall> r. (bpf_to_x64_reg r) \<notin> {x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg2 (IR (bpf_to_x64_reg r)) = reg1 (IR (bpf_to_x64_reg r ))" using div_subgoal_rr_aux2_2 a0 b1_2 by simp
+  have "x64Syntax.RAX \<notin> {x64Syntax.RDX, x64Syntax.RSP}"by simp
+  hence b1:"reg2 (IR x64Syntax.RAX) = reg1 (IR x64Syntax.RAX)" using a0 b1_5 b1_6 
+    by (metis One_nat_def b1_2 div_subgoal_rr_aux2_2_1 nth_Cons_0 nth_Cons_Suc)
   have b1_6:"reg2 (IR x64Syntax.RDX) = Vlong 0" using exec_instr_def a0 div_subgoal_rr_aux8_8 b1_2 b0_5 a4 by simp
   have b1_7_1:"\<forall> r. r \<notin> {x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg2 (IR r) = reg1 (IR r)" using a0 div_subgoal_rr_aux2_2_1 nth_Cons_0 b1_2 by auto
   have b1_7_2:"(bpf_to_x64_reg src)  \<noteq> x64Syntax.RSP" using reg_rsp_consist by simp
   have b1_7_3:"(bpf_to_x64_reg src) \<noteq> x64Syntax.RDX" using a8 by simp
   have b1_7:"reg2 (IR (bpf_to_x64_reg src)) = reg1 (IR (bpf_to_x64_reg src))" using b1_7_1 b1_7_2 b1_7_3 by auto 
-  have b2_1:"\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" 
-    using a0 a3 a1 exec_instr_def
-    by (smt (verit) Cons_nth_drop_Suc One_nat_def add.right_neutral add_Suc_right b0_0 b0_2 b1_5 drop0 interp3_length2_aux1 list.sel(3) list.size(3) list.size(4) nth_Cons_Suc numeral_2_eq_2 one_less_numeral_iff semiring_norm(76))
+  have b2_0:"Next reg'' m'' = interp3 (drop 2 xins) (Next reg2 m2)" using b1_5 by auto
+  have "(drop 2 xins) = [xins!2]@ [xins!3]" using b0_0
+    by (metis Cons_eq_appendI append_take_drop_id b1_3 eq_Nil_appendI list_consists_4 numeral_1_eq_Suc_0 numeral_One same_append_eq)
+  hence "\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2) \<and>  Next reg'' m'' = (exec_instr (xins!3) 1 reg3 m3)" using interp3_length2_aux1 b2_0
+    by fastforce
+  hence b2_1:"\<exists> reg3 m3. Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" by auto
   then obtain reg3 m3 where b2_2:"Next reg3 m3 = (exec_instr (xins!2) 1 reg2 m2)" using b1_1 by auto
   have b2_3:"take 3 xins = [xins!0]@[xins!1]@[xins!2]" using a0 
-    by (simp add: One_nat_def Suc_1 add_One numeral_3_eq_3 numeral_nat(2) take_Suc_conv_app_nth)
+    by (simp add: add_One numeral_3_eq_3 numeral_nat(2) take_Suc_conv_app_nth)
   have b2_4:"Next reg3 m3 = interp3 (take 3 xins) (Next reg m)" using a0 b1_5 b2_3 b2_2
     using append_Cons append_Nil b0_4 b1_2 b1_4 interp3.simps(2) interp3_list_aux3 outcome.case(1) by metis
   have b2_5:"[xins!0]@[xins!1]@[xins!2]@[last xins] = xins" using append_butlast_last_id a0 by fastforce
-  have b2_6:"(last xins) = (xins!3)" using a0 by (metis One_nat_def Suc_eq_plus1 Suc_numeral add_2_eq_Suc diff_Suc_1' last_conv_nth length_Suc_conv list.simps(3) list.size(3) list_consists_4 semiring_norm(5))
+  have b2_6:"(last xins) = (xins!3)" using a0 by (metis One_nat_def Suc_eq_plus1 Suc_numeral add_2_eq_Suc diff_Suc_1' last_conv_nth length_Suc_conv list.simps(3) list.size(3) semiring_norm(5))
   have b2_7: "(butlast xins) = [xins!0]@[xins!1]@[xins!2]" using a0 b2_6 by simp
   have b2_8:"butlast xins = take 3 xins" using a0 b2_7 by simp
-  have b2_9:"Next reg3 m3 = interp3 (butlast xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using a0 b2_4 b2_8 interp3_length4_aux4 b0_0 a1 by (metis a1 outcome.inject)
+  have b2_9:"Next reg3 m3 = interp3 (butlast xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using a0 b2_4 b2_8 interp3_length4_aux4 b0_0 a1 interp3_length4_aux4 b0_0 a1 interp3_list_aux3 a1 outcome.inject
+    by (metis interp3_length4_aux6)
   have b2_10:"Next reg3 m3 = interp3 (take 3 xins) (Next reg m) \<and> Next reg'' m'' = (exec_instr (last xins) 1 reg3 m3)" using b2_9 b2_8 by simp
   let ?tmprax = "reg3 (IR x64Syntax.RAX)"
   have b3_1:" \<exists> reg4 m4. Next reg4 m4 = (exec_instr (xins!3) 1 reg3 m3)" 
@@ -574,7 +589,8 @@ proof-
   have b4:"reg'' (IR x64Syntax.RAX) = reg3 (IR x64Syntax.RAX)" using b4_2 b3 by simp
   (*have b5_2:"reg2 (IR x64Syntax.RDX) = Vlong 0" should be proved*)
   have b5_0:"\<exists> n1 n2 n3. tmpreg (IR (bpf_to_x64_reg src)) = Vlong n1 \<and> n1 \<noteq> 0 \<and> tmpreg (IR x64Syntax.RAX) = Vlong n2  \<and> tmpreg (IR x64Syntax.RDX) = Vlong n3"
-    using a2 a3 div_subgoal_rr_aux8_7 by (metis zero_neq_one)
+    using a2 a3 div_subgoal_rr_aux8_7
+  by blast 
   then obtain n1 n2 n3 where b5_1: "tmpreg (IR (bpf_to_x64_reg src)) = Vlong n1 \<and> n1 \<noteq> 0 \<and> tmpreg (IR x64Syntax.RAX) = Vlong n2  \<and> tmpreg (IR x64Syntax.RDX) = Vlong n3" by auto
   have b5_2:"reg (IR (bpf_to_x64_reg src)) = Vlong n1" using b5_1 a7 by simp
   have b5_3:"reg (IR x64Syntax.RAX) = Vlong n2" using b5_1 a7 by simp
@@ -590,8 +606,8 @@ proof-
   (*have b6_8:"\<exists> tmpreg' m'. Next tmpreg' m'' = exec_instr (last ?tmplist) 1 reg m'" sorry
   then obtain tmpreg' m' where b6_9:"Next tmpreg' m'' = exec_instr (last ?tmplist) 1 reg m'" by auto*)
   have b6:"tmpreg' (IR x64Syntax.RAX) = reg3 (IR x64Syntax.RAX)" 
-    using b6_1 b6_2 b6_3 b6_4 b6_6 b6_7 b6_8 a0 a2 a3 b5_1 a7 a8 div_subgoal_rr_aux8_9 
-    by (smt (verit, del_insts) butlast.simps(2) interp3_list_aux3 last_ConsL)
+    using b6_1 b6_2 b6_3 b6_4 b6_6 b6_7 b6_8 a0 a2 a3 b5_1 a7 a8 div_subgoal_rr_aux8_9
+    by (smt (verit) butlast.simps(2) div_subgoal_rr_aux8_10 interp3_list_aux3 last_ConsL) 
   thus ?thesis using b6 b4_2 b3 by simp
 qed
 
@@ -728,7 +744,8 @@ lemma divq_subgoal_rr_generic:
        a6:"(\<forall> r. Vlong (rs r) = reg (IR (bpf_to_x64_reg r)))" and
        a7:"(bpf_to_x64_reg dst) = x64Syntax.RAX" and
        a8:"xins = map snd v" and
-       a9:"reg (IR x64Syntax.RDX) = Vlong 0" (*should be proved*)
+       a9:"reg (IR x64Syntax.RDX) = Vlong 0" (*should be proved*) and
+       a10:"Vlong n1 = reg(IR SP)"
   shows "(\<forall> r. Vlong (rs' r) = reg' (IR (bpf_to_x64_reg r)))"
 proof -
   have b:"Some bl = x64_encodes_suffix [Ppushl_r x64Syntax.RDX, Pxorq_rr (x64Syntax.RDX) (x64Syntax.RDX),
@@ -741,7 +758,7 @@ proof -
     moreover have b1:"Vlong (rs dst) = reg (IR (bpf_to_x64_reg dst))" using a6 spec by simp
     moreover have b2:"Vlong (rs src) = reg (IR (bpf_to_x64_reg src))" using a6 spec by simp
     hence b3:"Vlong (rs' dst) = reg' (IR (bpf_to_x64_reg dst))" using b0 b1 b2 a0 a4 a5 a6 a7 div_subgoal_rr_aux9 a9 by simp
-    have b4:"\<forall> r \<noteq> dst. reg'(IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))" using b0 a5 a7 div_subgoal_rr_aux7 by simp
+    have b4:"\<forall> r \<noteq> dst. reg'(IR (bpf_to_x64_reg r)) = reg (IR (bpf_to_x64_reg r))" using b0 a5 a7 div_subgoal_rr_aux7 a10 by simp
     have b5:"\<forall> r \<noteq> dst. Vlong (rs' r) = Vlong (rs r)" using a0 a4 div_subgoal_rr_aux1 by blast
     have b6:"\<forall> r \<noteq> dst. Vlong (rs r) = reg (IR (bpf_to_x64_reg r))" using a6 by blast
     have b7:"(\<forall> r \<noteq> dst. Vlong (rs' r) = reg' (IR (bpf_to_x64_reg r)))" by(simp add:b4 b5 b6) 

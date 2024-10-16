@@ -1,9 +1,12 @@
 # A complete formal semantics of eBPF instruction set architecture for Solana
 
-Note that we only test on
+Note that we only test our project on
 - Windows 11 + WSL2 (Ubuntu 22.04 LTS)
 - Ubuntu 22.04 LTS
 
+plus `CPU: Intel(R) Core(TM) Ultra 7 155H   1.40 GHz` + `RAM 32G` + `Core: 16`
+
+_We record how we install all necessary packages on a fresh Ubuntu22.04 environment._ see `intall_log.md`
 # 1. SBPF ISA Semantics
 ## 1.1 Install Isabelle/HOL and AFP
 - [Isabelle/HOL 2024](https://isabelle.in.tum.de/) (please set your PATH with e.g. `/YOUR-PATH/Isabelle2024`)
@@ -22,8 +25,8 @@ isabelle version # Isabelle2024
 cd /YOUR-PATH/afp/thys
 isabelle components -u . # Add AFP to ...
 
-# go to CertSBF folder and open this project in jedit
-cd /YOUR-PATH/CertSBF
+# go to our repo folder and open this project in jedit
+cd /OUR-REPO
 
 # adding the following libs when install on WSL2 with Ubuntu 22.04.3 LTS (GNU/Linux 5.15.153.1-microsoft-standard-WSL2 x86_64)
 sudo apt-get install libxi6 libxtst6 libxrender1 fontconfig
@@ -52,12 +55,11 @@ The following instructions explains how to install OCaml + packages
 ```shell
 # install opam
 
-# Note that you may need to focal source 
-add-apt-repository ppa:avsm/ppa
+sudo apt install opam
+# In the case you fail to install opam
+# Note1: you may need the two commands before install opam, i.e. `add-apt-repository ppa:avsm/ppa` and `apt update`
+# Note2: you may need to change your source list to focal source if `add-apt-repository ppa:avsm/ppa` fails
 
-
-apt update
-apt install opam
 
 # install ocaml+coq by opam
 opam init
@@ -70,7 +72,7 @@ opam switch list
 #   switch  compiler      description
 ->  sbpf     ocaml.4.14.1  sbpf
 
-# Once you get a warning, please do `eval $(opam env)` and restart your computer/VM
+# Note3: Once you get a warning here, please do `eval $(opam env)`, restart your computer/VM, and do `eval $(opam env)` again
 
 # make sure your ocaml is 4.14.1 and from `/home/bob/.opam/sbpf/bin/ocaml`
 which ocaml
@@ -82,13 +84,14 @@ opam install ocamlfind yojson
 ## 2.2 Validate semantics
 - **`make macro-test`**: Compiles and runs program-level tests using the Solana official test suite in `tests/rbpf/tests/execution.rs`.
 - **`make micro-test`**: Compiles and runs instruction-level tests using the generated cases (100 tests by default).
+
 We also provide **`make generator num=X`** to generate X random instruction test cases. For example, to do 100000 micro-test, just run `make generator num=100000; make micro-test`
 
 ## 2.3 Link to paper
 
 | Paper      | Code      |
 | ------------- | ------------- |
-| Validation Framework (Section 5.1) | isabell/hol: glue code1 `theory/Interpreter.thy#L651` + glue code2 `theory/Interpreter.thy#L683` + extraction declration `theory/bpf_generator.thy#L15`, OCaml: glue code `tests/exec_semantics/glue.ml`, interpreter_test `tests/exec_semantics/interp_test.ml`, step_test `tests/exec_semantics/step_test.ml` |
+| Validation Framework (Section 5) | isabell/hol: glue code1 `theory/Interpreter.thy#L651` + glue code2 `theory/Interpreter.thy#L683` + extraction declration `theory/bpf_generator.thy#L15`, OCaml: glue code `tests/exec_semantics/glue.ml`, interpreter_test `tests/exec_semantics/interp_test.ml`, step_test `tests/exec_semantics/step_test.ml` |
 
 # 3. Solana VM applications
 

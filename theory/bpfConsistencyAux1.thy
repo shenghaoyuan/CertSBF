@@ -392,8 +392,6 @@ proof-
     by metis
 qed
 
-
-
 lemma push_pop_subgoal_rr_aux2_3:
   assumes a0:"hd xins = Ppushl_r tmpreg" and 
           a1:"last xins = Ppopl tmpreg"and
@@ -406,11 +404,16 @@ lemma push_pop_subgoal_rr_aux2_3:
   shows "reg'' (IR tmpreg) = reg (IR tmpreg)"
 proof-
   let ?midlist = "butlast(tl xins)"
-  have b0_1:"xins = [Ppushl_r tmpreg]@?midlist@[Ppopl tmpreg]" using a0 a1
-    by (metis append_Cons append_Nil append_butlast_last_id hd_Nil_eq_last instruction.distinct(5787) last_ConsL last_tl list.collapse)
-  have b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR tmpreg))" using exec_instr_def a0 
-    using exec_push_def a5 a0 
-    by (smt (z3) a1 hd_Nil_eq_last hd_conv_nth instruction.distinct(5787) instruction.simps(6295))
+  have b0_1_0:"xins \<noteq> []" using a0
+    by (metis a1 hd_Nil_eq_last instruction.distinct(5787))
+  have b0_1_1:"xins = [hd xins]@?midlist@[last xins]" using b0_1_0
+    by (metis a0 a1 append_Cons append_Nil append_butlast_last_id instruction.distinct(5787) last_snoc list.collapse)
+  have b0_1:"xins = [Ppushl_r tmpreg]@?midlist@[Ppopl tmpreg]" using a0 a1 b0_1_1 by metis
+  have b0_2:"\<exists> reg' m'. Next reg' m' = (exec_instr (xins!0) 1 reg m)" using a0 a1 
+    interp3_list_aux1 a5 by blast
+  have b0:"Next reg' m' = exec_push 1 M32 m reg (reg (IR tmpreg))" using exec_instr_def a0 b0_2
+    using exec_push_def a5 a0 a5
+    by (simp add: b0_1_0 hd_conv_nth) 
   have b0_2:"\<exists> addr. Vlong addr = sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)" using a3 sub64_def
   using a3 sub64_def a8
     by (metis (no_types, lifting) memory_chunk.simps(15) val.simps(29) vlong_of_memory_chunk_def)
@@ -425,8 +428,7 @@ proof-
              (RIP := add64 (undef_regs [CR ZF, CR CF, CR PF, CR SF, CR OF] (reg(IR SP := sub64 (reg (IR SP)) (vlong_of_memory_chunk M32))) RIP) (Vlong ((1::64 word) + (1::64 word)))))
             x)
      | _ \<Rightarrow> Stuck) " using b0 nextinstr_nf_def nextinstr_def exec_push_def by metis
-  have "xins \<noteq> []" using b0_1 by auto
-  hence b3_1:"hd xins = (xins!0)" using a0 List.hd_conv_nth by blast
+  hence b3_1:"hd xins = (xins!0)" using a0 List.hd_conv_nth b0_1_0 by blast
   have b2_1:"(exec_instr (xins!0) 1 reg m) = Next reg' m' \<longrightarrow> storev M32 m addr (reg (IR tmpreg)) \<noteq> None" using push_pop_subgoal_rr_aux1 a0 a1
      b1 a3  b0_3 a0 b3_1 by (metis a7)                                 
   have b2_2:"storev M32 m addr (reg (IR tmpreg)) \<noteq> None" using b2_1 a5 by simp
@@ -448,7 +450,5 @@ qed
 lemma reg_rsp_consist:"r = (bpf_to_x64_reg dst) \<Longrightarrow> r \<noteq> x64Syntax.RSP"
   apply(cases dst) 
   by (unfold bpf_to_x64_reg_corr bpf_to_x64_reg_def, simp_all)
-
-lemma rsp_invariant[simp]: "\<forall> reg. \<exists> x. Vlong x = reg(IR SP)" sorry
 
 end
