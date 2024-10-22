@@ -127,36 +127,32 @@ lemma bits_two_p_m1_u8 [simp]: "n \<le> 8 \<Longrightarrow> bit ((2 ^ n - 1)::u8
     done
   done
 
-lemma bits_unsigned_bitfield_extract_u8: "\<And>pos width n i.
+lemma bits_unsigned_bitfield_extract_u8: "
   0 \<le> pos \<Longrightarrow> 0 < width \<Longrightarrow> pos + width \<le> 8 \<Longrightarrow>
   0 \<le> i \<Longrightarrow> i < 8 \<Longrightarrow> \<comment> \<open> TODO: i \<le> 8 is also OK !!  \<close>
   bit (unsigned_bitfield_extract_u8 pos width n) i =
   (if i < width then bit n (i + pos) else False)"
-  subgoal for pos width n i
-    apply (unfold unsigned_bitfield_extract_u8_def)
-    apply (simp only: bits_zero_ext_u8)
-    apply (cases "i < width", simp_all add: bit_simps)
-    apply (simp add: add_commute_nat)
-    done
+  apply (unfold unsigned_bitfield_extract_u8_def)
+  apply (simp only: bits_zero_ext_u8)
+  apply (cases "i < width", simp_all add: bit_simps)
+  apply (simp add: add_commute_nat)
   done
 
 lemma [simp]: "\<not> (i::nat) < pos \<Longrightarrow> (i - pos < width) = (i < pos + width)"
   by (simp add: add_commute_nat less_diff_conv2)
 
-lemma bits_bitfield_insert_u8: "\<And>pos width n p i.
+lemma bits_bitfield_insert_u8: "
   0 \<le> pos \<Longrightarrow> 0 < width \<Longrightarrow> pos + width \<le> 8 \<Longrightarrow>
   0 \<le> i \<Longrightarrow> i < 8 \<Longrightarrow>
   bit (bitfield_insert_u8 pos width n p) i =
   (if pos \<le> i \<and> i < (pos + width) then bit p (i - pos) else bit n i)"
-  subgoal for pos width n p i
-    apply (unfold bitfield_insert_u8_def Let_def)
-    apply (simp only: bit_or_iff)
-    apply (simp only: bit_and_iff)
-    apply (simp only: bit_not_iff)
-    apply (simp only: bits_shl_u8)
-    apply (simp only: bits_zero_ext_u8)
-    apply (cases "i < pos", simp_all)
-    done
+  apply (unfold bitfield_insert_u8_def Let_def)
+  apply (simp only: bit_or_iff)
+  apply (simp only: bit_and_iff)
+  apply (simp only: bit_not_iff)
+  apply (simp only: bits_shl_u8)
+  apply (simp only: bits_zero_ext_u8)
+  apply (cases "i < pos", simp_all)
   done
 
 subsection \<open> So we may be use
