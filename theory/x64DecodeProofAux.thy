@@ -141,7 +141,7 @@ lemma construct_modsib_to_u8_imply_base_reg_simp: "
     ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 0 3 v)
       (unsigned_bitfield_extract_u8 0 1 rex)) = Some base_reg"
   apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
-      bitfield_insert_u8_def Let_def)
+      bitfield_insert_u8_def unsigned_bitfield_extract_u8_def Let_def)
   apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
   apply (simp only: and_7_or_192_simp)
   apply (cases b; cases index_reg; cases base_reg; simp)
@@ -173,7 +173,7 @@ lemma construct_modsib_to_u8_imply_index_reg_simp: "
     ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 3 3 v)
       (unsigned_bitfield_extract_u8 1 1 rex)) = Some index_reg"
   apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
-      bitfield_insert_u8_def Let_def)
+      bitfield_insert_u8_def unsigned_bitfield_extract_u8_def Let_def)
   apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
   apply (simp only: and_7_or_24_simp)
   apply (cases b; cases index_reg; cases base_reg; simp)
@@ -228,7 +228,7 @@ lemma scale_le3_eq: "\<not> 3 < scale \<Longrightarrow> and 3 ((scale << 6) >> 6
 lemma construct_modsib_to_u8_imply_scale_simp: " \<not> 3 < scale \<Longrightarrow>
   v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
     unsigned_bitfield_extract_u8 6 2 v = scale"
-  apply (simp add: construct_modsib_to_u8_def bitfield_insert_u8_def Let_def)
+  apply (simp add: construct_modsib_to_u8_def bitfield_insert_u8_def unsigned_bitfield_extract_u8_def Let_def)
   using scale_le3_eq by blast
 
 lemma construct_modsib_to_u8_imply_scale: " \<not> 3 < scale \<Longrightarrow>
