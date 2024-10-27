@@ -18,7 +18,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         False \<comment> \<open> W \<close>
         False \<comment> \<open> R \<close>
         False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
         ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
@@ -33,9 +33,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     case a of Addrmode (Some rb) None dis \<Rightarrow> (
       let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
         (c = M64) \<comment> \<open> W \<close>
-        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> R \<close>
         False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       if dis \<le> 127 \<or> dis \<ge> -128 then   \<comment> \<open> displacement8 : mod 01\<close>
         let (dis::u8) = scast dis in
@@ -49,7 +49,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
             M32 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
             M64 \<Rightarrow> Some [rex, 0x8b, rop, dis] |
             _   \<Rightarrow> None
-      else if (and (u8_of_ireg rb) 0b0111 \<noteq> 0b100) then   \<comment> \<open> displacement8 : mod 10\<close>
+      else if (bitfield_extract_u8 0 3 (u8_of_ireg rb) \<noteq> 0b100) then   \<comment> \<open> displacement8 : mod 10\<close>
         let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg rd) (u8_of_ireg rb) in
           if rex = 0x40 then    
             case c of 
@@ -66,9 +66,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         else( 
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 1RXB \<close>
             True \<comment> \<open> W \<close>
-            (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-            (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
-            (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+            (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> R \<close>
+            (bitfield_extract_u8 3 1 (u8_of_ireg ri) \<noteq> 0) \<comment> \<open> X \<close>
+            (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
             ) in
           let (op:: u8) = 0x8b in
           let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg rd) 0b100 in
@@ -84,9 +84,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     case a of Addrmode (Some rb) None dis \<Rightarrow> 
       let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> WRXB \<close>
         (c = M64) \<comment> \<open> W \<close>
-        (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
         False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       if dis \<le> 127 \<or> dis \<ge> -128  then   \<comment> \<open> displacement8 : mod 01 \<close>
         let (dis::u8) = scast dis in
@@ -103,7 +103,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
             M16 \<Rightarrow> Some [0x66,rex, 0x89, rop, dis] |
             M32 \<Rightarrow> Some [rex, 0x89, rop, dis] |
             M64 \<Rightarrow> Some [rex, 0x89, rop, dis])
-      else if (and (u8_of_ireg rb) 0b0111 \<noteq> 0b100) then   \<comment> \<open> displacement8 : mod 10\<close>       
+      else if (bitfield_extract_u8 0 3 (u8_of_ireg rb) \<noteq> 0b100) then   \<comment> \<open> displacement8 : mod 10\<close>       
         let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg r1) (u8_of_ireg rb) in
         if rex = 0x40 then(
           case c of 
@@ -120,9 +120,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         else 
           let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> 1RXB \<close>
             True \<comment> \<open> W \<close>
-            (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-            (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
-            (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+            (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
+            (bitfield_extract_u8 3 1 (u8_of_ireg ri) \<noteq> 0) \<comment> \<open> X \<close>
+            (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
             ) in
         let (op:: u8) = 0x89 in
         let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg r1) 0b100 in
@@ -134,9 +134,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pmovl_rr rd r1 \<Rightarrow>
     let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -148,9 +148,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pmovq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x89 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -161,7 +161,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
@@ -175,7 +175,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = bitfield_insert_u8 0 3 0xb8 (u8_of_ireg rd) in
       Some ([rex, op] @ u8_list_of_u64 n)|
@@ -186,7 +186,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         True \<comment> \<open> W \<close>
         False \<comment> \<open> R \<close>
         False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       let (op:: u8) = 0xc7 in
         if dis \<le> 127 \<or> dis \<ge> -128  then   \<comment> \<open> displacement8 : mod 01 \<close>
@@ -201,9 +201,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pmovsq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x63 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg rd) (u8_of_ireg r1) in
@@ -212,9 +212,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pcmovl t rd r1 \<Rightarrow>
     let (rex::u8) = ( construct_rex_to_u8 \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (ex:: u8) = 0x0f in
     let (op:: u8) = bitfield_insert_u8 0 4 0x40 (u8_of_cond t) in   \<comment> \<open> 45 : NZ/NE （ZF=0 \<close>   
@@ -227,9 +227,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pcmovq t rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (ex:: u8) = 0x0f in
     let (op:: u8) = bitfield_insert_u8 0 4 0x40 (u8_of_cond t) in  \<comment> \<open> 45 : NZ/NE （ZF=0 \<close> 
@@ -239,9 +239,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pxchgq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op::u8) = 0x87 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -253,9 +253,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       else 
         let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1RXB` \<close>
           True \<comment> \<open> W \<close>
-          (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
-          (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
-          (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+          (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
+          (bitfield_extract_u8 3 1 (u8_of_ireg ri) \<noteq> 0) \<comment> \<open> X \<close>
+          (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
           ) in
         let (op:: u8) = 0x87 in
         let (rop::u8) = construct_modsib_to_u8 0b10 (u8_of_ireg r1) 0b100 in
@@ -273,9 +273,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Paddl_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x01 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -289,7 +289,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
@@ -303,7 +303,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
@@ -315,9 +315,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Paddq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x01 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -330,8 +330,8 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `10XB` \<close>
           True \<comment> \<open> W \<close>
           False \<comment> \<open> R \<close>
-          (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
-          (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+          (bitfield_extract_u8 3 1 (u8_of_ireg ri) \<noteq> 0) \<comment> \<open> X \<close>
+          (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
           ) in
         let (op:: u8) = 0x81 in
         let (rop::u8) = construct_modsib_to_u8 0b10 0b000 0b100 in
@@ -343,9 +343,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Psubl_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x29 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -357,9 +357,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Psubq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x29 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -370,7 +370,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b011 (u8_of_ireg rd) in
@@ -384,7 +384,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
@@ -398,7 +398,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b011 (u8_of_ireg rd) in
@@ -407,9 +407,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Porl_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x09 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -421,9 +421,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Porq_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x09 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -434,7 +434,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b001 (u8_of_ireg rd) in
@@ -446,9 +446,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pandl_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x21 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -460,9 +460,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pandq_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x21 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -473,7 +473,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
@@ -485,9 +485,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pxorl_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x31 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -499,9 +499,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pxorq_rr rd r1  \<Rightarrow> 
      let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x31 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -512,7 +512,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b110 (u8_of_ireg rd) in
@@ -526,7 +526,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg r1) in
@@ -540,7 +540,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg r1) in
@@ -551,7 +551,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg r1) in
@@ -565,7 +565,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg r1) in
@@ -576,7 +576,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b110 (u8_of_ireg r1) in
@@ -590,7 +590,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b110 (u8_of_ireg r1) in
@@ -601,7 +601,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
@@ -615,7 +615,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
@@ -626,7 +626,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
@@ -641,7 +641,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
@@ -653,7 +653,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
@@ -667,7 +667,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b100 (u8_of_ireg rd) in
@@ -678,7 +678,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
@@ -693,7 +693,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
@@ -705,7 +705,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
@@ -719,7 +719,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b101 (u8_of_ireg rd) in
@@ -730,7 +730,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
@@ -745,7 +745,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xc1 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
@@ -757,7 +757,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
@@ -771,7 +771,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xd3 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg rd) in
@@ -782,7 +782,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (ex:: u8) = 0x0f in
     let (op:: u8) = bitfield_insert_u8 0 3 0xc8 (u8_of_ireg rd) in
@@ -796,7 +796,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (ex:: u8) = 0x0f in
     let (op:: u8) = bitfield_insert_u8 0 3 0xc8 (u8_of_ireg rd) in
@@ -806,9 +806,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
     case a of Addrmode (Some rb) None dis \<Rightarrow>(
       let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `100B` \<close>
         True \<comment> \<open> W \<close>
-        (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> R \<close>
         False \<comment> \<open> X \<close>
-        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       let (op:: u8) = 0x8d in
         if dis \<le> 127 \<or> dis \<ge> -128  then   \<comment> \<open> displacement8 : mod 01 \<close>
@@ -830,7 +830,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op::u8) = bitfield_insert_u8 0 3 0x50 (u8_of_ireg r1) in
       if rex = 0x40 then
@@ -856,8 +856,8 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
         let (rex::u8) = (construct_rex_to_u8    \<comment> \<open> `100B` \<close>
         True \<comment> \<open> W \<close>
         False \<comment> \<open> R \<close>
-        (and (u8_of_ireg ri) 0b1000 \<noteq> 0) \<comment> \<open> X \<close>
-        (and (u8_of_ireg rb) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg ri) \<noteq> 0) \<comment> \<open> X \<close>
+        (bitfield_extract_u8 3 1 (u8_of_ireg rb) \<noteq> 0) \<comment> \<open> B \<close>
         ) in
       let (op::u8) = 0xff in 
       let (rop::u8) = construct_modsib_to_u8 0b10 0b110 0b100 in
@@ -870,7 +870,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op::u8) = bitfield_insert_u8 0 3 0x58 (u8_of_ireg rd) in
       if rex = 0x40 then
@@ -881,9 +881,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Ptestl_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x85 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -895,9 +895,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Ptestq_rr rd r1 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x85 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg rd) in
@@ -908,7 +908,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
@@ -922,7 +922,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg rd) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg rd) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0xf7 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b000 (u8_of_ireg rd) in
@@ -931,9 +931,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pcmpl_rr r1 r2 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `0R0B` \<close>
       False \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r2) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r2) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x39 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg r2) in
@@ -945,9 +945,9 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
   Pcmpq_rr r1 r2 \<Rightarrow>
     let (rex:: u8) = (construct_rex_to_u8  \<comment> \<open> `1R0B` \<close>
       True  \<comment> \<open> W \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> R \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r2) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r2) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x39 in
     let (rop::u8) = construct_modsib_to_u8 0b11 (u8_of_ireg r1) (u8_of_ireg r2) in
@@ -958,7 +958,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
@@ -972,7 +972,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op:: u8) = 0x81 in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b111 (u8_of_ireg r1) in
@@ -992,7 +992,7 @@ fun x64_encode :: "instruction \<Rightarrow> x64_bin option" where
       False \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
       let (op:: u8) = 0xff in
       let (rop::u8) = construct_modsib_to_u8 0b11 0b010 (u8_of_ireg r1) in
@@ -1047,7 +1047,7 @@ fun x64_assemble :: "x64_asm \<Rightarrow> x64_bin option" where
       True \<comment> \<open> W \<close>
       False \<comment> \<open> R \<close>
       False \<comment> \<open> X \<close>
-      (and (u8_of_ireg r1) 0b1000 \<noteq> 0) \<comment> \<open> B \<close>
+      (bitfield_extract_u8 3 1 (u8_of_ireg r1) \<noteq> 0) \<comment> \<open> B \<close>
       ) in
     let (op::u8) = 0xff in
     let (rop::u8) = construct_modsib_to_u8 0b11 0b110 (u8_of_ireg r1) in

@@ -5,11 +5,6 @@ imports
   x64Syntax
 begin
 
-(*
-value "[(1::nat)]!(0::nat)"
-
-value "[(1::nat)]!(1::nat)" returns an error, we should have a nth_error? *)
-
 definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruction) option" where
 "x64_decode pc l_bin = (
   let h = l_bin!pc in
@@ -27,12 +22,12 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
     \<comment> \<open> R7 legacy \<close>
     else if h = 0x66 then  \<comment> \<open> 16-bit mode \<close>
       let h1 = l_bin!(pc+1) in
-        if unsigned_bitfield_extract_u8 4 4 h1 \<noteq> 0b0100 then  
+        if bitfield_extract_u8 4 4 h1 \<noteq> 0b0100 then  
           \<comment> \<open> R7.1 [legacy + opcode + modrm + imm] \<close>
           let reg = l_bin!(pc+2) in
-          let modrm = unsigned_bitfield_extract_u8 6 2 reg in
-          let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
-          let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+          let modrm = bitfield_extract_u8 6 2 reg in
+          let reg1  = bitfield_extract_u8 3 3 reg in
+          let reg2  = bitfield_extract_u8 0 3 reg in
           let src   = bitfield_insert_u8 3 1 reg1 0 in
           let dst   = bitfield_insert_u8 3 1 reg2 0 in
             if h1 = 0xc1 then 
@@ -65,14 +60,14 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else None
             else None
         else  
-          let w = unsigned_bitfield_extract_u8 3 1 h1 in
-          let r = unsigned_bitfield_extract_u8 2 1 h1 in
-          let x = unsigned_bitfield_extract_u8 1 1 h1 in
-          let b = unsigned_bitfield_extract_u8 0 1 h1 in
+          let w = bitfield_extract_u8 3 1 h1 in
+          let r = bitfield_extract_u8 2 1 h1 in
+          let x = bitfield_extract_u8 1 1 h1 in
+          let b = bitfield_extract_u8 0 1 h1 in
             let op = l_bin!(pc+2) in let reg = l_bin!(pc+3) in 
-            let modrm = unsigned_bitfield_extract_u8 6 2 reg in
-            let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
-            let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+            let modrm = bitfield_extract_u8 6 2 reg in
+            let reg1  = bitfield_extract_u8 3 3 reg in
+            let reg2  = bitfield_extract_u8 0 3 reg in
             let src   = bitfield_insert_u8 3 1 reg1 r in
             let dst   = bitfield_insert_u8 3 1 reg2 b in
               \<comment> \<open> R7.3 [legacy + rex + opcode + modrm + imm] \<close>
@@ -115,19 +110,19 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
       if op = 0x31 then 
         Some (2, Prdtsc)
       \<comment> \<open> P2877 `BSWAP: register `   -> `0000 1111 : 1100 1 reg` \<close>
-      else if unsigned_bitfield_extract_u8 3 5 op = 0b11001 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 op in
+      else if bitfield_extract_u8 3 5 op = 0b11001 then
+        let reg2 = bitfield_extract_u8 0 3 op in
         let dst  = bitfield_insert_u8 3 1 reg2 0 in
           case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
             Some (2, Pbswapl dst))
       \<comment> \<open> R8.2 [escape + opcode + modrm] \<close>
       \<comment> \<open> P2919 `MOVcc : resgister2  to resgister1 ` -> `0100 0R0B 0000 1111: 0100 tttn : 11 reg1 reg2` \<close>
-      else if unsigned_bitfield_extract_u8 4 4 op = 0b0100 then
-        let flag = (unsigned_bitfield_extract_u8 0 4 op) in 
+      else if bitfield_extract_u8 4 4 op = 0b0100 then
+        let flag = (bitfield_extract_u8 0 4 op) in 
         let reg = l_bin!(pc+2) in 
-        let modrm = unsigned_bitfield_extract_u8 6 2 reg in
-        let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
-        let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+        let modrm = bitfield_extract_u8 6 2 reg in
+        let reg1  = bitfield_extract_u8 3 3 reg in
+        let reg2  = bitfield_extract_u8 0 3 reg in
         let src   = bitfield_insert_u8 3 1 reg1 0 in
         let dst   = bitfield_insert_u8 3 1 reg2 0 in
           if modrm = 0b11 then
@@ -138,8 +133,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else None
       \<comment> \<open> R8.3 [escape + opcode + displacement] \<close>
       \<comment> \<open> P2880 `JCC: full displacement` -> `0000 1111 : 1000 tttn : full displacement` \<close>
-      else if unsigned_bitfield_extract_u8 4 4 op = 0b1000 then
-        let flag = (unsigned_bitfield_extract_u8 0 4 op) in
+      else if bitfield_extract_u8 4 4 op = 0b1000 then
+        let flag = (bitfield_extract_u8 0 4 op) in
         let i1 = l_bin!(pc+2)  in
         let i2 = l_bin!(pc+3)  in
         let i3 = l_bin!(pc+4)  in
@@ -148,17 +143,17 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           case cond_of_u8 flag of None \<Rightarrow> None | Some t \<Rightarrow>(
             Some(6, Pjcc t d)))
       else None
-  else if unsigned_bitfield_extract_u8 4 4 h \<noteq> 0b0100 then  \<comment> \<open> h is not rex  \<close>
+  else if bitfield_extract_u8 4 4 h \<noteq> 0b0100 then  \<comment> \<open> h is not rex  \<close>
       \<comment> \<open> R1 [opcode] \<close>
       \<comment> \<open> P2885 `PUSH: qwordregister (alternate encoding)`   -> ` 0100 W00BS : 0101 0 reg64` \<close>
-      if unsigned_bitfield_extract_u8 3 5 h = 0b01010 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 h in
+      if bitfield_extract_u8 3 5 h = 0b01010 then
+        let reg2 = bitfield_extract_u8 0 3 h in
         let dst  = bitfield_insert_u8 3 1 reg2 0 in
         case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
           Some (1, Ppushl_r dst))
       \<comment> \<open> P2885 `POP: qwordregister (alternate encoding)`   -> ` 0100 W00B : 0101 1 reg64 ` \<close>
-      else if unsigned_bitfield_extract_u8 3 5 h = 0b01011 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 h in
+      else if bitfield_extract_u8 3 5 h = 0b01011 then
+        let reg2 = bitfield_extract_u8 0 3 h in
         let dst  = bitfield_insert_u8 3 1 reg2 0 in
         case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
           Some (1, Ppopl dst))
@@ -181,9 +176,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
             Some d \<Rightarrow> ( Some (5, Pjmp (scast d))) 
       else
         let reg = l_bin!(pc+1) in
-        let modrm = unsigned_bitfield_extract_u8 6 2 reg in
-        let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
-        let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+        let modrm = bitfield_extract_u8 6 2 reg in
+        let reg1  = bitfield_extract_u8 3 3 reg in
+        let reg2  = bitfield_extract_u8 0 3 reg in
         let src   = bitfield_insert_u8 3 1 reg1 0 in
         let dst   = bitfield_insert_u8 3 1 reg2 0 in
           \<comment> \<open> R2 [opcode + modrm] \<close>
@@ -394,28 +389,28 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                    Some (6, Pmov_rm src (Addrmode (Some dst) None dis) M32))))
             else None
           else None
-    else if unsigned_bitfield_extract_u8 0 4 h = 0 then   \<comment> \<open> h is rex, the low 4-bit must not 0  \<close> 
+    else if bitfield_extract_u8 0 4 h = 0 then   \<comment> \<open> h is rex, the low 4-bit must not 0  \<close> 
       None
     else  \<comment> \<open> h is rex  \<close> 
-      let w = unsigned_bitfield_extract_u8 3 1 h in
-      let r = unsigned_bitfield_extract_u8 2 1 h in
-      let x = unsigned_bitfield_extract_u8 1 1 h in
-      let b = unsigned_bitfield_extract_u8 0 1 h in
+      let w = bitfield_extract_u8 3 1 h in
+      let r = bitfield_extract_u8 2 1 h in
+      let x = bitfield_extract_u8 1 1 h in
+      let b = bitfield_extract_u8 0 1 h in
       let op = l_bin!(pc+1) in 
       \<comment> \<open> R6.1 [rex + opcode] \<close>
       if op = 0x99 then
         Some (2, Pcqo)
       \<comment> \<open> P2885 `PUSH: qwordregister (alternate encoding)`   -> ` 0100 W00BS : 0101 0 reg64` \<close>
-      else if unsigned_bitfield_extract_u8 3 5 op = 0b01010 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 op in
+      else if bitfield_extract_u8 3 5 op = 0b01010 then
+        let reg2 = bitfield_extract_u8 0 3 op in
         let dst  = bitfield_insert_u8 3 1 reg2 b in
         case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
           if w = 0 \<and> r = 0 \<and> x = 0 then
             Some (2, Ppushl_r dst)
           else None)
       \<comment> \<open> P2885 `POP: qwordregister (alternate encoding)`   -> ` 0100 W00B : 0101 1 reg64 ` \<close>
-      else if unsigned_bitfield_extract_u8 3 5 op = 0b01011 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 op in
+      else if bitfield_extract_u8 3 5 op = 0b01011 then
+        let reg2 = bitfield_extract_u8 0 3 op in
         let dst  = bitfield_insert_u8 3 1 reg2 b in
         case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
           if w = 0 \<and> r = 0 \<and> x = 0 then
@@ -423,8 +418,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else None)
       \<comment> \<open> R6.2 [rex + opcode + imm] \<close> 
       \<comment> \<open> P2882 `MOV immediate64 to qwordregister (alternate encoding)` -> `0100 100B 1011 1reg : imm64` \<close>
-      else if unsigned_bitfield_extract_u8 3 5 op = 0b10111 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 op in
+      else if bitfield_extract_u8 3 5 op = 0b10111 then
+        let reg2 = bitfield_extract_u8 0 3 op in
         let dst  = bitfield_insert_u8 3 1 reg2 b in
         let i1 = l_bin!(pc+2)  in
         let i2 = l_bin!(pc+3)  in
@@ -456,8 +451,8 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
       \<comment> \<open> R8.4 [rex + escape + opcode] \<close>
       \<comment> \<open> P2877 `BSWAP: register `   -> `0000 1111 : 1100 1 reg` \<close>
       \<comment> \<open> P2877 `BSWAP: qwordregister `   -> `0100 100B 0000 1111 : 1100 1 reg` \<close>
-      if unsigned_bitfield_extract_u8 3 5 op1 = 0b11001 then
-        let reg2 = unsigned_bitfield_extract_u8 0 3 op1 in
+      if bitfield_extract_u8 3 5 op1 = 0b11001 then
+        let reg2 = bitfield_extract_u8 0 3 op1 in
         let dst  = bitfield_insert_u8 3 1 reg2 b in
           case ireg_of_u8 dst of None \<Rightarrow> None | Some dst \<Rightarrow> (
             if w = 1 \<and> x = 0 \<and> r = 0 then
@@ -468,12 +463,12 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
       \<comment> \<open> R8.5 [rex + escape + opcode + modrm] \<close>
       \<comment> \<open> P2919 `MOVcc : resgister2  to resgister1 ` -> `0100 0R0B 0000 1111: 0100 tttn : 11 reg1 reg2` \<close>
       \<comment> \<open> P2919 `MOVcc : qwordregister2 to qwordregister1` -> ` 0100 1R0B 0000 1111: 0100 tttn : 11 qwordreg1 qwordreg2` \<close>
-        else if unsigned_bitfield_extract_u8 4 4 op1 = 0b0100 then
-          let flag = (unsigned_bitfield_extract_u8 0 4 op1)  in 
+        else if bitfield_extract_u8 4 4 op1 = 0b0100 then
+          let flag = (bitfield_extract_u8 0 4 op1)  in 
           let reg = l_bin!(pc+3) in
-          let modrm = unsigned_bitfield_extract_u8 6 2 reg in
-          let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
-          let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+          let modrm = bitfield_extract_u8 6 2 reg in
+          let reg1  = bitfield_extract_u8 3 3 reg in
+          let reg2  = bitfield_extract_u8 0 3 reg in
           let src   = bitfield_insert_u8 3 1 reg1 r in
           let dst   = bitfield_insert_u8 3 1 reg2 b in
             if modrm = 0b11 then
@@ -489,9 +484,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
         else None
       else
         let reg = l_bin!(pc+2) in
-        let modrm = unsigned_bitfield_extract_u8 6 2 reg in
-        let reg1  = unsigned_bitfield_extract_u8 3 3 reg in
-        let reg2  = unsigned_bitfield_extract_u8 0 3 reg in
+        let modrm = bitfield_extract_u8 6 2 reg in
+        let reg1  = bitfield_extract_u8 3 3 reg in
+        let reg2  = bitfield_extract_u8 0 3 reg in
         let src   = bitfield_insert_u8 3 1 reg1 r in
         let dst   = bitfield_insert_u8 3 1 reg2 b in
           \<comment> \<open> R6.3 [rex + opcode + modrm] \<close>
@@ -532,9 +527,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                       Some (7, Pmov_mr (Addrmode (Some rb) None dis) src (if w = 1 then M64 else M32)))))
               else 
                 let sib= l_bin!(pc+3) in
-                let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
-                let rindex = unsigned_bitfield_extract_u8 3 3 sib in
-                let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+                let rbase  = bitfield_extract_u8 0 3 sib in
+                let rindex = bitfield_extract_u8 3 3 sib in
+                let scale  = bitfield_extract_u8 6 2 sib in
                 let index  = bitfield_insert_u8 3 1 rindex x in
                 let base   = bitfield_insert_u8 3 1 rbase  b in
                   let d1 = l_bin!(pc+4) in
@@ -561,9 +556,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else if modrm = 0b10 then 
             if reg2 = 0b100 then                           
               let sib= l_bin!(pc+3) in
-              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
-              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
-              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let rbase  = bitfield_extract_u8 0 3 sib in
+              let rindex = bitfield_extract_u8 3 3 sib in
+              let scale  = bitfield_extract_u8 6 2 sib in
               let index  = bitfield_insert_u8 3 1 rindex x in
               let base   = bitfield_insert_u8 3 1 rbase  b in
                 let d1 = l_bin!(pc+4) in
@@ -770,9 +765,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else if modrm = 0b10 then 
             if reg2 = 0b100 then                           
               let sib= l_bin!(pc+3) in
-              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
-              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
-              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let rbase  = bitfield_extract_u8 0 3 sib in
+              let rindex = bitfield_extract_u8 3 3 sib in
+              let scale  = bitfield_extract_u8 6 2 sib in
               let index  = bitfield_insert_u8 3 1 rindex x in
               let base   = bitfield_insert_u8 3 1 rbase  b in
                 let d1 = l_bin!(pc+4) in
@@ -870,9 +865,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
           else if modrm = 0b10 then
             if reg2 = 0b100 then
               let sib= l_bin!(pc+3) in
-              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
-              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
-              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let rbase  = bitfield_extract_u8 0 3 sib in
+              let rindex = bitfield_extract_u8 3 3 sib in
+              let scale  = bitfield_extract_u8 6 2 sib in
               let index  = bitfield_insert_u8 3 1 rindex x in
               let base   = bitfield_insert_u8 3 1 rbase  b in
                 let d1 = l_bin!(pc+4) in
@@ -949,9 +944,9 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
                 else None)))  
             else \<comment> \<open> sib \<close>
               let sib = l_bin!(pc+3) in
-              let rbase  = unsigned_bitfield_extract_u8 0 3 sib in
-              let rindex = unsigned_bitfield_extract_u8 3 3 sib in
-              let scale  = unsigned_bitfield_extract_u8 6 2 sib in
+              let rbase  = bitfield_extract_u8 0 3 sib in
+              let rindex = bitfield_extract_u8 3 3 sib in
+              let scale  = bitfield_extract_u8 6 2 sib in
               let index  = bitfield_insert_u8 3 1 rindex x in
               let base   = bitfield_insert_u8 3 1 rbase  b in
                 let d1 = l_bin!(pc+4) in
@@ -1016,11 +1011,11 @@ value "x64_disassemble [102, 65, 137, 200]"
 value "102 = (0x66::u8)"
 value "137 = (0x89::u8)"
 
-value "unsigned_bitfield_extract_u8 2 1 64" (**r r = 0 *)
-value "unsigned_bitfield_extract_u8 0 1 64" (**r b = 0 *)
-value "unsigned_bitfield_extract_u8 6 2 195" (**r modrm = 3 *)
-value "unsigned_bitfield_extract_u8 3 3 200" (**r reg1 = 0 *)
-value "unsigned_bitfield_extract_u8 0 3 195" (**r reg2 = 3 *)
+value "bitfield_extract_u8 2 1 64" (**r r = 0 *)
+value "bitfield_extract_u8 0 1 64" (**r b = 0 *)
+value "bitfield_extract_u8 6 2 195" (**r modrm = 3 *)
+value "bitfield_extract_u8 3 3 200" (**r reg1 = 0 *)
+value "bitfield_extract_u8 0 3 195" (**r reg2 = 3 *)
 value "bitfield_insert_u8 3 1 0 0" (**r src = 0 *)
 value "bitfield_insert_u8 3 1  3 0" (**r dst = 3 *)
 value "ireg_of_u8 0" (**r Some RAX *)

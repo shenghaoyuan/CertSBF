@@ -282,8 +282,8 @@ definition bpf_find_instr :: "nat \<Rightarrow> u8 list \<Rightarrow> bpf_instru
   let npc= pc*INSN_SIZE in
   let op = l!(npc) in
   let reg = l!(npc+1) in
-  let dst = unsigned_bitfield_extract_u8 0 4 reg in
-  let src = unsigned_bitfield_extract_u8 4 4 reg in
+  let dst = bitfield_extract_u8 0 4 reg in
+  let src = bitfield_extract_u8 4 4 reg in
     if length l < npc+7 then
       None
     else

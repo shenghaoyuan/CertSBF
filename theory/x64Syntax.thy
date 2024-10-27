@@ -4,6 +4,7 @@ theory x64Syntax
 imports
   Main
   rBPFCommType Mem
+  BitsLemma
 begin
   
 subsection  \<open> x64 Syntax \<close>

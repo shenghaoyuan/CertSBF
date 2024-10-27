@@ -2,71 +2,15 @@ theory x64DecodeProofAux
 imports
   Main
   rBPFCommType
-  x64Assembler x64Disassembler BitsOpMore BitsOpMore2 BitsOpMore3 BitsOpMore4
+  x64Assembler x64Disassembler
+  BitsOpMore BitsOpMore2 BitsOpMore3 BitsOpMore4
+  BitsLemma ListsMoreLemma
 begin
 
-lemma [simp]: "l @ [a] = l_bin \<Longrightarrow> l_bin!(length l) = a" by fastforce
-lemma [simp]: "l @ [a, b] = l_bin \<Longrightarrow> l_bin!(length l) = a" by fastforce  
-lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> l_bin!(length l) = a" by fastforce
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(length l) = a" by fastforce
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(length l) = a" by fastforce
 
-lemma [simp]: "l @ [a, b] = l_bin \<Longrightarrow> l_bin!(length l + 1) = b"
-  by (metis One_nat_def nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> l_bin!(length l + 1) = b"
-  by (metis One_nat_def nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(length l + 1) = b"
-  by (metis One_nat_def nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(length l + 1) = b"
-  by (metis One_nat_def nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-
-lemma [simp]: "l @ [a, b] = l_bin \<Longrightarrow> l_bin!(Suc (length l)) = b"
-  by (metis One_nat_def add_diff_cancel_right' not_add_less2 nth_Cons_0 nth_Cons_Suc nth_append plus_1_eq_Suc)
-lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> l_bin!(Suc (length l)) = b"
-  by (metis One_nat_def add_diff_cancel_right' not_add_less2 nth_Cons_0 nth_Cons_Suc nth_append plus_1_eq_Suc)
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(Suc (length l)) = b"
-  by (metis One_nat_def add_diff_cancel_right' not_add_less2 nth_Cons_0 nth_Cons_Suc nth_append plus_1_eq_Suc)
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(Suc (length l)) = b"
-  by (metis One_nat_def add_diff_cancel_right' not_add_less2 nth_Cons_0 nth_Cons_Suc nth_append plus_1_eq_Suc)
-
-lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> l_bin!(length l + 2) = c"
-  by (metis One_nat_def Suc_1 nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(length l + 2) = c"
-  by (metis One_nat_def Suc_1 nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(length l + 2) = c"
-  by (metis One_nat_def Suc_1 nth_Cons_0 nth_Cons_Suc nth_append_length_plus)
-
-
-lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> l_bin!(Suc (Suc (length l))) = c"
-  by (metis Cons_eq_appendI One_nat_def add_Suc_right append_Nil length_append list.size(3) list.size(4) nth_append_length nth_append_length_plus plus_1_eq_Suc)
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(Suc (Suc (length l))) = c"
-  by (metis Cons_eq_appendI One_nat_def add_Suc_right append_Nil length_append list.size(3) list.size(4) nth_append_length nth_append_length_plus plus_1_eq_Suc)
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(Suc (Suc (length l))) = c"
-  by (metis Cons_eq_appendI One_nat_def add_Suc_right append_Nil length_append list.size(3) list.size(4) nth_append_length nth_append_length_plus plus_1_eq_Suc)
-
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(length l + 3) = d"
-  by force
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(length l + 3) = d"
-  by force
-
-
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> l_bin!(Suc (Suc (Suc (length l)))) = d"
-  by (metis One_nat_def Suc3_eq_add_3 add_diff_cancel_right' last.simps last_conv_nth length_Cons list.discI list.size(3) not_add_less2 nth_append)
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(Suc (Suc (Suc (length l)))) = d"
-  by (metis Suc3_eq_add_3 add.commute nth_Cons_0 nth_Cons_Suc nth_append_length_plus numeral_3_eq_3)
-
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(length l + 4) = e"
-  by force
-
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> l_bin!(Suc (Suc (Suc (Suc (length l))))) = e"
-  by (metis Nil_is_append_conv One_nat_def Suc_1 add_2_eq_Suc' add_Suc_right diff_Suc_1' last.simps last_appendR last_conv_nth length_Cons length_append list.discI list.size(3))
-
-lemma [simp]: "l @ [a] = l_bin \<Longrightarrow> length l_bin - length l = 1" by fastforce
-lemma [simp]: "l @ [a, b] = l_bin \<Longrightarrow> length l_bin - length l = 2" by fastforce  
-lemma [simp]: "l @ [a, b, c] = l_bin \<Longrightarrow> length l_bin - length l = 3" by fastforce
-lemma [simp]: "l @ [a, b, c, d] = l_bin \<Longrightarrow> length l_bin - length l = 4" by fastforce
-lemma [simp]: "l @ [a, b, c, d, e] = l_bin \<Longrightarrow> length l_bin - length l = 5" by fastforce
-
+lemma bitfield_extract_u8_u8_of_ireg_same [bitfield_simps]:
+  "bitfield_extract_u8 0 4 (u8_of_ireg r) = u8_of_ireg r"
+  by (cases r; simp add: bitfield_extract_u8_def Let_def)
 
   \<comment> \<open> u16 \<close> 
 lemma list_in_list_u8_list_of_u16_simp : "list_in_list (u8_list_of_u16 imm) pc l \<Longrightarrow>
@@ -123,6 +67,7 @@ list_in_list l2 (pc + length l1) l                  \<Longrightarrow> list_in_li
 
 lemma Suc4_eq_add_4: "(Suc (Suc (Suc (Suc pc)))) = pc + 4" by simp
 
+(*
 lemma and_7_or_192_simp: "(and 7 (or (and 192 (scale << 6)) v ) ) = and 7 (v::u8)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -132,29 +77,29 @@ lemma and_7_or_192_simp: "(and 7 (or (and 192 (scale << 6)) v ) ) = and 7 (v::u8
         done
       done
     done
-  done
+  done *)
 
 lemma construct_modsib_to_u8_imply_base_reg_simp: "
-  rex = construct_rex_to_u8 True b (and (u8_of_ireg index_reg) 8 \<noteq> 0)
-    (and (u8_of_ireg base_reg) 8 \<noteq> 0) \<Longrightarrow>
+  rex = construct_rex_to_u8 True b (bitfield_extract_u8 3 1 (u8_of_ireg index_reg) \<noteq> 0)
+    (bitfield_extract_u8 3 1 (u8_of_ireg base_reg) \<noteq> 0) \<Longrightarrow>
   v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 0 3 v)
-      (unsigned_bitfield_extract_u8 0 1 rex)) = Some base_reg"
+    ireg_of_u8 (bitfield_insert_u8 3 1 (bitfield_extract_u8 0 3 v)
+      (bitfield_extract_u8 0 1 rex)) = Some base_reg"
   apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
-      bitfield_insert_u8_def unsigned_bitfield_extract_u8_def Let_def)
-  apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
-  apply (simp only: and_7_or_192_simp)
-  apply (cases b; cases index_reg; cases base_reg; simp)
+      Let_def)
+  apply (subst x64Syntax.u8_of_ireg_of_u8_iff[symmetric])
+  apply (simp add: bitfield_simps)
   done
 
 lemma construct_modsib_to_u8_imply_base_reg: "
-  construct_rex_to_u8 True b (and (u8_of_ireg index_reg) 8 \<noteq> 0)
-    (and (u8_of_ireg base_reg) 8 \<noteq> 0) = rex \<Longrightarrow>
+  construct_rex_to_u8 True b (bitfield_extract_u8 3 1 (u8_of_ireg index_reg) \<noteq> 0)
+    (bitfield_extract_u8 3 1 (u8_of_ireg base_reg) \<noteq> 0) = rex \<Longrightarrow>
   construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) = v \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 0 3 v)
-      (unsigned_bitfield_extract_u8 0 1 rex)) = Some base_reg"
+    ireg_of_u8 (bitfield_insert_u8 3 1 (bitfield_extract_u8 0 3 v)
+      (bitfield_extract_u8 0 1 rex)) = Some base_reg"
   using construct_modsib_to_u8_imply_base_reg_simp by blast
 
+(*
 lemma and_7_or_24_simp: "and 7 (or (and 24 ((scale << 6) >> 3)) v) = and 7 (v::u8)"
   apply (simp add: bit_eq_iff)
   apply (auto simp add: bit_simps)
@@ -164,27 +109,26 @@ lemma and_7_or_24_simp: "and 7 (or (and 24 ((scale << 6) >> 3)) v) = and 7 (v::u
         done
       done
     done
-  done
+  done *)
 
 lemma construct_modsib_to_u8_imply_index_reg_simp: "
-  rex = construct_rex_to_u8 True b (and (u8_of_ireg index_reg) 8 \<noteq> 0)
-    (and (u8_of_ireg base_reg) 8 \<noteq> 0) \<Longrightarrow>
+  rex = construct_rex_to_u8 True b (bitfield_extract_u8 3 1 (u8_of_ireg index_reg) \<noteq> 0)
+    (bitfield_extract_u8 3 1 (u8_of_ireg base_reg) \<noteq> 0) \<Longrightarrow>
   v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 3 3 v)
-      (unsigned_bitfield_extract_u8 1 1 rex)) = Some index_reg"
+    ireg_of_u8 (bitfield_insert_u8 3 1 (bitfield_extract_u8 3 3 v)
+      (bitfield_extract_u8 1 1 rex)) = Some index_reg"
   apply (simp add: construct_rex_to_u8_def construct_modsib_to_u8_def
-      bitfield_insert_u8_def unsigned_bitfield_extract_u8_def Let_def)
-  apply (simp only: u8_of_ireg_of_u8_iff[symmetric])
-  apply (simp only: and_7_or_24_simp)
-  apply (cases b; cases index_reg; cases base_reg; simp)
+      Let_def)
+  apply (subst x64Syntax.u8_of_ireg_of_u8_iff[symmetric])
+  apply (simp add: bitfield_simps)
   done
 
 lemma construct_modsib_to_u8_imply_index_reg: "
-  construct_rex_to_u8 True b (and (u8_of_ireg index_reg) 8 \<noteq> 0)
-    (and (u8_of_ireg base_reg) 8 \<noteq> 0) = rex \<Longrightarrow>
+  construct_rex_to_u8 True b (bitfield_extract_u8 3 1 (u8_of_ireg index_reg) \<noteq> 0)
+    (bitfield_extract_u8 3 1 (u8_of_ireg base_reg) \<noteq> 0) = rex \<Longrightarrow>
   construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) = v \<Longrightarrow>
-    ireg_of_u8 (bitfield_insert_u8 3 1 (unsigned_bitfield_extract_u8 3 3 v)
-      (unsigned_bitfield_extract_u8 1 1 rex)) = Some index_reg"
+    ireg_of_u8 (bitfield_insert_u8 3 1 (bitfield_extract_u8 3 3 v)
+      (bitfield_extract_u8 1 1 rex)) = Some index_reg"
   using construct_modsib_to_u8_imply_index_reg_simp by blast
 
 lemma word_of_nat_3_eq: "word_of_nat n \<le> (3::u8) \<longleftrightarrow> ((word_of_nat n) ::u8) \<le> word_of_nat 3"
@@ -227,13 +171,13 @@ lemma scale_le3_eq: "\<not> 3 < scale \<Longrightarrow> and 3 ((scale << 6) >> 6
 
 lemma construct_modsib_to_u8_imply_scale_simp: " \<not> 3 < scale \<Longrightarrow>
   v = construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) \<Longrightarrow>
-    unsigned_bitfield_extract_u8 6 2 v = scale"
-  apply (simp add: construct_modsib_to_u8_def bitfield_insert_u8_def unsigned_bitfield_extract_u8_def Let_def)
+    bitfield_extract_u8 6 2 v = scale"
+  apply (simp add: construct_modsib_to_u8_def bitfield_insert_u8_def bitfield_extract_u8_def Let_def)
   using scale_le3_eq by blast
 
 lemma construct_modsib_to_u8_imply_scale: " \<not> 3 < scale \<Longrightarrow>
   construct_modsib_to_u8 scale (u8_of_ireg index_reg) (u8_of_ireg base_reg) = v \<Longrightarrow>
-    unsigned_bitfield_extract_u8 6 2 v = scale"
+    bitfield_extract_u8 6 2 v = scale"
   using construct_modsib_to_u8_imply_scale_simp by blast
 
 lemma bit_n_ge: "bit v n \<Longrightarrow> (v::u32) \<ge> 2^n"
@@ -283,8 +227,9 @@ proof-
   then show ?thesis using len_word[OF v0, of v']
     by (metis a1 bit.double_compl len_word u v0 word_not_set_inverse) 
 qed
-  
-declare [[show_types]]
+
+(*
+declare [[show_types]] *)
 lemma u32_ge_minus_128_ge_7_True: "n < 25 \<Longrightarrow> -128 \<le> (ofs::u32) \<Longrightarrow>
   bit ofs (Suc (Suc (Suc (Suc (Suc (Suc (Suc n))))))) = True"
   apply (simp only: Suc7_eq_add_7)
@@ -305,14 +250,12 @@ lemma scast_un_bb:
 
 lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
   (v::u8) = scast (ofs::u32) \<Longrightarrow> (scast v) = ofs"
-  apply simp                   
+  apply simp          
   apply (simp only: scast_eq)
-
-  apply (simp add: bit_eq_iff)
-  apply (auto simp add: bit_simps)
-     apply (metis BitM.simps(1) BitM.simps(2) BitM.simps(3) 
+  apply (auto simp add: bit_simps bit_eq_iff)
+  subgoal by (metis BitM.simps(1) BitM.simps(2) BitM.simps(3) 
            eval_nat_numeral(3) min_def numeral_3_eq_3 numeral_nat(2) u32_le_127_ge_7_False)
-    apply (metis bit_n_plus_le_7 min.absorb2 nat_le_linear 
+  subgoal by (metis bit_n_plus_le_7 min.absorb2 nat_le_linear 
            ordered_cancel_comm_monoid_diff_class.add_diff_inverse)
 
   subgoal for n
@@ -323,8 +266,8 @@ lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrig
         subgoal for n3 apply (cases n3, simp_all)
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
-              subgoal for n6 apply (cases n6, simp_all add: u32_ge_minus_128_ge_7_True)
-                done
+              subgoal for n6 apply (cases n6, simp_all)
+                using Suc7_eq_add_7 u32_ge_minus_128_ge_7_True by presburger
               done
             done
           done
@@ -340,18 +283,17 @@ lemma scast_u32_scast_u8_eq_simp: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrig
         subgoal for n3 apply (cases n3, simp_all)
           subgoal for n4 apply (cases n4, simp_all)
             subgoal for n5 apply (cases n5, simp_all)
-              subgoal for n6 apply (cases n6, simp_all add: u32_ge_minus_128_ge_7_True)
-                done
+              subgoal for n6 apply (cases n6, simp_all)
+                by (metis Suc7_eq_add_7 add.commute add_0 u32_ge_minus_128_ge_7_True zero_less_numeral)
               done
             done
           done
         done
       done
     done
-done
+  done
   
 lemma scast_u32_scast_u8_eq: "ofs \<le> 127 \<or> - 128 \<le> ofs \<Longrightarrow>
   scast (ofs::u32) = (v::u8) \<Longrightarrow> (scast v) = ofs"
   using scast_u32_scast_u8_eq_simp by blast
-
 end
