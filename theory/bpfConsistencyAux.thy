@@ -1,6 +1,6 @@
 theory bpfConsistencyAux
   imports Main Interpreter x64Semantics 
-  x64Assembler x64DecodeProof Mem JITCommType
+  x64Assembler x64DecodeProof Mem JIT_abs
 begin
 
 inductive small_step ::"instruction list * outcome \<Rightarrow> instruction list * outcome \<Rightarrow> bool"(infix "\<rightarrow>" 55)

@@ -56,7 +56,7 @@ record JitCompiler =
 jit_result :: JitProgram (*
 text_section_jumps: Vec<Jump>,
     anchors: [*const u8; ANCHOR_COUNT], *)
-offset_in_text_section :: nat \<comment> \<open> usize is refined to nat \<close>
+offset_in_text_section :: usize \<comment> \<open> usize is refined to nat \<close>
 (*
     executable: &'a Executable<C>,
     program: &'a [u8],
@@ -64,18 +64,27 @@ offset_in_text_section :: nat \<comment> \<open> usize is refined to nat \<close
 jit_pc :: usize (*
     last_instruction_meter_validation_pc: usize,
     next_noop_insertion: u32, *)
-runtime_environment_key :: i32 (*
+(*runtime_environment_key :: i32*) (*
     diversification_rng: SmallRng,
     stopwatch_is_active: bool, *)
+text_section_base :: usize
+
+definition update_pc_section_aux ::"usize list \<Rightarrow> nat \<Rightarrow> usize \<Rightarrow> usize list" where
+"update_pc_section_aux pc_sec pc x = list_update pc_sec pc x"
+
+definition update_pc_section ::"JitCompiler \<Rightarrow> JitCompiler" where
+"update_pc_section jcomp = (let jprog = jit_result jcomp;
+   r = pc_section jprog; x = update_pc_section_aux r (unat (jit_pc jcomp)) (offset_in_text_section jcomp + text_section_base jcomp) in 
+    jcomp \<lparr>jit_result := (jit_result jcomp)\<lparr>pc_section := x \<rparr>\<rparr>)"
 
 definition jit_emit :: "JitCompiler \<Rightarrow> u8 list  \<Rightarrow> JitCompiler" where
 "jit_emit l n = l
  \<lparr>
   jit_result              := (jit_result l)\<lparr> text_section := (text_section (jit_result l))@n \<rparr>,
-  offset_in_text_section  := (offset_in_text_section l) + length n
+  offset_in_text_section  := (offset_in_text_section l) + of_nat (length n)
  \<rparr>"
 
-definition slot_in_vm :: "JitCompiler \<Rightarrow> RuntimeEnvironmentSlot \<Rightarrow> i32" where
+(*definition slot_in_vm :: "JitCompiler \<Rightarrow> RuntimeEnvironmentSlot \<Rightarrow> i32" where
 "slot_in_vm l slot =
   8 * ((i32_of_RuntimeEnvironmentSlot slot) - (runtime_environment_key l))"
 
@@ -89,7 +98,7 @@ definition jit_emit_variable_length ::
   S32 \<Rightarrow> jit_emit l (u8_list_of_u32 (ucast data)) |
   S64 \<Rightarrow> jit_emit l (u8_list_of_u64 (ucast data))
 )"
-
+*)
 abbreviation "REG_SCRATCH::ireg \<equiv> x64Syntax.R11"  
 
 definition bpf_to_x64_reg:: "bpf_ireg \<Rightarrow> ireg" where
@@ -142,6 +151,60 @@ lemma bpf_to_x64_reg_corr[simp]:" r1 \<noteq> r2 \<longrightarrow> bpf_to_x64_re
     apply(cases r2, simp_all)
   done
 
+(*no addq_ri?*)
+definition per_jit_add_reg64_1 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option \<times> bool" where
+"per_jit_add_reg64_1 dst src = (
+  let ins = Paddq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
+    (x64_encode ins,True)
+)"
+
+definition per_jit_exit :: "x64_bin option \<times> bool" where
+"per_jit_exit = (
+  let ins = Pret in
+    (x64_encode ins,True)
+)"
+
+datatype jit_state =
+  JIT_OK JitCompiler reg_map SBPFV | (**r normal state *) (*reg_map mem stack_state Config SBPFV*)
+  JIT_Success |
+  JIT_EFlag | (**r find bugs at runtime *)
+  JIT_Err (**r bad thing *)
+
+fun per_jit_ins ::" u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> x64_bin option \<times> bool"where
+"per_jit_ins pc bins rs sv = (
+  case bins of
+  BPF_ALU64 BPF_ADD dst (SOReg src) \<Rightarrow> (per_jit_add_reg64_1 dst src) |
+  BPF_EXIT \<Rightarrow> per_jit_exit |
+  _ \<Rightarrow> (None,True)
+)"
+
+definition update_pc ::"JitCompiler \<Rightarrow> JitCompiler " where
+"update_pc jcomp = jcomp\<lparr> jit_pc := (jit_pc jcomp) + 1\<rparr>"
+
+definition jit_compile_aux::"u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> JitCompiler \<Rightarrow> jit_state" where
+"jit_compile_aux pc bins rs sv jcomp = (let xins = fst(per_jit_ins pc bins rs sv); no_exception = snd(per_jit_ins pc bins rs sv) in
+  if no_exception then 
+   if bins = BPF_EXIT then JIT_Success else
+   (case xins of None \<Rightarrow> JIT_Err |
+                 Some v \<Rightarrow> let jcomp_updated1 = update_pc_section jcomp; jcomp_updated2 = jit_emit jcomp_updated1 v;
+                           jcomp_updated = update_pc jcomp_updated2 in 
+    JIT_OK jcomp_updated rs sv)
+  else JIT_EFlag)"
+
+fun jit_compile :: "nat \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
+"jit_compile 0  _ _ st =  JIT_EFlag " |
+"jit_compile (Suc fuel) prog rs st = (
+  case st of 
+  JIT_Err \<Rightarrow> JIT_Err |
+  JIT_Success \<Rightarrow> JIT_Success |
+  JIT_EFlag \<Rightarrow> JIT_EFlag |
+  JIT_OK jcomp rs sv \<Rightarrow> ( let pc = jit_pc jcomp in
+    if unat pc < length prog then
+        case bpf_find_instr (unat pc) prog of 
+          None \<Rightarrow> JIT_Err |
+          Some ins \<Rightarrow> jit_compile fuel prog rs (jit_compile_aux pc ins rs sv jcomp)      
+    else JIT_Err))"
+
 definition per_jit_sub_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_sub_reg64 dst src = (
   let ins = Psubq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
@@ -176,13 +239,6 @@ definition per_jit_and_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg  \<Rightarrow> 
 definition per_jit_mov_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
 "per_jit_mov_reg64 dst src  = (
     let ins = Pmovq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
-    x64_encode ins
-)"
-
-(*no addq_ri?*)
-definition per_jit_add_reg64_1 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> x64_bin option" where
-"per_jit_add_reg64_1 dst src = (
-  let ins = Paddq_rr (bpf_to_x64_reg dst) (bpf_to_x64_reg src) in
     x64_encode ins
 )"
 
@@ -255,12 +311,7 @@ definition per_jit_load_reg64 :: "bpf_ireg \<Rightarrow> bpf_ireg \<Rightarrow> 
     x64_encode ins
 )"
 
-datatype jit_state =
-  JIT_OK JitProgram reg_map SBPFV | (**r normal state *) (*reg_map mem stack_state Config SBPFV*)
-  JIT_Success |
-  JIT_EFlag | (**r find bugs at runtime *)
-  JIT_Err (**r bad thing *)
-
+(*
 fun per_jit_ins ::" u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> SBPFV \<Rightarrow> x64_bin option"where
 "per_jit_ins pc bins rs sv = (
   case bins of
@@ -286,20 +337,92 @@ definition jit_compile_aux::"u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg
    (case xins of None \<Rightarrow> JIT_Err |
                  Some v \<Rightarrow> let ts' = (text_section jprog @ v) in JIT_OK (jprog \<lparr>text_section:=ts'\<rparr>) rs sv))"
 
-fun jit_compile :: "nat \<Rightarrow> u64 \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
-"jit_compile 0 _ _ _ st =  JIT_EFlag " |
-"jit_compile (Suc fuel) pc prog rs st = (
+fun jit_compile :: "nat \<Rightarrow> bpf_bin \<Rightarrow> jit_state \<Rightarrow> jit_state " where
+"jit_compile 0  _ st =  JIT_EFlag " |
+"jit_compile (Suc fuel) prog st = (
   case st of 
   JIT_Err \<Rightarrow> JIT_Err |
   JIT_Success \<Rightarrow> JIT_Success |
   JIT_EFlag \<Rightarrow> JIT_EFlag |
-  JIT_OK jprog rs sv \<Rightarrow> (
+  JIT_OK jcomp rs sv \<Rightarrow> ( let pc = jit_pc jcomp in
     if unat pc < length prog then
         case bpf_find_instr (unat pc) prog of 
           None \<Rightarrow> JIT_Err |
-          Some ins \<Rightarrow> jit_compile fuel (pc+1) prog rs (jit_compile_aux pc ins rs sv jprog)      
+          Some ins \<Rightarrow> jit_compile fuel prog (jit_compile_aux pc ins rs sv jcomp)      
     else JIT_Err))"
+*)
 
+
+type_synonym target_pc ="usize"
+type_synonym pc = "usize"
+type_synonym insn_meter = "usize"
+type_synonym last_pc = "usize"
+
+definition emit_validate_instruction_count::"pc \<Rightarrow> insn_meter \<Rightarrow> last_pc option" where
+"emit_validate_instruction_count pc im = (if pc+1 > im then Some pc else None)"
+
+definition emit_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> insn_meter" where
+"emit_profile_instruction_count t_pc pc im = im + (t_pc -(pc+1))"
+
+definition emit_validate_and_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> (last_pc \<times> insn_meter) option"where
+"emit_validate_and_profile_instruction_count t_pc pc im = (
+  case emit_validate_instruction_count pc im of
+  None \<Rightarrow> None |
+  Some l_pc \<Rightarrow>
+    let meter = emit_profile_instruction_count t_pc pc im in 
+    Some (l_pc, meter))"
+
+definition emit_undo_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> insn_meter" where
+"emit_undo_profile_instruction_count t_pc pc im = im + (pc+1)-t_pc"
+
+
+fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
+"jit_compile 0 _ _ _ _ _ st =  st " |
+"jit_compile (Suc fuel) cur_pc n l_pc prog rs st = (
+  case st of 
+  JIT_Err \<Rightarrow>  JIT_Err |
+  JIT_Success \<Rightarrow>  JIT_Success |
+  JIT_EFlag \<Rightarrow> JIT_EFlag |
+  JIT_OK jprog rs sv \<Rightarrow>  (
+    let w_cur_pc = word_of_nat cur_pc in
+      if (instruction_meter_checkpoint_distance + l_pc \<le> w_cur_pc) \<and> w_cur_pc + 1 > n then
+        JIT_EFlag
+      else
+        let l_pc' = if instruction_meter_checkpoint_distance + l_pc \<le> w_cur_pc then w_cur_pc else l_pc in (
+          case bpf_find_instr cur_pc prog of 
+          None \<Rightarrow> JIT_Err |
+          Some ins \<Rightarrow> (
+            let n' = (
+              case ins of
+              BPF_JA ofs \<Rightarrow>
+                let t_pc :: u64 = w_cur_pc + scast ofs + 1 in
+                  emit_validate_and_profile_instruction_count t_pc w_cur_pc n |
+              BPF_JUMP cond bpf_ireg snd_op ofs \<Rightarrow>
+                let t_pc = w_cur_pc + scast ofs + 1 in 
+                  emit_validate_and_profile_instruction_count t_pc w_cur_pc n |
+              BPF_LD_IMM dst imm1 imm2 \<Rightarrow>
+                emit_validate_and_profile_instruction_count (w_cur_pc+2) w_cur_pc n |
+              BPF_CALL_IMM src imm \<Rightarrow> (
+                case get_function_registry (ucast imm) of
+                None \<Rightarrow> None |
+                Some t_pc \<Rightarrow> emit_validate_and_profile_instruction_count t_pc w_cur_pc n) |
+              BPF_CALL_REG src imm \<Rightarrow>
+                let v = case sv of
+                V1 \<Rightarrow> Option.the (u4_to_bpf_ireg (scast imm)) |
+                V2 \<Rightarrow> src in 
+                emit_validate_and_profile_instruction_count (rs v) w_cur_pc n |
+              BPF_EXIT \<Rightarrow> emit_validate_and_profile_instruction_count 0 w_cur_pc n |
+              _  \<Rightarrow> Some(l_pc,n)) in (
+              if n' = None then
+                JIT_EFlag
+              else
+                let meter' = (snd (Option.the n')) in
+                let l_pc' = fst (Option.the n') in
+                  jit_compile fuel cur_pc meter' l_pc' prog rs (jit_compile_aux ins rs sv jprog )
+              )
+          )
+        )
+  ))"
 
 
 end
