@@ -277,7 +277,7 @@ definition rbpf_decoder :: "u8 \<Rightarrow> u4 \<Rightarrow> u4 \<Rightarrow> i
           None ))
 )"
 
-definition bpf_find_instr :: "nat \<Rightarrow> u8 list \<Rightarrow> bpf_instruction option" where
+definition bpf_find_instr :: "nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_instruction option" where
 "bpf_find_instr pc l = (
   let npc= pc*INSN_SIZE in
   let op = l!(npc) in
@@ -312,10 +312,11 @@ definition bpf_find_instr :: "nat \<Rightarrow> u8 list \<Rightarrow> bpf_instru
     )
 )"
 
-(*
-value "bpf_find_instr 0 [0x07::u8,0x0B,0x00,0x00,0x01,0x02,0x03,0x04] "
-*)
-definition getNextPC::"nat \<Rightarrow> u8 list \<Rightarrow> nat" where
+
+value "bpf_find_instr 0 [0x95::u8,0x00,0x00,0x00,0x00,0x00,0x00,0x00] "
+value "bpf_find_instr 0 [0x0f::u8,0x12,0x00,0x00,0x00,0x00,0x00,0x00] "
+
+definition getNextPC::"nat \<Rightarrow> bpf_bin \<Rightarrow> nat" where
 "getNextPC pc l = (
   let npc= pc*INSN_SIZE in
     let off_v = u16_of_u8_list [l!(npc+2), l!(npc+3)] in
@@ -323,7 +324,7 @@ definition getNextPC::"nat \<Rightarrow> u8 list \<Rightarrow> nat" where
       else unat (Option.the off_v) + pc
 )"
 
-fun bpf_find_prog_aux :: "nat \<Rightarrow> nat \<Rightarrow> u8 list \<Rightarrow> bpf_instruction option list " where
+fun bpf_find_prog_aux :: "nat \<Rightarrow> nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_instruction option list " where
 "bpf_find_prog_aux 0 _ _ = [None] " |
 "bpf_find_prog_aux (Suc fuel) pc l = (if (pc+1)*INSN_SIZE \<le> length l then 
   (let ins' = bpf_find_instr pc l in 
@@ -331,7 +332,7 @@ fun bpf_find_prog_aux :: "nat \<Rightarrow> nat \<Rightarrow> u8 list \<Rightarr
                            Some v \<Rightarrow> let pc' = getNextPC pc l in
         [Some v] @ bpf_find_prog_aux fuel pc' l) else [None])"
 
-definition bpf_find_prog::"nat \<Rightarrow> nat \<Rightarrow> u8 list \<Rightarrow> bpf_instruction list option" where
+definition bpf_find_prog::"nat \<Rightarrow> nat \<Rightarrow> bpf_bin \<Rightarrow> bpf_instruction list option" where
 "bpf_find_prog fuel pc l  = (let l' = bpf_find_prog_aux fuel pc l in 
                               if length l' = 1 then None else Some (map Option.the (butlast l')))"
 
@@ -350,4 +351,6 @@ value "bpf_find_prog 3 0 [0x07::u8,0x0B,0x00,0x00,0x01,0x02,0x03,0x04,
   0x07::u8,0x0B,0x00,0x00,0x01,0x02,0x03,0x04] "
 
 value "getNextPC 0 [0x07::u8,0x0B,0x00,0x00,0x01,0x02,0x03,0x04] "
+
+value "bpf_find_prog 3 0 [0x0f::u8,0x12,0x00,0x00,0x00,0x00,0x00,0x00,0x95::u8,0x00,0x00,0x00,0x00,0x00,0x00,0x00] "
 end

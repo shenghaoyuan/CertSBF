@@ -27,6 +27,9 @@ type_synonym func_map = "(func_key, func_val) map"
 definition init_func_map :: "func_map" where
 "init_func_map = (\<lambda> _. None)"
 
+definition init_mem :: "mem" where
+"init_mem = (\<lambda> _. None)"
+
 (*
 consts fm::func_map *)
 

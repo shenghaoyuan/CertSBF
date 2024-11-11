@@ -64,7 +64,7 @@ definition init_bpf_state :: "reg_map \<Rightarrow> mem \<Rightarrow> u64 \<Righ
     (rs#BR10 <--
       (MM_STACK_START + (stack_frame_size * max_call_depth)))
     m init_stack_state v init_func_map 0 n"
-
+                                  
 datatype 'a option2 =
   NOK |
   OKS (the: 'a) |
@@ -130,7 +130,7 @@ definition eval_alu32_aux3 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   let sv :: u32 = and (eval_snd_op_u32 sop rs) 31 in (
   case bop of
   BPF_ARSH \<Rightarrow> OKS (rs#dst <-- (and (ucast (arsh32 dv (unat sv))::u64) (ucast u32_MAX)) ) | 
-  _ \<Rightarrow> OKN
+  _ \<Rightarrow> OKN                                                 
 )))"
 
 definition eval_alu32 :: "binop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where

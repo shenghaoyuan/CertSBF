@@ -28,6 +28,19 @@ fun exec_instrs :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome
 section    \<open> BPF_ALU64 \<close> 
 subsection    \<open> BPF_ALU64 auxs\<close> 
 
+lemma aluq_subgoal_rr_aux0:
+     "op1 \<in> {BPF_SUB, BPF_ADD, BPF_MOV, BPF_AND, BPF_XOR, BPF_OR} \<Longrightarrow>
+     bins = BPF_ALU64 op1 dst (SOReg src) \<Longrightarrow>
+     xins = (let op2 = (case op1 of 
+        BPF_SUB \<Rightarrow> Psubq_rr | BPF_ADD \<Rightarrow> Paddq_rr | BPF_MOV \<Rightarrow> Pmovq_rr | BPF_AND \<Rightarrow> Pandq_rr | BPF_XOR \<Rightarrow> Pxorq_rr | 
+        BPF_OR \<Rightarrow> Porq_rr ) in op2 rd ri) \<Longrightarrow>
+     (BPF_OK pc rs' m' ss' is_v1 fm (cur_cu+1) remain_cu) = step fuel bins rs m ss is_v1 fm enable_stack_frame_gaps program_vm_addr cur_cu remain_cu \<Longrightarrow>
+     Next reg' m' = exec_instr xins sz reg m \<Longrightarrow>
+     m'=m"
+  apply (unfold exec_instr_def step)
+  apply simp
+  apply(cases op1,simp_all)
+  done
 
 lemma aluq_subgoal_rr_aux1:
      "op1 \<in> {BPF_SUB, BPF_ADD, BPF_MOV, BPF_AND, BPF_XOR, BPF_OR} \<Longrightarrow>

@@ -376,7 +376,7 @@ definition emit_undo_profile_instruction_count::"target_pc \<Rightarrow> pc \<Ri
 "emit_undo_profile_instruction_count t_pc pc im = im + (pc+1)-t_pc"
 
 
-fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
+(*fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> reg_map \<Rightarrow> jit_state \<Rightarrow> jit_state " where
 "jit_compile 0 _ _ _ _ _ st =  st " |
 "jit_compile (Suc fuel) cur_pc n l_pc prog rs st = (
   case st of 
@@ -423,6 +423,6 @@ fun jit_compile :: "nat \<Rightarrow> nat \<Rightarrow> insn_meter \<Rightarrow>
           )
         )
   ))"
-
+*)
 
 end
