@@ -1,16 +1,12 @@
 theory bpfConsistencyAux
   imports Main Interpreter x64Semantics 
-  x64Assembler x64DecodeProof Mem JIT_abs
+  x64Assembler x64DecodeProof Mem JIT_abs StepSem
 begin
 
 inductive small_step ::"instruction list * outcome \<Rightarrow> instruction list * outcome \<Rightarrow> bool"(infix "\<rightarrow>" 55)
   where
     Seq1:"(l#ls,Stuck)\<rightarrow>(ls,Stuck)"|
     Seq2:"(l#ls,Next rs m)\<rightarrow>(ls,exec_instr l 0 rs m)"
-
-inductive star::"('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
-refl:"star r x x"|
-step: "r x y \<Longrightarrow> star r y z \<Longrightarrow> star r x z"
 
 abbreviation small_steps::"instruction list * outcome \<Rightarrow> instruction list * outcome \<Rightarrow> bool"(infix "\<rightarrow>*" 55)
   where "x \<rightarrow>* y == star small_step x y "

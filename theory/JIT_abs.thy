@@ -5,6 +5,7 @@ imports
   Main
   rBPFCommType rBPFSyntax
   vm x86CommType Interpreter x64Semantics x64Disassembler  x64Assembler
+  StepSem
 begin
 
 record JitProgram =
@@ -12,7 +13,7 @@ page_size     :: usize
 pc_section    :: "usize list"
 text_section  :: "x64_bin"
 
-record JitCompiler =
+record jit_state =
 jit_result :: JitProgram 
 offset_in_text_section :: usize 
 jit_pc :: usize 
@@ -20,6 +21,7 @@ jit_pc :: usize
 definition update_pc_section_aux ::"usize list \<Rightarrow> nat \<Rightarrow> usize \<Rightarrow> usize list" where
 "update_pc_section_aux pc_sec pc x = list_update pc_sec pc x"
 
+(*
 definition update_pc_section ::"JitCompiler \<Rightarrow> JitCompiler" where
 "update_pc_section jcomp = (let jprog = jit_result jcomp;
    r = pc_section jprog; x = update_pc_section_aux r (unat (jit_pc jcomp)) (offset_in_text_section jcomp) in 
@@ -30,7 +32,7 @@ definition jit_emit :: "JitCompiler \<Rightarrow> u8 list  \<Rightarrow> JitComp
  \<lparr>
   jit_result              := (jit_result l)\<lparr> text_section := (text_section (jit_result l))@n \<rparr>,
   offset_in_text_section  := (offset_in_text_section l) + of_nat (length n)
- \<rparr>"
+ \<rparr>" *)
 
 abbreviation "REG_SCRATCH::ireg \<equiv> x64Syntax.R11"  
 
@@ -96,11 +98,12 @@ definition per_jit_exit :: "x64_bin option " where
     x64_encode ins
 )"
 
+(*
 datatype jit_state =
   JIT_OK JitCompiler| (**r normal state *) (*regset SBPFV  mem Config*)
   JIT_Success JitProgram|
   JIT_EFlag | (**r find bugs at runtime *)
-  JIT_Err (**r bad thing *)
+  JIT_Err (**r bad thing *) *)
 
 fun per_jit_ins ::" bpf_instruction \<Rightarrow> x64_bin option"where
 "per_jit_ins bins = (
@@ -110,6 +113,7 @@ fun per_jit_ins ::" bpf_instruction \<Rightarrow> x64_bin option"where
   _ \<Rightarrow> None
 )"
 
+(*
 fun per_jit_insns_aux ::"bpf_instruction list \<Rightarrow> x64_bin option list"where
 "per_jit_insns_aux []  = []" |
 "per_jit_insns_aux (x#xs) = (let val = per_jit_ins x in case val of None \<Rightarrow> [None] | _ \<Rightarrow> [val] @ per_jit_insns_aux xs )"
@@ -128,7 +132,7 @@ definition jit_compile_aux::"u64 \<Rightarrow> bpf_instruction \<Rightarrow> Jit
                  Some v \<Rightarrow> let jcomp_updated1 = update_pc_section jcomp; jcomp_updated2 = jit_emit jcomp_updated1 v;
                            jcomp_updated = update_pc jcomp_updated2 in 
     JIT_OK jcomp_updated))"
-                                           
+
 fun jit_compile :: "nat \<Rightarrow> bpf_bin \<Rightarrow> jit_state \<Rightarrow> jit_state" where
 "jit_compile 0 _ st =  JIT_EFlag " |
 "jit_compile (Suc fuel) prog st = (
@@ -142,6 +146,58 @@ fun jit_compile :: "nat \<Rightarrow> bpf_bin \<Rightarrow> jit_state \<Rightarr
           None \<Rightarrow> JIT_Err |
           Some ins \<Rightarrow> jit_compile fuel prog (jit_compile_aux pc ins jcomp)      
     else JIT_Err))"
+*)
+
+(**r 
+TODO: 
+1. from sbpf binary (interpreter.rs) to sbpf binary simplified: (0x18 lddw) to (0x18 lddw_low) + (0x10 lddw_high)
+2. from sbpf binary (simplified) to sbpf assembly
+*)
+
+axiomatization upd_x64_ins :: "u8 list \<Rightarrow> jit_state \<Rightarrow> jit_state"
+
+fun jit :: "ebpf_asm \<Rightarrow> jit_state \<Rightarrow> jit_state option" where
+"jit [] st = Some st" |
+"jit (h#t) st = (
+  case per_jit_ins h of
+  None \<Rightarrow> None |
+  Some ins \<Rightarrow> jit t (upd_x64_ins ins st)
+)"
+
+(**r star of ebpf *)
+datatype sbpf_state =
+  SBPF_OK u64 reg_map mem stack_state SBPFV func_map u64 u64 | (**r normal state *)
+  SBPF_Success u64
+
+inductive sbpf_step :: "ebpf_asm * sbpf_state \<Rightarrow> ebpf_asm * sbpf_state \<Rightarrow> bool" (infix "\<rightarrow>s" 55)
+  where
+B_ADD64: "st = SBPF_OK pc rs m stk sv fm cur_cu remain_cu \<Longrightarrow>
+          BPF_ALU64 bop d sop = l!(unat pc) \<Longrightarrow>
+          bop = BPF_ADD \<Longrightarrow>
+          is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) \<Longrightarrow>
+          OKS rs' = eval_alu32 bop d sop rs is_v1 \<Longrightarrow>
+          st' = SBPF_OK (pc+1) rs' m stk sv fm (cur_cu+1) remain_cu \<Longrightarrow>
+            (l, st) \<rightarrow>s (l, st')" |
+B_EXIT: " st = SBPF_OK pc rs m stk sv fm cur_cu remain_cu \<Longrightarrow>
+          BPF_EXIT = l!(unat pc) \<Longrightarrow>
+          call_depth stk = 0 \<Longrightarrow>
+            (l, st) \<rightarrow>s (l, SBPF_Success (rs BR0))"
+
+abbreviation sbpf_sem::"ebpf_asm * sbpf_state \<Rightarrow> ebpf_asm * sbpf_state \<Rightarrow> bool" (infix "\<rightarrow>*s" 55)
+  where "x \<rightarrow>*s y == star sbpf_step x y"
+
+
+(**r star of x64 *)
+datatype x64_state =
+  Bin_OK u64 regset mem
+
+axiomatization x64_step :: "u8 list * x64_state \<Rightarrow> u8 list * x64_state \<Rightarrow> bool" (infix "\<rightarrow>x" 55)
+
+abbreviation x64_sem::"u8 list * x64_state \<Rightarrow> u8 list * x64_state \<Rightarrow> bool" (infix "\<rightarrow>*x" 55)
+  where "x \<rightarrow>*x y == star x64_step x y"
+
+
+
 
 fun interp3 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
 "interp3 [] s = s" |
