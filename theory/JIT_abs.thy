@@ -154,9 +154,27 @@ TODO:
 2. from sbpf binary (simplified) to sbpf assembly
 *)
 
-axiomatization upd_x64_ins :: "u8 list \<Rightarrow> jit_state \<Rightarrow> jit_state"
+fun jit1 :: "ebpf_asm \<Rightarrow> u8 list \<Rightarrow> usize list \<Rightarrow> (u8 list * usize list) option" where
+"jit1 [] l_bin l_pc = Some (l_bin, l_pc)" |
+"jit1 (h#t) l_bin l_pc = (
+  case per_jit_ins h of
+  None \<Rightarrow> None |
+  Some ins \<Rightarrow> (
+    jit1 t (l_bin @ ins) (l_pc @ [of_nat (length l_bin)])
+  )
+)"
 
-axiomatization jit :: "ebpf_asm \<Rightarrow> (u8 list * usize list) option"
+fun jit2 :: "ebpf_asm \<Rightarrow> (u8 list * usize list) option" where
+"jit2 [] = Some ([], [])" |
+"jit2 (h#t) = (
+  case jit2 t of
+  None \<Rightarrow> None |
+  Some (l_bin, l_pc) \<Rightarrow> (
+    case per_jit_ins h of
+    None \<Rightarrow> None |
+    Some ins \<Rightarrow> Some (ins @l_bin, 0#(map (\<lambda> i. i + (of_nat (length ins))) l_pc))
+  )
+)"
 
 (*
 fun jit :: "ebpf_asm \<Rightarrow> jit_state \<Rightarrow> jit_state option" where
@@ -217,7 +235,7 @@ definition match_state :: "sbpf_state \<Rightarrow> x64_state \<Rightarrow> usiz
 )"
 
 theorem jit_correct:
-  " jit prog = Some (x64_prog, pc_map) \<Longrightarrow>
+  " jit2 prog = Some (x64_prog, pc_map) \<Longrightarrow>
     match_state bst xst pc_map \<Longrightarrow>
     sbpf_sem (prog, bst) (prog, bst') \<Longrightarrow>
     (\<exists> xst'.
