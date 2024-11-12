@@ -156,13 +156,16 @@ TODO:
 
 axiomatization upd_x64_ins :: "u8 list \<Rightarrow> jit_state \<Rightarrow> jit_state"
 
+axiomatization jit :: "ebpf_asm \<Rightarrow> (u8 list * usize list) option"
+
+(*
 fun jit :: "ebpf_asm \<Rightarrow> jit_state \<Rightarrow> jit_state option" where
 "jit [] st = Some st" |
 "jit (h#t) st = (
   case per_jit_ins h of
   None \<Rightarrow> None |
   Some ins \<Rightarrow> jit t (upd_x64_ins ins st)
-)"
+)" *)
 
 (**r star of ebpf *)
 datatype sbpf_state =
@@ -196,7 +199,32 @@ axiomatization x64_step :: "u8 list * x64_state \<Rightarrow> u8 list * x64_stat
 abbreviation x64_sem::"u8 list * x64_state \<Rightarrow> u8 list * x64_state \<Rightarrow> bool" (infix "\<rightarrow>*x" 55)
   where "x \<rightarrow>*x y == star x64_step x y"
 
+(**r simulation relation *)
+definition match_state :: "sbpf_state \<Rightarrow> x64_state \<Rightarrow> usize list \<Rightarrow> bool" where
+"match_state bst xst pc_map = (
+  case bst of
+  SBPF_OK pc rs m stk sv fm cur_cu remain_cu \<Rightarrow> (
+    case xst of
+    Bin_OK xpc xrs xm \<Rightarrow>
+    (\<forall> r. Vlong (rs r) = xrs (IR (bpf_to_x64_reg r))) \<and> \<comment>\<open> for ALU + MEM + Call \<close>
+    pc_map!(unat pc) = xpc \<and>  \<comment>\<open> for Jump \<close>
+    m = xm  \<comment>\<open> for MEM + Call \<close>
+  ) |
+  SBPF_Success v \<Rightarrow>(
+    case xst of
+    Bin_OK xpc xrs xm \<Rightarrow> Vlong v = xrs (IR (bpf_to_x64_reg BR0)) \<comment>\<open> for EXIT \<close>
+  )
+)"
 
+theorem jit_correct:
+  " jit prog = Some (x64_prog, pc_map) \<Longrightarrow>
+    match_state bst xst pc_map \<Longrightarrow>
+    sbpf_sem (prog, bst) (prog, bst') \<Longrightarrow>
+    (\<exists> xst'.
+      x64_sem (x64_prog, xst) (x64_prog, xst') \<and>
+      match_state bst' xst' pc_map)
+"
+  sorry
 
 
 fun interp3 :: "instruction list \<Rightarrow> outcome \<Rightarrow> outcome" where
@@ -238,7 +266,8 @@ fun binary_execute :: "nat \<Rightarrow> JitProgram \<Rightarrow> bin_state \<Ri
 definition init_jitprog::"JitProgram" where
 "init_jitprog \<equiv> \<lparr> page_size = 4096, pc_section = [], text_section = []\<rparr>"
 
+(*
 definition init_jitcomp::"JitCompiler" where
-"init_jitcomp = \<lparr> jit_result = init_jitprog, offset_in_text_section = 0, jit_pc = 0\<rparr>"
+"init_jitcomp = \<lparr> jit_result = init_jitprog, offset_in_text_section = 0, jit_pc = 0\<rparr>" *)
  
 end
