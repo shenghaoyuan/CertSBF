@@ -17,8 +17,6 @@ definition x64_decode :: "nat \<Rightarrow> x64_bin \<Rightarrow> (nat * instruc
     else if h = 0xc3 then
       \<comment> \<open> P2887 ` RET near` -> ` 1100 0011` \<close>
       Some (1, Pret)
-    else if h = 0x99 then
-      Some (1, Pcdq)
     \<comment> \<open> R7 legacy \<close>
     else if h = 0x66 then  \<comment> \<open> 16-bit mode \<close>
       let h1 = l_bin!(pc+1) in

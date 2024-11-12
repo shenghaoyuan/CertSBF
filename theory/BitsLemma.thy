@@ -205,4 +205,17 @@ lemma bitfield_insert_extract_same0 [bitfield_simps]:
     by linarith
   done
 
+lemma bitfield_insert_zero_other [bitfield_simps]:
+  " 0 < w0 \<Longrightarrow> 0 < w1 \<Longrightarrow> p0 + w0 < 8 \<Longrightarrow> p1 + w1 < 8 \<Longrightarrow> w0 \<le> p1 \<Longrightarrow>
+    bitfield_insert_u8 p1 w1
+     (bitfield_extract_u8 p0 w0 v)
+     0 =
+    bitfield_extract_u8 p0 w0 v"
+  apply (simp add: bit_eq_iff)
+  apply (rule allI)
+  subgoal for n
+    apply (simp add: bitfield_simps)
+    done
+  done
+
 end
