@@ -1,6 +1,6 @@
 theory x64DecodeProof1
 imports
-  Main
+  Main (*"HOL-Eisbach.Eisbach" *)
   rBPFCommType x86CommType
   x64Assembler x64Disassembler
 begin
