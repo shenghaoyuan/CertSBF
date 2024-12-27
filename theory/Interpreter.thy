@@ -279,16 +279,91 @@ definition eval_hor64 :: "dst_ty \<Rightarrow> imm_ty \<Rightarrow> reg_map \<Ri
 
 subsection  \<open> PQR \<close>
 
+(*
+value "sint (0x99addc7fdd190ac8::i64)"
+value "sint (0x543727b::i64)"
+value "(sint (0x99addc7fdd190ac8::i64)) div sint (0x543727b::i64)"
+value "0x1d32844580::i64"
+value "0xFFFFFFEC8F679312::i64" 
+value "(-(11::int)) div (10::int)"
+value "(-(15::int)) div (10::int)"
+value "(-(19::int)) div (10::int)"
+value "((11::int)) div (10::int)"
+value "((11::int)) div (10::int)"
+value "((15::int)) div (10::int)"
+value "((19::int)) div (10::int)"
+
+value "((-20::int)) mod (10::int)"
+value "(-(11::int)) mod (10::int)"
+value "(-(15::int)) mod (10::int)"
+value "(0::int) mod (10::int)"
+value "(0::int) mod (-10::int)"
+value "(-(19::int)) mod (10::int)"
+value "((19::int)) mod (-10::int)"
+value "(-(19::int)) mod (0::int)"
+value "((19::int)) mod (-0::int)"
+value "((11::int)) mod (10::int)"
+value "((11::int)) mod (10::int)"
+value "((15::int)) mod (10::int)"
+value "((19::int)) mod (10::int)"
+value "((-20::int)) mod (10::int)" *)
+
+definition rust_sdiv :: "int \<Rightarrow> int \<Rightarrow> int option" where
+"rust_sdiv a b = (
+  if b = 0 then None
+  else if b dvd a then
+    Some (a div b)
+  else 
+    let c = a div b in
+      if c \<ge> 0 then Some c else Some (c + 1))"
+
+definition rust_srem :: "int \<Rightarrow> int \<Rightarrow> int option" where
+"rust_srem a b = (
+  if b = 0 then None
+  else if (b dvd a) then
+    Some 0
+  else if a > 0 \<and> b < 0 then
+    Some (a mod (-b))
+  else if a < 0 \<and> b > 0 then
+    Some (- ((-a) mod b))
+  else
+    Some (a mod b))"
+
+(*
+value "sint (0xCD1050586212C918::u64)"
+value "rust_sdiv (sint (0xCD1050586212C918::u64)) (sint (0x9A3C2820F029C171::u64))"
+value "rust_sdiv (-3) (-7)"
+value " (-3 ::int) div (-7::int)"
+
+value "rust_srem 0x69968B6226C9B0EC 0x2C1C8C65"
+value "0x25C77666::int" *)
+
 definition eval_pqr32_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_pqr32_aux1 pop dst sop rs  = (
   let dv :: i32 = scast (eval_reg dst rs) in (
   let sv :: i32 = eval_snd_op_i32 sop rs in (
   case pop of
   BPF_LMUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv * sv))) |
-  BPF_SDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv div sv))) |
-  BPF_SREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
+  BPF_SDIV \<Rightarrow>
+    if sv = 0 then (
+      case sop of
+      SOImm _ \<Rightarrow> NOK |
+      _ \<Rightarrow> OKN)
+    else (
+      case rust_sdiv (sint dv) (sint sv) of
+      None \<Rightarrow> NOK |
+      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))
+    ) |
+  BPF_SREM \<Rightarrow>
+    if sv = 0 then (
+      case sop of
+      SOImm _ \<Rightarrow> NOK |
+      _ \<Rightarrow> OKN)
+    else (
+      case rust_srem (sint dv) (sint sv) of
+      None \<Rightarrow> NOK |
+      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))
+    ) |
   _ \<Rightarrow> OKN
 )))"
 
@@ -330,14 +405,28 @@ definition eval_pqr64_aux1 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
 
 definition eval_pqr64_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> reg_map option2" where
 "eval_pqr64_aux2 pop dst sop rs = (
-  let dv :: i64 = scast (eval_reg dst rs) in (
-  let sv :: i64 = eval_snd_op_i64 sop rs in (
+  let dv :: int = sint (eval_reg dst rs) in (
+  let sv :: int = sint (eval_snd_op_i64 sop rs) in (
   case pop of
-  BPF_SDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv div sv))) | 
-  BPF_SREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
-                        else OKS (rs#dst <-- (ucast (dv mod sv))) |
-  _ \<Rightarrow> OKN  
+  BPF_SDIV \<Rightarrow>
+    if sv = 0 then (
+      case sop of
+      SOImm _ \<Rightarrow> NOK |
+      _ \<Rightarrow> OKN)
+    else (
+      case rust_sdiv dv sv of
+      None \<Rightarrow> NOK |
+      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))) | 
+  BPF_SREM \<Rightarrow>
+    if sv = 0 then (
+      case sop of
+      SOImm _ \<Rightarrow> NOK |
+      _ \<Rightarrow> OKN)
+    else (
+      case rust_srem dv sv of
+      None \<Rightarrow> NOK |
+      Some res \<Rightarrow> OKS (rs#dst <-- (of_int res))) |
+  _ \<Rightarrow> OKN
 )))"
 
 definition eval_pqr64 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where
@@ -683,7 +772,7 @@ definition u8_list_to_mem_plus :: "u8 list \<Rightarrow> mem" where
 definition step_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool" where
 "step_test lp lr lm lc v fuel ipc i res = (
-  if of_int res = i64_MIN then True else 
+  \<comment>\<open> if of_int res = i64_MIN then True else \<close>
   let prog  = int_to_u8_list lp in
   let rs    = ((intlist_to_reg_map lr)#BR10 <--
       (MM_STACK_START + (stack_frame_size * max_call_depth))) in
