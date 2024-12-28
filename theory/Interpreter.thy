@@ -440,6 +440,8 @@ definition eval_pqr64 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
   BPF_SREM \<Rightarrow> eval_pqr64_aux2 pop dst sop rs
 ))"
 
+value " (((0xDB014C31EDB90C40::u128) * (0x61A44BEC6C60B391::u128))>>64)"
+(*let _ = print_endline("hello1") in let _ = print_regmap rs2 in*)
 definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where
 "eval_pqr64_2 pop2 dst sop rs is_v1 = (
   if is_v1 then OKN else(
@@ -448,8 +450,9 @@ definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<R
   let dv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
   let sv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
   case pop2 of
-  BPF_UHMUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv_u * sv_u)>>64)) |
-  BPF_SHMUL \<Rightarrow> OKS (rs#dst <-- (ucast (dv_i * sv_i)>>64)) 
+  BPF_UHMUL \<Rightarrow> 
+    OKS (rs#dst <-- (ucast ((dv_u * sv_u)>>64))) |
+  BPF_SHMUL \<Rightarrow> OKS (rs#dst <-- (ucast ((dv_i * sv_i)>>64))) 
 ))))))"
 
 subsection  \<open> MEM \<close>

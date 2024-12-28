@@ -20,6 +20,7 @@ micro-test:
 
 macro-test:
 	@cd ./tests/exec_semantics && \
+	eval $$(opam env) && \
 	ocamlc -c interp_test.ml && \
 	ocamlc -o test interp_test.cmo test.ml && \
 	./test
