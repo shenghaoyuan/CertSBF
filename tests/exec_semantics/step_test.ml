@@ -2259,7 +2259,56 @@ let rec eval_snd_op_u64
         i
     | SOReg r, rs -> rs r;;
 
-let rec eval_pqr64_2
+
+let rec num_to_int (n: num) : int64 =
+  match n with
+  | One -> 1L
+  | Bit0 m -> Int64.mul 2L (num_to_int m)
+  | Bit1 m -> Int64.add (Int64.mul 2L (num_to_int m)) 1L     
+
+let myint_to_int (mi: myint) : int64 =
+  match mi with
+  | Zero_int -> 0L
+  | Pos n -> num_to_int n
+  | Neg n -> Int64.neg (num_to_int n)
+
+let rec num_of_int (n: int64) =
+  if n = 1L then One
+  else if Int64.rem n 2L = 0L then Bit0 (num_of_int (Int64.div n 2L))
+  else Bit1 (num_of_int (Int64.div n 2L))
+
+let i64_MIN
+  = (Neg (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+     (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+   (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
+ (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));;
+
+let int_of_standard_int (n: int64) =
+  if n = 0L then Zero_int
+  else if n > 0L then  Pos (num_of_int (n))
+  else if n = 0x8000000000000000L then i64_MIN
+  else Neg (num_of_int (Int64.sub 0L n))
+
+let int_list_of_standard_int_list lst =
+  List.map int_of_standard_int lst
+
+let print_regmap rs =
+  let reg_list = [("R0", BR0); ("R1", BR1); ("R2", BR2); ("R3", BR3);
+                  ("R4", BR4); ("R5", BR5); ("R6", BR6); ("R7", BR7);
+                  ("R8", BR8); ("R9", BR9); ("R10", BR10)] in
+  List.iter (fun (name, reg) ->
+    Printf.printf "%s: %Lx\n" name (myint_to_int (the_int
+    (len_bit0
+      (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+        (rs reg)))
+  ) reg_list
+
+  let rec eval_pqr64_2
   pop2 dst sop rs is_v1 =
     (if is_v1 then OKN
       else (let dv_u =
@@ -2283,14 +2332,16 @@ let rec eval_pqr64_2
                 (eval_snd_op_u64 sop rs)
               in
             let dv_i =
-              cast (len_signed
-                     (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                (len_bit0
+              signed_cast
+                (len_signed
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                (len_signed
+                  (len_bit0
+                    (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                 (signed_cast
                   (len_bit0
                     (len_bit0
@@ -2302,14 +2353,16 @@ let rec eval_pqr64_2
                   (eval_reg dst rs))
               in
             let sv_i =
-              cast (len_signed
-                     (len_bit0
-                       (len_bit0
-                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                (len_bit0
+              signed_cast
+                (len_signed
                   (len_bit0
                     (len_bit0
                       (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+                (len_signed
+                  (len_bit0
+                    (len_bit0
+                      (len_bit0
+                        (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
                 (signed_cast
                   (len_bit0
                     (len_bit0
@@ -2318,7 +2371,7 @@ let rec eval_pqr64_2
                     (len_bit0
                       (len_bit0
                         (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                  (eval_reg dst rs))
+                  (eval_snd_op_u64 sop rs))
               in
              (match pop2
                with BPF_UHMUL ->
@@ -2350,33 +2403,98 @@ let rec eval_pqr64_2
                                        (len_bit0 (len_bit0 len_num1)))))))
                              dv_u sv_u))))
                | BPF_SHMUL ->
-                 OKS (fun_upd equal_bpf_ireg rs dst
-                       (signed_cast (len_bit0
+                 (let rs1 =
+                    fun_upd equal_bpf_ireg rs BR0
+                      (cast (len_signed
+                              (len_bit0
+                                (len_bit0
+                                  (len_bit0
+                                    (len_bit0
+                                      (len_bit0
+(len_bit0 (len_bit0 len_num1))))))))
+                        (len_bit0
+                          (len_bit0
+                            (len_bit0
+                              (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                        dv_i)
+                    in
+                  let rs2 =
+                    fun_upd equal_bpf_ireg rs1 BR1
+                      (cast (len_signed
+                              (len_bit0
+                                (len_bit0
+                                  (len_bit0
+                                    (len_bit0
+                                      (len_bit0
+(len_bit0 (len_bit0 len_num1))))))))
+                        (len_bit0
+                          (len_bit0
+                            (len_bit0
+                              (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                        sv_i)
+                    in
+                  let rs3 =
+                    fun_upd equal_bpf_ireg rs2 BR2
+                      (cast (len_signed
+                              (len_bit0
+                                (len_bit0
+                                  (len_bit0
+                                    (len_bit0
+                                      (len_bit0
+(len_bit0 (len_bit0 len_num1))))))))
+                        (len_bit0
+                          (len_bit0
+                            (len_bit0
+                              (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                        (drop_bit_word
+                          (len_signed
+                            (len_bit0
+                              (len_bit0
+                                (len_bit0
+                                  (len_bit0
+                                    (len_bit0
+                                      (len_bit0 (len_bit0 len_num1))))))))
+                          (nat_of_num
+                            (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
+                          (times_worda
+                            (len_signed
+                              (len_bit0
+                                (len_bit0
+                                  (len_bit0
+                                    (len_bit0
+                                      (len_bit0
+(len_bit0 (len_bit0 len_num1))))))))
+                            dv_i sv_i)))
+                    in
+                   OKS (fun_upd equal_bpf_ireg rs3 dst
+                         (cast (len_signed
+                                 (len_bit0
+                                   (len_bit0
+                                     (len_bit0
+                                       (len_bit0
+ (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+                           (len_bit0
+                             (len_bit0
+                               (len_bit0
+                                 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+                           (drop_bit_word
+                             (len_signed
                                (len_bit0
                                  (len_bit0
                                    (len_bit0
                                      (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
-                         (len_bit0
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0 (len_bit0 (len_bit0 len_num1))))))
-                         (drop_bit_word
-                           (len_bit0
-                             (len_bit0
-                               (len_bit0
-                                 (len_bit0
-                                   (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
-                           (nat_of_num
-                             (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
-                           (times_worda
-                             (len_bit0
-                               (len_bit0
+                                       (len_bit0
+ (len_bit0 (len_bit0 len_num1))))))))
+                             (nat_of_num
+                               (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 One)))))))
+                             (times_worda
+                               (len_signed
                                  (len_bit0
                                    (len_bit0
                                      (len_bit0
-                                       (len_bit0 (len_bit0 len_num1)))))))
-                             dv_i sv_i)))))));;
+                                       (len_bit0
+ (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+                               dv_i sv_i))))))));;
 
 let rec eval_store
   chk dst sop off rs mem =
@@ -5528,6 +5646,7 @@ let rec step_test
                      (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
                  (Pos (Bit1 One)))
              in
+             (*let _ = print_endline("hello1") in let _ = print_bpf_state st1 in*)
             (if equal_word (len_bit0 (len_bit0 (len_bit0 len_num1)))
                   (nth prog Zero_nat)
                   (of_int (len_bit0 (len_bit0 (len_bit0 len_num1)))

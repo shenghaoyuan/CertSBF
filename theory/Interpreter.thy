@@ -441,18 +441,23 @@ definition eval_pqr64 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Righ
 ))"
 
 value " (((0xDB014C31EDB90C40::u128) * (0x61A44BEC6C60B391::u128))>>64)"
+value " (((0x423E3A731AE4CF90::i128) * (0x9316E379C06068E5::i128))>>64)"
 (*let _ = print_endline("hello1") in let _ = print_regmap rs2 in*)
 definition eval_pqr64_2 :: "pqrop2 \<Rightarrow> dst_ty \<Rightarrow> snd_op \<Rightarrow> reg_map \<Rightarrow> bool \<Rightarrow> reg_map option2" where
 "eval_pqr64_2 pop2 dst sop rs is_v1 = (
   if is_v1 then OKN else(
   let dv_u :: u128 = ucast (eval_reg dst rs) in (
   let sv_u :: u128 = ucast (eval_snd_op_u64 sop rs) in (
-  let dv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
-  let sv_i :: u128 = ucast (scast (eval_reg dst rs)::i64) in (
+  let dv_i :: i128 = scast (scast (eval_reg dst rs)::i64) in (
+  let sv_i :: i128 = scast (scast (eval_snd_op_u64 sop rs)::i64) in (
   case pop2 of
   BPF_UHMUL \<Rightarrow> 
     OKS (rs#dst <-- (ucast ((dv_u * sv_u)>>64))) |
-  BPF_SHMUL \<Rightarrow> OKS (rs#dst <-- (ucast ((dv_i * sv_i)>>64))) 
+  BPF_SHMUL \<Rightarrow> 
+    let rs1 = (rs#BR0 <-- (ucast dv_i)) in
+    let rs2 = (rs1#BR1 <-- (ucast sv_i)) in
+    let rs3 = (rs2#BR2 <-- (ucast ((dv_i * sv_i)>>64))) in
+    OKS (rs3#dst <-- (ucast ((dv_i * sv_i)>>64))) 
 ))))))"
 
 subsection  \<open> MEM \<close>

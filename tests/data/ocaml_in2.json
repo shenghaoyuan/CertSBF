@@ -1,8 +1,8 @@
-[  {
-  "dis": "uhmul r8, r3",
+[    {
+  "dis": "shmul r7, r9",
   "lp_std": [
-    "0x3E",
-    "0x38",
+    "0xBE",
+    "0x97",
     "0x00",
     "0x00",
     "0x00",
@@ -12,21 +12,21 @@
   ],
   "lr_std": [
     "0x0000000000000000",
-    "0x5A8CE0371C1DF246",
-    "0x289E84E65248571F",
-    "0xDB014C31EDB90C40",
-    "0xD8F3E4965BD8FC83",
-    "0x838DD051E34CF637",
-    "0x6E06076E9A894FF6",
-    "0xC0A6EA61406AA52A",
-    "0x61A44BEC6C60B391",
-    "0x60D7BCD1C0442D47"
+    "0x1F65442EC99B729C",
+    "0x2DAA6B3EA072C250",
+    "0x9A5ADEF9E9AA86EA",
+    "0x96690993B65C9A38",
+    "0xA08223D730504CB3",
+    "0xC6C8A19C86791D28",
+    "0x423E3A731AE4CF90",
+    "0x48368C0F132261ED",
+    "0x9316E379C06068E5"
   ],
   "lm_std": [],
   "lc_std": [],
   "v": "0x2",
   "fuel": "0x1",
-  "index": "0x8",
+  "index": "0x7",
   "ipc": "0x1",
-  "result_expected": "0x53880BA75E4B8D1C"
+  "result_expected": "0xE3D16D52B27632DA"
 }]
