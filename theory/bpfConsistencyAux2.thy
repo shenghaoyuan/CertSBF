@@ -165,6 +165,7 @@ proof-
     by (meson interp3_length2_aux2)
 qed
 
+(*
 lemma div_subgoal_rr_aux5:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg]" and 
     a1:"Next reg'' m'' = interp3 xins (Next reg m)" and 
@@ -198,7 +199,7 @@ proof-
   have b9:"tmpreg \<in> {x64Syntax.RDX, x64Syntax.RAX, x64Syntax.RCX}" using a2 by auto
   thus ?thesis using a3 a4 b5 b6 b8 a1 push_pop_subgoal_rr_aux2_3 
     using assms(4) b3 b4 by blast
-qed
+qed *)
 
 lemma div_subgoal_rr_aux6:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg]" and 
@@ -254,6 +255,7 @@ proof-
   thus ?thesis using b0 b1 b2 by auto
 qed
 
+(*
 lemma div_subgoal_rr_aux7:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg] " and
     a1:"Next reg'' m'' = interp3 xins (Next reg m) " and
@@ -267,7 +269,7 @@ proof-
   have b1_1:"\<forall> r. (bpf_to_x64_reg r) \<noteq> x64Syntax.RSP" using a0 reg_rsp_consist by simp
   have b2:"\<forall> r . bpf_to_x64_reg r  \<notin> {(bpf_to_x64_reg dst), x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg'' (IR (bpf_to_x64_reg r )) = reg (IR (bpf_to_x64_reg r ))" using b1 a3 by simp
   thus ?thesis using  b0 b2 b1_1 by force 
-qed
+qed *)
 
 lemma "tmpreg (IR x64Syntax.RDX) = Vlong 0 \<Longrightarrow> 
        tmpreg (IR (bpf_to_x64_reg src)) = Vlong n2 \<Longrightarrow> 
@@ -333,6 +335,7 @@ lemma div_subgoal_rr_aux8_3:"Next reg' m' = exec_instr xins 1 reg m \<Longrighta
     reg' (IR ireg.RAX) = Vlong (ucast (((ucast n1)::u128) div ((ucast n2)::u128)))"
   using div_subgoal_rr_aux8_2 div_subgoal_rr_aux8_1 by blast
 
+(*
 lemma div_subgoal_rr_aux8_7:"result = (exec_instr (Pdivq_r (bpf_to_x64_reg src)) 1 tmpreg m') \<Longrightarrow>
       (tmpreg (IR (bpf_to_x64_reg src)) = result1) \<and>
       tmpreg (IR x64Syntax.RAX) = result2  \<and> 
@@ -346,11 +349,9 @@ proof (rule ccontr)
  (* have a5:"\<nexists> n1 n2 n3. result = Stuck \<and> \<not> (result1 = Vlong n1 \<and> result2 = Vlong n2 \<and> result3 = Vlong n3 \<and> n1 \<noteq> 0)" using a3 by blast
   have a5:"\<nexists> n1 n2 n3. result = Stuck  \<and> (result1 \<noteq> Vlong n1 \<or> result2 \<noteq> Vlong n2  \<or> result3 \<noteq> Vlong n3 \<or> n1 = 0)  "using a4 by blast
   have a6:"\<exists> n1 n2 n3. result = Stuck \<and> (result1 = Vlong n1 \<and> result2 = Vlong n2 \<and> result3 = Vlong n3 \<and> n1 \<noteq> 0)  "using a4 try*)
-  then show "False" sorry
+  then show "False" TODO
 qed
- (* proof
-   qed
- qed*)
+*)
 
 lemma div_subgoal_rr_aux8_6:"result = (exec_instr (xins) 1 tmpreg m') \<Longrightarrow> xins = Pdivq_r (bpf_to_x64_reg src) \<Longrightarrow>
       (tmpreg (IR (bpf_to_x64_reg src)) = result1) \<Longrightarrow>
@@ -518,6 +519,7 @@ proof-
 thus ?thesis using b0 b1 by simp
 qed
 
+(*
 lemma div_subgoal_rr_aux8:
   assumes a0:"xins = [Ppushl_r x64Syntax.RDX, Pxorq_rr x64Syntax.RDX x64Syntax.RDX,Pdivq_r (bpf_to_x64_reg src),Ppopl x64Syntax.RDX]" and 
     a1:"Next reg'' m'' = interp3 xins (Next reg m)" and
@@ -603,8 +605,6 @@ proof-
   have b6_6:"reg2 (IR x64Syntax.RDX) = Vlong 0" using b1_6 by auto
   have b6_7:"reg2 (IR x64Syntax.RAX) = reg (IR x64Syntax.RAX)" using b1 b0 by simp
   have b6_8:"reg2 (IR (bpf_to_x64_reg src)) =  reg (IR (bpf_to_x64_reg src))" using b1_7 b0_6 by simp
-  (*have b6_8:"\<exists> tmpreg' m'. Next tmpreg' m'' = exec_instr (last ?tmplist) 1 reg m'" sorry
-  then obtain tmpreg' m' where b6_9:"Next tmpreg' m'' = exec_instr (last ?tmplist) 1 reg m'" by auto*)
   have b6:"tmpreg' (IR x64Syntax.RAX) = reg3 (IR x64Syntax.RAX)" 
     using b6_1 b6_2 b6_3 b6_4 b6_6 b6_7 b6_8 a0 a2 a3 b5_1 a7 a8 div_subgoal_rr_aux8_9
     by (smt (verit) butlast.simps(2) div_subgoal_rr_aux8_10 interp3_list_aux3 last_ConsL) 
@@ -612,7 +612,7 @@ proof-
 qed
 
 lemma ucast_for_div:"(x::u64) div (y::u64) = ucast(((ucast x)::u128) div ((ucast y)::u128))"
-  sorry
+  TODO
 
 lemma div_subgoal_rr_aux9_1:
     "bins = BPF_ALU64 BPF_DIV dst (SOReg src) \<Longrightarrow> 
@@ -646,7 +646,7 @@ lemma div_subgoal_rr_aux9_1:
     subgoal for x5 using ucast_for_div apply blast
       done
   done
-  done
+  done *)
 
 lemma div_subgoal_rr_aux9_2:
     "bins = BPF_ALU64 BPF_DIV dst (SOReg src) \<Longrightarrow> 
@@ -670,6 +670,7 @@ lemma div_subgoal_rr_aux9_2:
     done
   done
 
+(*
 lemma div_subgoal_rr_aux9_3:
     "bins = BPF_ALU64 BPF_DIV dst (SOReg src) \<Longrightarrow> 
     (BPF_OK pc rs' mem' ss' is_v1 fm (cur_cu+1) remain_cu) = step fuel bins rs m ss is_v1 fm enable_stack_frame_gaps program_vm_addr cur_cu remain_cu  \<Longrightarrow> 
@@ -682,13 +683,14 @@ lemma div_subgoal_rr_aux9_3:
     reg (IR x64Syntax.RDX) = Vlong 0 \<Longrightarrow>
     Vlong (rs' dst) = reg' (IR (bpf_to_x64_reg dst))"
 (*(ucast(n1+n2)::128 word) \<le> ucast u64_MAX \<Longrightarrow>*)
-  using div_subgoal_rr_aux9_1 div_subgoal_rr_aux9_2 by metis
+  using div_subgoal_rr_aux9_1 div_subgoal_rr_aux9_2 by metis *)
 
 lemma reg_rax_rdx1:"(bpf_to_x64_reg dst) = x64Syntax.RAX \<longrightarrow> (bpf_to_x64_reg dst) \<noteq> x64Syntax.RDX" 
   apply(cases dst) 
   by (unfold bpf_to_x64_reg_corr bpf_to_x64_reg_def, simp_all)
 
 
+(*
 lemma div_subgoal_rr_aux9:
   assumes a0:"bins = BPF_ALU64 BPF_DIV dst (SOReg src)" and
      a1:"xins = [Ppushl_r x64Syntax.RDX, Pxorq_rr x64Syntax.RDX x64Syntax.RDX,Pdivq_r (bpf_to_x64_reg src),Ppopl x64Syntax.RDX]" and
@@ -763,6 +765,6 @@ proof -
     have b6:"\<forall> r \<noteq> dst. Vlong (rs r) = reg (IR (bpf_to_x64_reg r))" using a6 by blast
     have b7:"(\<forall> r \<noteq> dst. Vlong (rs' r) = reg' (IR (bpf_to_x64_reg r)))" by(simp add:b4 b5 b6) 
     thus ?thesis using b3 by fastforce
-  qed
+  qed *)
 
 end

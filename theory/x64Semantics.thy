@@ -17,30 +17,6 @@ syntax "_pregmap_set" :: "'a => 'b => 'c => 'a" ("_ # _ <- _" [1000, 1000, 1000]
 translations
   "_pregmap_set a b c" => "(a(b := c))"
 
-(*section \<open> Axiom Memory model \<close>
-
-theory Mem
-imports
-  Main
-  rBPFCommType Val
-begin
-
-type_synonym mem = "(u64, val) map"
-
-datatype memory_chunk = M8 | M16 | M32 | M64
-
-type_synonym addr_type = val
-
-axiomatization
-  loadv   :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val option" and
-  storev  :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val \<Rightarrow> mem option"
-
-
-end
-abbreviation bit_left_shift ::
-  "regset \<Rightarrow> preg \<Rightarrow> val \<Rightarrow> regset" (infix " _ # _ <- _ " 50)
-where "a # b <- c \<equiv> (a(b := c))" *)
-
 fun undef_regs :: "preg list \<Rightarrow> regset \<Rightarrow> regset" where
 "undef_regs [] rs = rs" |
 "undef_regs (r#l') rs = undef_regs l' (rs#r <- Vundef)"

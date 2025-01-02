@@ -4,6 +4,7 @@ theory Mem
 imports
   Main
   rBPFCommType Val
+  BitsOpMore3
 begin
 
 type_synonym mem = "(u64, u8) map"
@@ -143,11 +144,6 @@ definition storev :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<R
     _ \<Rightarrow> None)
 )"
 
- (*
-axiomatization
-  loadv   :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val option" and
-  storev  :: "memory_chunk \<Rightarrow> mem \<Rightarrow> addr_type \<Rightarrow> val \<Rightarrow> mem option"  *)
-
 definition vlong_of_memory_chunk :: "memory_chunk \<Rightarrow> val" where
 "vlong_of_memory_chunk chunk = (
   case chunk of
@@ -156,7 +152,5 @@ definition vlong_of_memory_chunk :: "memory_chunk \<Rightarrow> val" where
   M32 \<Rightarrow> Vlong 32 |
   M64 \<Rightarrow> Vlong 64
 )"
-
-axiomatization where store_load_consistency: "storev M32 m place v = Some m' \<Longrightarrow>  loadv M32 m' place = Some v "
 
 end

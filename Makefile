@@ -55,6 +55,7 @@ code:
 clean :
 	@echo $@
 	find . -name "step" -exec rm {} \;
+	find . -name "*\.thy~" -exec rm {} \;
 	find . -name "test" -exec rm {} \;
 	find . -name "*\.cmi" -exec rm {} \;
 	find . -name "*\.cmo" -exec rm {} \;
