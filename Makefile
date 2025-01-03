@@ -46,7 +46,7 @@ code:
 	@echo "SBPF x64 Model"
 	cd theory && cloc --force-lang="OCaml" x64Assembler.thy x64Syntax.thy x64Semantics.thy x64Disassembler.thy
 	@echo "SBPF x64 Proof"
-	cd theory && cloc --force-lang="OCaml" BitsOpMore.thy BitsOpMore2.thy BitsOpMore3.thy BitsOpMore4.thy x64C*.thy x64De*.thy  x64E*.thy  x64_*.thy
+	cd theory && cloc --force-lang="OCaml" BitsOpMore.thy BitsOpMore2.thy BitsOpMore3.thy BitsOpMore4.thy x64De*.thy  x64_*.thy
 	@echo "SBPF Validation  Framework"
 	cd tests && cloc exec_semantics/glue.ml rbpf/step_test_random/src/*.rs rbpf/step_test_fixed/src/*.rs
 	@echo "SBPF Executable Semantics"

@@ -1,6 +1,60 @@
-session Solana_rBPF = Main +
-  options [timeout = 600]
-  sessions
-    "Word_Lib"
+session "CertSBF-oopsla25-ae" = HOL + 
+  options [
+  document=pdf, document_output=generated, 
+  document_variants="document:outline=/proof,/ML", 
+  browser_info, threads=32, 
+  timeout = 600]
+  sessions "Word_Lib"
+  directories
+    "theory"
   theories
-    "Interpreter"
+"theory/Assembler"
+"theory/BitsOpMore"
+"theory/BitsOpMore2"
+"theory/BitsOpMore3"
+"theory/BitsOpMore4"
+"theory/ConsistencyCommProof"
+"theory/ConsistencyProof"
+"theory/ConsistencyProof1"
+"theory/ConsistencyProof2"
+"theory/Disassembler"
+"theory/Interpreter"
+"theory/JITCommType"
+"theory/Mem"
+"theory/Static_Analysis"
+"theory/Val"
+"theory/VerifierSafety"
+"theory/bpf_generator"
+"theory/ebpf"
+"theory/rBPFCommType"
+"theory/rBPFDecoder"
+"theory/rBPFSyntax"
+"theory/rustCommType"
+"theory/verifier"
+"theory/vm"
+"theory/vm_state"
+"theory/x64Assembler"
+"theory/x64DecodeProof"
+"theory/x64DecodeProofAux"
+"theory/x64Disassembler"
+"theory/x64Semantics"
+"theory/x64Syntax"
+"theory/bpfConsistencyAux"
+"theory/bpfConsistencyAux1"
+"theory/bpfConsistencyAux2"
+"theory/bpfConsistencyAux3"
+"theory/x64_encode_mov_rm_1"
+"theory/x64_encode_mov_rm_2"
+"theory/x64_encode_mov_rm_3"
+"theory/x64_encode_mov_rm_4"
+"theory/x64_encode_movl_rr_1"
+"theory/x64_encode_movl_rr_2"
+"theory/x64_encode_movl_rr_3"
+"theory/x64_encode_movl_rr_4"
+"theory/x64_encode_movl_rr_5"
+"theory/x64_encode_movl_rr_6"
+"theory/x64_encode_movq_rr_1"
+"theory/x86"
+"theory/x86CommType"
+document_files
+  "root.tex" 

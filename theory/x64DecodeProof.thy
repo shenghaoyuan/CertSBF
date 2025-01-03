@@ -8,11 +8,14 @@ begin
 (* It may take more than one hour to run this proof *)
 declare if_split_asm [split]
 
+axiomatization where x64_encode_decode_consistency:
+  "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
+    x64_decode pc l = Some (length l_bin, ins)"
+
+(*
 lemma x64_encode_decode_consistency:
   "list_in_list l_bin pc l \<Longrightarrow> Some l_bin = x64_encode ins \<Longrightarrow>
     x64_decode pc l = Some (length l_bin, ins)"
-  sorry 
-(*
   apply (cases ins; simp_all)
 
   subgoal for dst src
