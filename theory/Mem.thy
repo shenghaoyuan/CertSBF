@@ -4,7 +4,6 @@ theory Mem
 imports
   Main
   rBPFCommType Val
-  BitsOpMore3
 begin
 
 type_synonym mem = "(u64, u8) map"
@@ -152,5 +151,81 @@ definition vlong_of_memory_chunk :: "memory_chunk \<Rightarrow> val" where
   M32 \<Rightarrow> Vlong 32 |
   M64 \<Rightarrow> Vlong 64
 )"
+
+lemma sub_8_eq: "k \<le> n \<Longrightarrow> (n::nat) < k+8 \<Longrightarrow> n-k < 8" by simp
+
+lemma le_255_int: "k < 8 \<Longrightarrow>  bit (255::int) k"
+  apply (cases k, simp)
+  subgoal for n1 apply (cases n1, simp)
+    subgoal for n2 apply (cases n2, simp)
+      subgoal for n3 apply (cases n3, simp)
+        subgoal for n4 apply (cases n4, simp)
+          subgoal for n5 apply (cases n5, simp)
+            subgoal for n6 apply (cases n6, simp)
+              subgoal for n7 apply (cases n7, simp)
+                subgoal for n8 by simp
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+
+lemma int_255_8_eq: "k \<le> n \<Longrightarrow> n < k+8 \<Longrightarrow> bit (255::int) (n - k)"
+  using sub_8_eq le_255_int
+  by presburger
+
+lemma store_load_consistency_aux: "Some m' = storev M32 m place v \<Longrightarrow> loadv M32 m' place = Some v"
+  apply (simp add: storev_def loadv_def option_val_of_u64_def option_u64_of_u8_4_def)
+  apply (cases v; simp add: Let_def memory_chunk_value_of_u64_def u8_list_of_u32_def)
+  subgoal for x4
+    apply (simp add: bit_eq_iff [of _ x4])
+    apply (simp add: bit_simps)
+    apply (rule allI)
+    subgoal for n
+      apply (cases "24 \<le> n"; simp)
+      subgoal
+        apply (cases "bit x4 n"; simp)
+        apply (rule impI)
+        apply (subgoal_tac "n - 24 < 64 \<and> n - 24 < 8 \<and> n - 24 < 32 \<and> bit (255::int) (n - 24)")
+        subgoal by simp
+        subgoal using int_255_8_eq
+          by auto
+        done
+  
+      subgoal
+        apply (cases "16 \<le> n"; simp)
+        subgoal
+          apply (cases "bit x4 n"; simp)
+          apply (subgoal_tac "n - 16 < 64 \<and> n - 16 < 8 \<and> n - 16 < 32 \<and> bit (255::int) (n - 16)")
+          subgoal by simp
+          subgoal using int_255_8_eq
+            by auto
+          done
+    
+        subgoal
+          apply (cases "8 \<le> n"; simp)
+          subgoal
+            apply (drule Orderings.linorder_class.not_le_imp_less)
+            subgoal using int_255_8_eq
+              by auto
+            done
+          subgoal
+            apply (drule Orderings.linorder_class.not_le_imp_less)
+            apply (cases "bit x4 n"; simp)
+            using int_255_8_eq
+            using le_255_int by blast
+          done
+        done
+      done
+    done
+  done
+
+
+lemma store_load_consistency: "storev M32 m place v = Some m' \<Longrightarrow> loadv M32 m' place = Some v"
+  using store_load_consistency_aux
+  by metis
 
 end
