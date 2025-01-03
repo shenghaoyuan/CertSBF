@@ -372,9 +372,9 @@ definition eval_pqr32_aux2 :: "pqrop \<Rightarrow> dst_ty \<Rightarrow> snd_op \
   let dv :: u32 = ucast (eval_reg dst rs) in (
   let sv :: u32 = eval_snd_op_u32 sop rs in (
   case pop of
-  BPF_UDIV \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
+  BPF_UDIV \<Rightarrow> if eval_snd_op_u64 sop rs = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
                         else OKS (rs#dst <-- (ucast (dv div sv))) |
-  BPF_UREM \<Rightarrow> if sv = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
+  BPF_UREM \<Rightarrow> if eval_snd_op_u64 sop rs = 0 then (case sop of SOImm _ \<Rightarrow> NOK | _ \<Rightarrow> OKN)
                         else OKS (rs#dst <-- (ucast (dv mod sv))) |
   _ \<Rightarrow> OKN
 )))"

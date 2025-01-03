@@ -40,7 +40,7 @@ code:
 	@echo "SBPF Assembler-Disassembler"
 	cd theory && cloc --force-lang="OCaml" Assembler.thy ConsistencyCommProof.thy ConsistencyProof.thy ConsistencyProof1.thy ConsistencyProof2.thy Disassembler.thy
 	@echo "SBPF JIT"
-	cd theory && cloc --force-lang="OCaml" JIT.thy JITCommType.thy rustCommType.thy x86.thy x86CommType.thy
+	cd theory && cloc --force-lang="OCaml" JITCommType.thy rustCommType.thy x86.thy x86CommType.thy
 	@echo "SBPF JIT Proof"
 	cd theory && cloc --force-lang="OCaml" bpfConsistencyAux.thy bpfConsistencyAux1.thy bpfConsistencyAux2.thy bpfConsistencyAux3.thy
 	@echo "SBPF x64 Model"

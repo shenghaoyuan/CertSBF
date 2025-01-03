@@ -8,6 +8,10 @@ imports
   verifier Interpreter
 begin
 
+lemma i32_not_0_ucast_not_0: "(x1::i32) \<noteq> 0 \<Longrightarrow> ucast x1 \<noteq> (0::u32)"
+  apply (simp only: ucast_eq)
+  by (metis scast_nop1 signed_0 word_of_int_uint)
+
 declare if_split_asm [split]
 
 lemma verifier_step_safe: "verify_one ins l pc len sv fr reject_callx_r10 \<Longrightarrow>
@@ -32,11 +36,10 @@ lemma verifier_step_safe: "verify_one ins l pc len sv fr reject_callx_r10 \<Long
     apply (cases x51; cases sv; cases x53; simp add: eval_alu32_def eval_alu32_aux1_def
         eval_alu32_aux2_def eval_alu32_aux3_def check_imm_nonzero_def Let_def)
     subgoal for x1
-      by (metis cast_lemma4 scast_0 ucast_id)
+      by (metis i32_not_0_ucast_not_0 scast_0)
 
     subgoal for x1
-      by (metis cast_lemma4 scast_0 ucast_id)
-
+      by (metis i32_not_0_ucast_not_0 scast_0)
     done
 
   subgoal for x51 x52 x53
@@ -66,11 +69,6 @@ lemma verifier_step_safe: "verify_one ins l pc len sv fr reject_callx_r10 \<Long
   subgoal for x91 x92 x93
     apply (cases x91; cases x93; simp add: check_imm_nonzero_def eval_alu64_def eval_alu64_aux1_def
         eval_alu64_aux2_def eval_alu64_aux3_def Let_def)
-
-    subgoal
-      by (metis cast_lemma4 cast_lemma4 scast_0 ucast_id) 
-    subgoal
-      by (metis cast_lemma4 cast_lemma4 scast_0 ucast_id) 
     done
 
   subgoal for x91 x92 x93
@@ -89,28 +87,29 @@ lemma verifier_step_safe: "verify_one ins l pc len sv fr reject_callx_r10 \<Long
 
   subgoal for x121 x122 x123
     apply (cases sv; cases x121; cases x123; simp add: check_imm_nonzero_def eval_pqr32_def
-        eval_pqr32_aux1_def eval_pqr32_aux2_def Let_def)
+        eval_pqr32_aux1_def eval_pqr32_aux2_def Let_def rust_sdiv_def rust_srem_def)
     subgoal for x1
-      by (metis cast_lemma4 scast_0 ucast_id)
+      by (metis scast_0 signed_eq_0_iff)
     subgoal for x1
-      by (metis cast_lemma4 scast_0 ucast_id)
+      using signed_eq_0_iff by blast
+    subgoal for x1
+      by (metis scast_0 signed_eq_0_iff)
+    subgoal for x1
+      by (simp add: signed_eq_0_iff)
     done
 
   subgoal for x131 x132 x133
     apply (cases x131; cases sv; cases x133; simp add: check_imm_nonzero_def eval_pqr64_def
-        eval_pqr64_aux1_def eval_pqr64_aux2_def Let_def)
-    subgoal
-      by (metis cast_lemma4 cast_lemma4 scast_0 ucast_id) 
-    subgoal
-      by (metis cast_lemma4 cast_lemma4 scast_0 ucast_id) 
-    subgoal
-      by (metis cast_lemma4 cast_lemma4 scast_0 ucast_id) 
-    subgoal
-      by (metis cast_lemma4 cast_lemma4 scast_0 ucast_id) 
+        eval_pqr64_aux1_def eval_pqr64_aux2_def Let_def rust_sdiv_def rust_srem_def)
+    subgoal for x1
+      by (metis (mono_tags, opaque_lifting) of_int_sint scast_nop2 signed_0)
+    subgoal for x1
+      by (metis (mono_tags, opaque_lifting) of_int_sint scast_nop2 signed_0)
     done
 
   subgoal for x141 x142 x143
     apply (cases x141; simp add: eval_pqr64_2_def)
+    apply (cases sv; simp add: Let_def)
     done
 
   subgoal for x171 x172

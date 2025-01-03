@@ -39,7 +39,7 @@ definition check_prog_len :: "bpf_bin \<Rightarrow> bool" where
 definition check_imm_nonzero :: "snd_op \<Rightarrow> bool" where
 " check_imm_nonzero sop = (
     case sop of
-    SOImm i \<Rightarrow> if i = 0 then False else True |
+    SOImm i \<Rightarrow> if scast i = (0::u64) then False else True |
     SOReg _ \<Rightarrow> True
 )"
 
