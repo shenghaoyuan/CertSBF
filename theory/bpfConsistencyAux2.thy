@@ -165,7 +165,7 @@ proof-
     by (meson interp3_length2_aux2)
 qed
 
-(*
+
 lemma div_subgoal_rr_aux5:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg]" and 
     a1:"Next reg'' m'' = interp3 xins (Next reg m)" and 
@@ -199,7 +199,7 @@ proof-
   have b9:"tmpreg \<in> {x64Syntax.RDX, x64Syntax.RAX, x64Syntax.RCX}" using a2 by auto
   thus ?thesis using a3 a4 b5 b6 b8 a1 push_pop_subgoal_rr_aux2_3 
     using assms(4) b3 b4 by blast
-qed *)
+qed 
 
 lemma div_subgoal_rr_aux6:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg]" and 
@@ -255,7 +255,7 @@ proof-
   thus ?thesis using b0 b1 b2 by auto
 qed
 
-(*
+
 lemma div_subgoal_rr_aux7:
   assumes a0:"xins = [Ppushl_r tmpreg, Pxorq_rr tmpreg tmpreg,Pdivq_r (bpf_to_x64_reg src),Ppopl tmpreg] " and
     a1:"Next reg'' m'' = interp3 xins (Next reg m) " and
@@ -269,7 +269,7 @@ proof-
   have b1_1:"\<forall> r. (bpf_to_x64_reg r) \<noteq> x64Syntax.RSP" using a0 reg_rsp_consist by simp
   have b2:"\<forall> r . bpf_to_x64_reg r  \<notin> {(bpf_to_x64_reg dst), x64Syntax.RDX, x64Syntax.RSP} \<longrightarrow> reg'' (IR (bpf_to_x64_reg r )) = reg (IR (bpf_to_x64_reg r ))" using b1 a3 by simp
   thus ?thesis using  b0 b2 b1_1 by force 
-qed *)
+qed
 
 lemma "tmpreg (IR x64Syntax.RDX) = Vlong 0 \<Longrightarrow> 
        tmpreg (IR (bpf_to_x64_reg src)) = Vlong n2 \<Longrightarrow> 

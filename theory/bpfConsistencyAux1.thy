@@ -321,21 +321,17 @@ lemma push_pop_subgoal_rr_aux2_1_1:" Vlong addr = sub64 (reg (IR SP)) (vlong_of_
   apply(cases "sub64 (reg (IR SP)) (vlong_of_memory_chunk M32)",simp_all)
   done
 
-(*
 lemma push_pop_subgoal_rr_aux2_1_2:"reg' (IR SP) = sub64 (reg (IR SP)) (vlong_of_memory_chunk M32) \<Longrightarrow>
     Vlong n = reg' (IR SP) \<Longrightarrow>
     loadv M32 m n = Some (reg (IR tmpreg)) \<Longrightarrow>
     xins = Ppopl tmpreg \<Longrightarrow> 
-    Next reg'' m'' = (exec_instr xins 1 reg' m') \<Longrightarrow> 
+    Next reg'' m' = (exec_instr xins 1 reg' m) \<Longrightarrow> 
     reg'' (IR tmpreg) = (reg (IR tmpreg))"
  apply(unfold exec_instr_def )
   apply(cases xins, simp_all)
   subgoal for x64
     apply(unfold exec_pop_def Let_def nextinstr_nf_def nextinstr_def sub64_def vlong_of_memory_chunk_def add64_def)
     apply(cases "reg (IR SP)",simp_all)
-    subgoal for x5 apply(cases "loadv M32 m' (x5 - (32::64 word))",simp_all)
-      subgoal for a apply(cases "reg' RIP",simp_all) TODO
-      done
     done
   done
 
@@ -446,7 +442,7 @@ proof-
   let "?v" = " (reg (IR tmpreg))"
   have c4:"reg''(IR tmpreg) = ?v" using exec_pop_def b4_2 b3 a3 a6 push_pop_subgoal_rr_aux2_1_2 c1 a1 by simp
   thus ?thesis using c4 by simp
-qed *)
+qed
 
 lemma reg_rsp_consist:"r = (bpf_to_x64_reg dst) \<Longrightarrow> r \<noteq> x64Syntax.RSP"
   apply(cases dst) 
