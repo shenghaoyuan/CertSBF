@@ -1,3 +1,10 @@
+(* 
+ * This file demonstrates how to input a large set of test cases 
+ * (./tests/data/ocaml_in.json) into the `step_test.ml` file,
+ * execute them, and generate human-readable results.
+ *)
+
+
 open Step_test
 open Yojson.Basic.Util
 

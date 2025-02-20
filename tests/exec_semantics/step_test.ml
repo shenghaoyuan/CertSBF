@@ -1,3 +1,13 @@
+(*
+ * This file is for instruction-level validation,
+ * containing the OCaml code extracted from the Isabelle function
+ * `step_test` (defined in ./theory/Interpreter.thy) 
+ * 
+ * We add necessary glue code in this file for proper execution.
+ * Further details please refer to `interp_test.ml`, README.md
+ * and our paper (Chapter 5).
+ *)
+
 module Step_test : sig
   type num
   type myint

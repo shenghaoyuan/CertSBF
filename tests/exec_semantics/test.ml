@@ -1,4 +1,10 @@
-open Interp_test
+(* 
+ * This file contains 146 test cases manually extracted from the official Solana test suites. 
+ * It inputs these test cases into the `interp_test.ml` file, executes them, 
+ * and generates human-readable results.
+ *)
+
+ open Interp_test
 
 type test_case = {
   dis : string; 

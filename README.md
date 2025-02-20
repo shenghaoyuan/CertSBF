@@ -190,7 +190,7 @@ make micro-test
 # Warnings like `this pattern-matching is not exhaustive` can be ignored
 ```
 
-- (Optional)  We also provide **`make generator num=X`** to generate X random instruction test cases. 
+- (Optional)  We also provide `make generator num=X` to generate X random instruction test cases. 
 
 ```shell
 # Go to the root directory of this repo

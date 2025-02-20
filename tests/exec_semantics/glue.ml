@@ -1,4 +1,11 @@
-(**ocaml glue code just for CLoC *)
+(* 
+ * This file contains the OCaml-level glue code for integrating 
+ * extracted OCaml components. It is not designed to be executed 
+ * independently, but serves as a framework to facilitate the 
+ * interaction between the various components of the system.
+ *)
+
+(* The following code are equally added to `interp_test.ml` and `step_test.ml` *)
 
 let i64_MIN
   = (Neg (Bit0 (Bit0 (Bit0 (Bit0 (Bit0 (Bit0
@@ -37,7 +44,7 @@ let int_of_standard_int (n: int64) =
 let int_list_of_standard_int_list lst =
   List.map int_of_standard_int lst
 
-
+(* The following code demonstrates how the extracted OCaml code can be used within the overall system. *)
 open Interp_test
 
 type test_case = {

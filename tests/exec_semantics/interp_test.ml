@@ -1,3 +1,16 @@
+(*
+ * This file is for program-level validation, 
+ * containing the OCaml code extracted from the Isabelle function
+ * `bpf_interp_test` (defined in ./theory/Interpreter.thy).
+ *
+ * To enable validation of the extracted code, we introduce two glue functions:
+ * `int_of_standard_int` and `int_list_of_standard_int_list`
+ *
+ * We also use `myint` type to distinguish the complex Isabelle-generated integers
+ * from native OCaml integers. This separation ensures that the extracted code
+ * remains faithful to the Isabelle model while still being executable in OCaml.
+ *)
+
 module Interp_test : sig
   type num
   type myint
