@@ -47,6 +47,7 @@ Welcome to the SBPF ISA Semantics and Validation Framework! This guide will help
 
 - **[Isabelle AFP](https://www.isa-afp.org/download/) (Archive of Formal Proofs)** 
   - Installation Path: `/YOUR-PATH/afp`
+  - Simply download the latest AFP release (e.g., `afp-2024-09-23`)
 
 ```shell
 # set isabelle PATH and update shell environment
@@ -72,39 +73,67 @@ cd /OUR-REPO
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 rustc --version
-# rustc 1.85.0
+# expected: rustc 1.85.0
 ```
 
 - **OCaml and Related Packages**
 
-```shell
-# install opam
+1. Install opam
 
-sudo apt install opam
-# In the case you fail to install opam
-# Note1: you may need the two commands before install opam, i.e. `add-apt-repository ppa:avsm/ppa` and `apt update`
-# Note2: you may need to change your source list to focal source if `add-apt-repository ppa:avsm/ppa` fails
+   ```
+   sudo apt install opam
+   ```
 
+   - In the case you fail to install opam:
 
-# install ocaml+coq by opam
-opam init
-# install ocaml
-opam switch create sbpf ocaml-base-compiler.4.14.1 
+     - You may need to add the `PPA` repository before installing opam.
 
-eval $(opam env)
+     ```shell
+     sudo add-apt-repository ppa:avsm/ppa
+     sudo apt update
+     ```
 
-opam switch list
-#   switch  compiler      description
-->  sbpf     ocaml.4.14.1  sbpf
+     - You may need to change your source list to `focal` source If the above step fails.
 
-# Note3: Once you get a warning here, please do `eval $(opam env)`, restart your computer/VM, and do `eval $(opam env)` again
+2. Install ocaml by opam
 
-# make sure your ocaml is 4.14.1 and from `/home/bob/.opam/sbpf/bin/ocaml`
-which ocaml
+   ```shell
+   # install ocaml
+   opam init
+   opam switch create sbpf ocaml.4.13.1
+   # update your environment
+   opam switch set sbpf
+   eval $(opam env)
+   
+   # verify the current switch
+   opam switch list
+   #   switch  compiler      description
+   ->  sbpf     ocaml.4.13.1  sbpf
+   # verify ocaml location
+   which ocaml
+   # example: `/home/bob/.opam/sbpf/bin/ocaml`
+   ```
 
-# install necessary packages
-opam install ocamlfind yojson
-```
+   - Note ocaml above 4.14 version may not work correctly.
+   - If you encounter any warnings during this process, execute `eval $(opam env)`, restart your computer/VM, and run the command `eval $(opam env)` again.
+
+3. Install necessary packages
+
+   ```shell
+   # install all the dependencies listed in the CertSBF.opam.locked file
+   opam install ./CertSBF.opam.locked
+   
+   #check installed packages
+   opam list
+   # Packages matching: installed
+   	# Name             # Installed  
+   -> 	ocamlfind           1.9.6       
+   	yojson              2.2.2       
+   	...					...
+   ```
+
+   - We expect that other later versions of these packages should also work correctly.
+   - If you encounter any warnings during the installation, they are generally safe to ignore as long as they do not affect the program's functionality.
 
 - **Cloc Tool**
 
@@ -146,8 +175,6 @@ make
 | Syntax (Section 4.1, Fig 4) | `theory/rBPFSyntax.thy#L41`                                  |
 | Semantics (Section 4.2)     | `theory/Interpreter.thy#L510`, `theory/Interpreter.thy#L608` |
 
-
-
 ### 4.2 Semantics Validation 
 
 - We have two sets of benchmarks for validating semantics:
@@ -160,6 +187,7 @@ make
 # Go to the root directory of this repo
 make macro-test
 make micro-test
+# Warnings like `this pattern-matching is not exhaustive` can be ignored
 ```
 
 - (Optional)  We also provide **`make generator num=X`** to generate X random instruction test cases. 
@@ -176,8 +204,6 @@ make micro-test
 | Paper                            | Code                                                         |
 | -------------------------------- | ------------------------------------------------------------ |
 | Validation Framework (Section 5) | isabell/hol: glue code1 `theory/Interpreter.thy#L651` + glue code2 `theory/Interpreter.thy#L683` + extraction declration `theory/bpf_generator.thy#L15`, OCaml: glue code `tests/exec_semantics/glue.ml`, interpreter_test `tests/exec_semantics/interp_test.ml`, step_test `tests/exec_semantics/step_test.ml` |
-
-
 
 ### 4.3 Solana VM applications
 
@@ -205,8 +231,6 @@ make micro-test
 | x64 equivalence proof | `theory/x64DecodeProof.thy#L11`: has sufficiently provided the infrastructure for proving the Solana JIT correctness |
 | Solana JIT            | `theory/JITCommType.thy#L264`                                |
 | Solana JIT Proof      | `theory/bpfConsistencyAux.thy` |
-
-
 
 ### 4.4 Code Statistics (Section 7.1)
 

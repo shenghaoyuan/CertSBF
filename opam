@@ -1,0 +1,7 @@
+opam-version: "2.0"
+name: "CertSBF"
+version: "0.1"
+depends: [
+  "ocamlfind" {= "1.9.6"}
+  "yojson" {= "2.2.2"}
+]
