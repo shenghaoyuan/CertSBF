@@ -55,11 +55,12 @@ vim  ~/.bashrc # export PATH=$PATH:/YOUR-PATH/Isabelle2024/bin:...
 source ~/.bashrc
 
 # test isabelle/hol
-isabelle version # Isabelle2024
+isabelle version 
+# expected：Isabelle2024
 
 # config AFP
 cd /YOUR-PATH/afp/thys
-isabelle components -u . # Add AFP to ...
+isabelle components -u . # Add AFP to isabelle’s dependencies
 
 # go to our repo folder and open this project in jedit
 cd /OUR-REPO
