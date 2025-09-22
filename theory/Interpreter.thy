@@ -58,7 +58,7 @@ datatype bpf_state =
 definition init_reg_map :: "reg_map" where
 "init_reg_map = (\<lambda> _. 0)"
 
-definition init_bpf_state :: "reg_map \<Rightarrow> mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
+definition  init_bpf_state :: "reg_map \<Rightarrow> mem \<Rightarrow> u64 \<Rightarrow> SBPFV \<Rightarrow> bpf_state" where
 "init_bpf_state rs m n v =
   BPF_OK 0
     (rs#BR10 <--
@@ -730,7 +730,7 @@ definition int_to_u8_list :: "int list \<Rightarrow> u8 list" where
 definition u8_list_to_mem :: "u8 list \<Rightarrow> mem" where
 "u8_list_to_mem l = (\<lambda> i. if (unat i) < length(l) then Some (l!((unat i))) else None)"
 
-definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
+definition intlist_to_reg_map :: "int list \<Rightarrow>  reg_map" where
 " intlist_to_reg_map l = ( \<lambda> r.
     case r of BR0 \<Rightarrow> of_int (l!0) |
               BR1 \<Rightarrow> of_int (l!1) |
@@ -744,6 +744,8 @@ definition intlist_to_reg_map :: "int list \<Rightarrow> reg_map" where
               BR9 \<Rightarrow> of_int (l!9) |
               BR10\<Rightarrow> of_int (l!10)
 )"
+
+value "intlist_to_reg_map [1,1,1,1,1,1,1,1,1,1,1,1,1] BR0"
 
 definition bpf_interp_test ::
   "int list \<Rightarrow> int list \<Rightarrow> int list \<Rightarrow> int \<Rightarrow> int \<Rightarrow> int \<Rightarrow> bool \<Rightarrow> bool" where
