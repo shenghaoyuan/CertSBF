@@ -2,6 +2,20 @@ theory InterpreterProof
 imports Interpreter Interpreter2
 begin
 
+theorem cu_correct:
+" st0 = (BPF_OK pc rs m ss sv cur_cu rem_cu) \<Longrightarrow>
+  bpf_interp n l st0 = st1 \<Longrightarrow> bpf_interp2 n t l st0 = st2 \<Longrightarrow> st1 = st2"
+  apply (induction n, simp)
+  subgoal for n
+    apply simp
+
+
+
+lemma hh1:
+  assumes a0:"bstate1 = bpf_interp (length bprog+1) bprog (BPF_OK 0 rs m ss sv 0 cu) " and
+          a1:"bstate2 = bpf_interp2 (length bprog+1) 0 bprog (BPF_OK 0 rs m ss sv 0 cu) " and
+          a2:"bpf_find_instr 0 prog = Some (BPF_ALU64 BPF_ADD dst (SOReg src))" and
+          a3:"bpf_find_instr 1 prog = Some BPF_EXIT" and
 
 lemma hh1_aux1:
   "step pc ins rs m ss sv cur_cu remain_cu = BPF_Success v \<Longrightarrow> ins = BPF_EXIT"

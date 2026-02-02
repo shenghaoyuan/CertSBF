@@ -33,4 +33,17 @@ memory_mapping :: "(u64, u64) map" (**r TBC, check mem of phi-system *)
 call_frames :: "CallFrame list"
 loader :: bpf_bin    
 
+
+record stack_state = 
+call_depth :: u64
+stack_pointer :: u64
+call_frames :: "CallFrame list"
+
+definition default_stack_state :: "stack_state" where
+"default_stack_state = \<lparr> 
+  call_depth = 0,
+  stack_pointer = 0,
+  call_frames = []
+\<rparr> "
+
 end

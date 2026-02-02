@@ -12,10 +12,6 @@ subsubsection  \<open> Interpreter State \<close>
 (*
 type_synonym reg_map = "bpf_ireg \<Rightarrow> u64" *)
 
-record stack_state = 
-call_depth :: u64
-stack_pointer :: u64
-call_frames :: "CallFrame list"
 
 (*
 record rbpf_state =
@@ -448,7 +444,7 @@ definition eval_exit :: "reg_map \<Rightarrow> stack_state \<Rightarrow> bool \<
 
 subsection  \<open> step \<close>
 
-fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> bpf_state" where
+definition step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> bpf_state" where
 "step pc ins rs m ss sv cur_cu remain_cu = ( let is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) in
   case ins of
   BPF_ALU bop d sop \<Rightarrow> (
@@ -554,7 +550,7 @@ fun step :: "u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarro
       if cur_cu >  remain_cu then
         BPF_EFlag
       else
-        BPF_Success (rs BR1)
+        BPF_Success (rs BR0)
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
         BPF_OK pc' rs' m ss' sv (cur_cu+1) remain_cu ))
