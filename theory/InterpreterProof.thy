@@ -3,10 +3,10 @@ imports Interpreter Interpreter2
 begin
 
 theorem cu_correct_ok_state:
-" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv cur_cu remain_cu) \<Longrightarrow>
+" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu) \<Longrightarrow>
   bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l_pc l st0 = st2 \<Longrightarrow>
-  st0 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' cur_cu' remain_cu' \<Longrightarrow>
-  st1 = st2"
+  st1 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu' \<Longrightarrow>
+  st2 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu''"
   apply (induction n, simp)
   subgoal for n
     sorry
@@ -14,20 +14,20 @@ theorem cu_correct_ok_state:
 
 
 theorem cu_correct_err_state:
-" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv cur_cu rem_cu) \<Longrightarrow>
+" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv rem_cu) \<Longrightarrow>
   bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l_pc l st0 = st2 \<Longrightarrow> 
-  st2 = BPF_st BPF_CU1 l_pc' pc' rs' m' ss' sv' cur_cu' remain_cu' \<Longrightarrow>
-  st1 = st2"
+  st2 = BPF_st BPF_CU1 l_pc' pc' rs' m' ss' sv' remain_cu' \<Longrightarrow>
+  st1 = BPF_st BPF_CU1 l_pc' pc' rs' m' ss' sv' remain_cu''"
   apply (induction n, simp)
   subgoal for n
     sorry
   done
 
-lemma hh1:
+(*lemma hh1:
   assumes a0:"bstate1 = bpf_interp (length bprog+1) bprog (BPF_OK 0 rs m ss sv 0 cu) " and
           a1:"bstate2 = bpf_interp2 (length bprog+1) 0 bprog (BPF_OK 0 rs m ss sv 0 cu) " and
           a2:"bpf_find_instr 0 prog = Some (BPF_ALU64 BPF_ADD dst (SOReg src))" and
-          a3:"bpf_find_instr 1 prog = Some BPF_EXIT" and
+          a3:"bpf_find_instr 1 prog = Some BPF_EXIT" and*)
 
 lemma hh1_aux1:
   "step pc ins rs m ss sv cur_cu remain_cu = BPF_Success v \<Longrightarrow> ins = BPF_EXIT"
@@ -73,9 +73,12 @@ subgoal for x131 x132 x133 apply(cases sv,simp_all) apply(cases "eval_pqr64 x131
 subgoal for x141 x142 x143 apply(cases sv,simp_all) apply(cases "eval_pqr64_2 x141 x142 x143 rs enable_instruction_meter",simp_all)
  apply(cases "eval_pqr64_2 x141 x142 x143 rs False",simp_all)
   done
-subgoal for x161 x162 x163 x164 apply(cases "eval_jmp x161 x162 x163 rs enable_instruction_meter",simp_all)
+  subgoal for x161 x162 x163 x164 
+    apply(split if_splits,simp_all)
+    done
+(*    apply(cases "eval_jmp x161 x162 x163 rs enable_instruction_meter",simp_all)
  apply(cases "eval_jmp x161 x162 x163 rs",simp_all)
-  done
+  done*)
   prefer 2
 subgoal for x181 x182 apply(cases sv,simp_all) 
    apply(cases "eval_call_imm x182 rs ss enable_instruction_meter",simp_all)

@@ -32,155 +32,155 @@ definition emit_undo_profile_instruction_count::"target_pc \<Rightarrow> pc \<Ri
 "emit_undo_profile_instruction_count t_pc pc im = im + (pc+1)-t_pc"
 
 
-definition step2 :: "last_pc \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> bpf_state1" where
-"step2 lpc pc ins rs m ss sv cur_cu remain_cu = ( let is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) in
+definition step2 :: "last_pc \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> bpf_state1" where
+"step2 lpc pc ins rs m ss sv remain_cu = ( let is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) in
   case ins of
   BPF_ALU bop d sop \<Rightarrow> (
     case eval_alu32 bop d sop rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_ALU64 bop d sop \<Rightarrow> (
     case eval_alu64 bop d sop rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_ADD_STK i \<Rightarrow> (
     case eval_add64_imm_R10 i ss is_v1 of
-    None \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    Some ss' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs m ss' sv cur_cu remain_cu ) |
+    None \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    Some ss' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs m ss' sv remain_cu ) |
 
   BPF_LE dst imm \<Rightarrow> (
     case eval_le dst imm rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_BE dst imm \<Rightarrow> (
     case eval_be dst imm rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_NEG32_REG dst \<Rightarrow> (
     case eval_neg32 dst rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_NEG64_REG dst \<Rightarrow> (
     case eval_neg64 dst rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_LDX chk dst sop off \<Rightarrow> (
     case eval_load chk dst sop off rs m of
-    None \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    Some rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    None \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    Some rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_ST chk dst sop off \<Rightarrow> (
     case eval_store chk dst sop off rs m of
-    None \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    Some m' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs m' ss sv cur_cu remain_cu ) |
+    None \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    Some m' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs m' ss sv remain_cu ) |
 
   BPF_LD_IMM dst imm1 imm2  \<Rightarrow> (
     case eval_load_imm dst imm1 imm2 rs m of
-    None \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    Some rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    None \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    Some rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_PQR pop dst sop \<Rightarrow> (
     case eval_pqr32 pop dst sop rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_PQR64 pop dst sop \<Rightarrow> (
     case eval_pqr64 pop dst sop rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_PQR2 pop dst sop \<Rightarrow> (
     case eval_pqr64_2 pop dst sop rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_HOR64_IMM dst imm \<Rightarrow> (
     case eval_hor64 dst imm rs is_v1 of
-    NOK \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-    OKN \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
-    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv cur_cu remain_cu ) |
+    NOK \<Rightarrow> default_bpf_state1 BPF_Err1 |
+    OKN \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
+    OKS rs' \<Rightarrow> BPF_st BPF_OK1 lpc (pc+1) rs' m ss sv remain_cu ) |
 
   BPF_JA off  \<Rightarrow> (
     let t_pc = pc + scast off + 1 in 
     let x = emit_validate_and_profile_instruction_count t_pc pc remain_cu in 
     case x of
-       None \<Rightarrow> bad_bpf_state1 BPF_CU1 |
+       None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
-        BPF_st BPF_OK1 lpc' (pc + scast off + 1) rs m ss sv cur_cu remain_cu')  |
+        BPF_st BPF_OK1 lpc' (pc + scast off + 1) rs m ss sv remain_cu')  |
 
   BPF_JUMP cond bpf_ireg snd_op off  \<Rightarrow> (
     let t_pc = pc + scast off + 1 in 
     let x = emit_validate_and_profile_instruction_count t_pc pc remain_cu in 
     case x of
-       None \<Rightarrow> bad_bpf_state1 BPF_CU1 |
+       None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
         if eval_jmp cond bpf_ireg snd_op rs then
-          BPF_st BPF_OK1 lpc' (pc + scast off + 1) rs m ss sv cur_cu remain_cu' 
+          BPF_st BPF_OK1 lpc' (pc + scast off + 1) rs m ss sv remain_cu' 
         else
           let t_pc = (pc + scast off + 1); remain_cu'' = emit_undo_profile_instruction_count t_pc pc remain_cu' in
-          BPF_st BPF_OK1 lpc' (pc + 1) rs m ss sv cur_cu remain_cu'' ) |
+          BPF_st BPF_OK1 lpc' (pc + 1) rs m ss sv remain_cu'' ) |
 
   BPF_CALL_IMM src imm \<Rightarrow> (
     case eval_call_imm imm rs ss is_v1 of
-    None \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
+    None \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
     Some (pc', rs', ss') \<Rightarrow> 
       let x = emit_validate_and_profile_instruction_count pc' pc remain_cu in 
       (case x of 
-        None \<Rightarrow> bad_bpf_state1 BPF_CU1 |
+        None \<Rightarrow> default_bpf_state1 BPF_CU1 |
         Some (lpc', remain_cu') \<Rightarrow> 
       let remain_cu'' = emit_undo_profile_instruction_count 0 pc remain_cu' in
-      BPF_st BPF_OK1 lpc' pc' rs' m ss' sv cur_cu remain_cu'' )) |
+      BPF_st BPF_OK1 lpc' pc' rs' m ss' sv remain_cu'' )) |
 
   BPF_EXIT \<Rightarrow> (
     if call_depth ss = 0 then
         let x = emit_validate_instruction_count pc remain_cu in 
-        case x of None \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-                  Some pc \<Rightarrow>  bad_bpf_state1 BPF_Success1
+        case x of None \<Rightarrow> default_bpf_state1 BPF_Err1 |
+                  Some pc \<Rightarrow>  default_bpf_state1 BPF_Success1
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
       let x = emit_validate_and_profile_instruction_count 0 pc remain_cu in
       case x of
-       None \<Rightarrow> bad_bpf_state1 BPF_CU1 |
+       None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
-        BPF_st BPF_OK1 lpc' pc' rs' m ss' sv cur_cu remain_cu'))
+        BPF_st BPF_OK1 lpc' pc' rs' m ss' sv remain_cu'))
 )"
 
  (* BPF_CALL_REG src imm \<Rightarrow> (
     case eval_call_reg src imm rs ss is_v1 pc of
-    None \<Rightarrow> bad_bpf_state1 BPF_EFlag1 |
+    None \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
     Some (pc', rs', ss') \<Rightarrow> let remain_cu' = emit_undo_profile_instruction_count pc' pc remain_cu in
-    BPF_st BPF_OK1 lpc pc' rs' m ss' sv cur_cu remain_cu' ) |*)
+    BPF_st BPF_OK1 lpc pc' rs' m ss' sv remain_cu' ) |*)
   
 
 (*
 fun bpf_interp2 :: "nat \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> bpf_state1 \<Rightarrow> bpf_state1" where
-"bpf_interp2 0 _ _ _ = bad_bpf_state1 BPF_EFlag1" | 
+"bpf_interp2 0 _ _ _ = default_bpf_state1 BPF_EFlag1" | 
 "bpf_interp2 (Suc fuel) l_pc prog st = (
   case st of
-  BPF_st ty pc rs m ss sv cur_cu remain_cu \<Rightarrow> (
+  BPF_st ty pc rs m ss sv remain_cu \<Rightarrow> (
     case ty of
     BPF_OK1 \<Rightarrow> (
     if INSN_SIZE*unat pc < length prog then
-      if (instruction_meter_checkpoint_distance + l_pc \<le> pc) \<and> pc + 1 > remain_cu then bad_bpf_state1 BPF_CU1
+      if (instruction_meter_checkpoint_distance + l_pc \<le> pc) \<and> pc + 1 > remain_cu then default_bpf_state1 BPF_CU1
       else
         let l_pc' = if instruction_meter_checkpoint_distance + l_pc \<le> pc then pc else l_pc in 
           case bpf_find_instr (unat pc) prog of
-            None \<Rightarrow> bad_bpf_state1 BPF_Err1 |
+            None \<Rightarrow> default_bpf_state1 BPF_Err1 |
             Some ins \<Rightarrow> 
               let n' = case ins of
                 BPF_JA ofs \<Rightarrow>
@@ -203,31 +203,31 @@ fun bpf_interp2 :: "nat \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow
                 BPF_EXIT \<Rightarrow> emit_validate_and_profile_instruction_count 0 pc remain_cu |
                 _ \<Rightarrow> Some(l_pc',remain_cu) in 
             if n' = None then
-              bad_bpf_state1 BPF_CU1
+              default_bpf_state1 BPF_CU1
             else
               let remain_cu' = (snd (Option.the n')) in
               let l_pc' = fst (Option.the n') in
             bpf_interp2 fuel l_pc' prog (step2 pc ins rs m ss sv pc remain_cu')
-    else bad_bpf_state1 BPF_EFlag1) |
+    else default_bpf_state1 BPF_EFlag1) |
     _ \<Rightarrow> st )
 )"  
 *)
 
 fun bpf_interp2 :: "nat \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> bpf_state1 \<Rightarrow> bpf_state1" where
-"bpf_interp2 0 _ _ _ = bad_bpf_state1 BPF_EFlag1" | 
+"bpf_interp2 0 _ _ _ = default_bpf_state1 BPF_EFlag1" | 
 "bpf_interp2 (Suc fuel) l_pc prog st = (
   case st of
-  BPF_st ty l_pc pc rs m ss sv cur_cu remain_cu \<Rightarrow> (
+  BPF_st ty l_pc pc rs m ss sv remain_cu \<Rightarrow> (
     case ty of
     BPF_OK1 \<Rightarrow> (
     if INSN_SIZE*unat pc < length prog then
-      if (instruction_meter_checkpoint_distance + l_pc \<le> pc) \<and> pc + 1 > remain_cu then bad_bpf_state1 BPF_CU1
+      if (instruction_meter_checkpoint_distance + l_pc \<le> pc) \<and> pc + 1 > remain_cu then default_bpf_state1 BPF_CU1
       else
         let l_pc' = if instruction_meter_checkpoint_distance + l_pc \<le> pc then pc else l_pc in 
           case bpf_find_instr (unat pc) prog of
-            None \<Rightarrow> bad_bpf_state1 BPF_Err1 |
-            Some ins \<Rightarrow> bpf_interp2 fuel l_pc' prog (step2 l_pc' pc ins rs m ss sv pc remain_cu)
-    else bad_bpf_state1 BPF_EFlag1) |
+            None \<Rightarrow> default_bpf_state1 BPF_Err1 |
+            Some ins \<Rightarrow> bpf_interp2 fuel l_pc' prog (step2 l_pc' pc ins rs m ss sv remain_cu)
+    else default_bpf_state1 BPF_EFlag1) |
     _ \<Rightarrow> st )
 )"  
 
