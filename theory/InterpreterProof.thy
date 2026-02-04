@@ -2,14 +2,26 @@ theory InterpreterProof
 imports Interpreter Interpreter2
 begin
 
-theorem cu_correct:
-" st0 = (BPF_OK pc rs m ss sv cur_cu rem_cu) \<Longrightarrow>
-  bpf_interp n l st0 = st1 \<Longrightarrow> bpf_interp2 n t l st0 = st2 \<Longrightarrow> st1 = st2"
+theorem cu_correct_ok_state:
+" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv cur_cu remain_cu) \<Longrightarrow>
+  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l_pc l st0 = st2 \<Longrightarrow>
+  st0 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' cur_cu' remain_cu' \<Longrightarrow>
+  st1 = st2"
   apply (induction n, simp)
   subgoal for n
-    apply simp
+    sorry
+  done
 
 
+theorem cu_correct_err_state:
+" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv cur_cu rem_cu) \<Longrightarrow>
+  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l_pc l st0 = st2 \<Longrightarrow> 
+  st2 = BPF_st BPF_CU1 l_pc' pc' rs' m' ss' sv' cur_cu' remain_cu' \<Longrightarrow>
+  st1 = st2"
+  apply (induction n, simp)
+  subgoal for n
+    sorry
+  done
 
 lemma hh1:
   assumes a0:"bstate1 = bpf_interp (length bprog+1) bprog (BPF_OK 0 rs m ss sv 0 cu) " and
@@ -19,6 +31,7 @@ lemma hh1:
 
 lemma hh1_aux1:
   "step pc ins rs m ss sv cur_cu remain_cu = BPF_Success v \<Longrightarrow> ins = BPF_EXIT"
+  apply(unfold step_def Let_def)
 apply(cases ins; simp_all)
  subgoal for x11 x12 x13 
     apply(cases "eval_load_imm x11 x12 x13 rs m", simp_all)
@@ -83,13 +96,13 @@ apply(cases "eval_call_reg x181 x182 rs ss False pc",simp_all)
    apply(cases a,simp_all)
    done
   done
+  done
 
-lemma hh1_aux1:
-  "step pc ins rs m ss sv cur_cu remain_cu = BPF_Success v \<Longrightarrow> ins = BPF_EXIT"
 
 lemma hh1_aux2:
   "step2 pc ins rs m ss sv cur_cu remain_cu = BPF_OK pc rs' m' ss' sv cur_cu' remain_cu' \<Longrightarrow> cur_cu' = cur_cu+1"
-apply(cases ins; simp_all)
+apply(unfold step2_def Let_def)
+  apply(cases ins; simp_all)
  subgoal for x11 x12 x13 
     apply(cases "eval_load_imm x11 x12 x13 rs m", simp_all)
     done
