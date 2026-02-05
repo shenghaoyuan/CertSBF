@@ -14,15 +14,20 @@ type_synonym pc = "usize"
 type_synonym insn_meter = "usize"
 type_synonym last_pc = "usize"
 
-definition emit_validate_instruction_count::"pc \<Rightarrow> insn_meter \<Rightarrow> last_pc option" where
-"emit_validate_instruction_count pc im = (if pc+1 > im then Some pc else None)"
+definition emit_validate_instruction_count::"pc \<Rightarrow> insn_meter \<Rightarrow> bool \<Rightarrow> last_pc option" where
+"emit_validate_instruction_count pc im is_final = (
+  if is_final then 
+    if pc = im then Some pc else None 
+  else 
+    if pc+1 < im then Some pc else None
+)"
 
 definition emit_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> insn_meter" where
 "emit_profile_instruction_count t_pc pc im = im + (t_pc -(pc+1))"
 
-definition emit_validate_and_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> (last_pc \<times> insn_meter) option"where
-"emit_validate_and_profile_instruction_count t_pc pc im = (
-  case emit_validate_instruction_count pc im of
+definition emit_validate_and_profile_instruction_count::"target_pc \<Rightarrow> pc \<Rightarrow> insn_meter \<Rightarrow> bool \<Rightarrow> (last_pc \<times> insn_meter) option"where
+"emit_validate_and_profile_instruction_count t_pc pc im is_final = (
+  case emit_validate_instruction_count pc im is_final of
   None \<Rightarrow> None |
   Some l_pc \<Rightarrow>
     let meter = emit_profile_instruction_count t_pc pc im in 
@@ -117,7 +122,7 @@ definition step2 :: "u64 \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Right
 
   BPF_JA off  \<Rightarrow> (
     let t_pc = pc + scast off + 1 in 
-    let x = emit_validate_and_profile_instruction_count t_pc pc remain_cu in 
+    let x = emit_validate_and_profile_instruction_count t_pc pc remain_cu False in 
     case x of
        None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
@@ -125,7 +130,7 @@ definition step2 :: "u64 \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Right
 
   BPF_JUMP cond bpf_ireg snd_op off  \<Rightarrow> (
     let t_pc = pc + scast off + 1 in 
-    let x = emit_validate_and_profile_instruction_count t_pc pc remain_cu in 
+    let x = emit_validate_and_profile_instruction_count t_pc pc remain_cu False in 
     case x of
        None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
@@ -139,7 +144,7 @@ definition step2 :: "u64 \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Right
     case eval_call_imm imm rs ss is_v1 of
     None \<Rightarrow> default_bpf_state1 BPF_EFlag1 |
     Some (pc', rs', ss') \<Rightarrow> 
-      let x = emit_validate_and_profile_instruction_count pc' pc remain_cu in 
+      let x = emit_validate_and_profile_instruction_count pc' pc remain_cu False in 
       (case x of 
         None \<Rightarrow> default_bpf_state1 BPF_CU1 |
         Some (lpc', remain_cu') \<Rightarrow> 
@@ -148,12 +153,12 @@ definition step2 :: "u64 \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Right
 
   BPF_EXIT \<Rightarrow> (
     if call_depth ss = 0 then
-        let x = emit_validate_instruction_count pc remain_cu in 
+        let x = emit_validate_instruction_count pc remain_cu True in 
         case x of None \<Rightarrow> default_bpf_state1 BPF_Err1 |
                   Some pc \<Rightarrow>  default_bpf_state1 BPF_Success1
     else (
       let (pc', rs', ss') = eval_exit rs ss is_v1 in
-      let x = emit_validate_and_profile_instruction_count 0 pc remain_cu in
+      let x = emit_validate_and_profile_instruction_count 0 pc remain_cu False in
       case x of
        None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
