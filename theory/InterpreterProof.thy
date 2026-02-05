@@ -4,7 +4,7 @@ begin
 
 theorem cu_correct_ok_state:
 " st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu) \<Longrightarrow>
-  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l_pc l st0 = st2 \<Longrightarrow>
+  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l st0 = st2 \<Longrightarrow>
   st1 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu' \<Longrightarrow>
   st2 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu''"
   apply (induction n, simp)
@@ -15,7 +15,7 @@ theorem cu_correct_ok_state:
 
 theorem cu_correct_err_state:
 " st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv rem_cu) \<Longrightarrow>
-  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l_pc l st0 = st2 \<Longrightarrow> 
+  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l st0 = st2 \<Longrightarrow> 
   st2 = BPF_st BPF_CU1 l_pc' pc' rs' m' ss' sv' remain_cu' \<Longrightarrow>
   st1 = BPF_st BPF_CU1 l_pc' pc' rs' m' ss' sv' remain_cu''"
   apply (induction n, simp)

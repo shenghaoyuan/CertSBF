@@ -32,7 +32,7 @@ definition emit_undo_profile_instruction_count::"target_pc \<Rightarrow> pc \<Ri
 "emit_undo_profile_instruction_count t_pc pc im = im + (pc+1)-t_pc"
 
 
-definition step2 :: "last_pc \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> bpf_state1" where
+definition step2 :: "u64 \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<Rightarrow> reg_map \<Rightarrow> mem \<Rightarrow> stack_state \<Rightarrow> SBPFV \<Rightarrow> u64 \<Rightarrow> bpf_state1" where
 "step2 lpc pc ins rs m ss sv remain_cu = ( let is_v1 = (case sv of V1 \<Rightarrow> True | _ \<Rightarrow> False) in
   case ins of
   BPF_ALU bop d sop \<Rightarrow> (
@@ -121,7 +121,7 @@ definition step2 :: "last_pc \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<R
     case x of
        None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
-        BPF_st BPF_OK1 lpc' (pc + scast off + 1) rs m ss sv remain_cu')  |
+        BPF_st BPF_OK1 lpc' t_pc rs m ss sv remain_cu')  |
 
   BPF_JUMP cond bpf_ireg snd_op off  \<Rightarrow> (
     let t_pc = pc + scast off + 1 in 
@@ -130,9 +130,9 @@ definition step2 :: "last_pc \<Rightarrow> u64 \<Rightarrow> bpf_instruction \<R
        None \<Rightarrow> default_bpf_state1 BPF_CU1 |
        Some (lpc', remain_cu') \<Rightarrow>
         if eval_jmp cond bpf_ireg snd_op rs then
-          BPF_st BPF_OK1 lpc' (pc + scast off + 1) rs m ss sv remain_cu' 
+          BPF_st BPF_OK1 lpc' t_pc rs m ss sv remain_cu' 
         else
-          let t_pc = (pc + scast off + 1); remain_cu'' = emit_undo_profile_instruction_count t_pc pc remain_cu' in
+          let remain_cu'' = emit_undo_profile_instruction_count t_pc pc remain_cu' in
           BPF_st BPF_OK1 lpc' (pc + 1) rs m ss sv remain_cu'' ) |
 
   BPF_CALL_IMM src imm \<Rightarrow> (
@@ -213,20 +213,20 @@ fun bpf_interp2 :: "nat \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow
 )"  
 *)
 
-fun bpf_interp2 :: "nat \<Rightarrow> last_pc \<Rightarrow> bpf_bin \<Rightarrow> bpf_state1 \<Rightarrow> bpf_state1" where
-"bpf_interp2 0 _ _ _ = default_bpf_state1 BPF_EFlag1" | 
-"bpf_interp2 (Suc fuel) l_pc prog st = (
+fun bpf_interp2 :: "nat  \<Rightarrow> bpf_bin \<Rightarrow> bpf_state1 \<Rightarrow> bpf_state1" where
+"bpf_interp2 0 _ _ = default_bpf_state1 BPF_EFlag1" | 
+"bpf_interp2 (Suc fuel) prog st = (
   case st of
   BPF_st ty l_pc pc rs m ss sv remain_cu \<Rightarrow> (
     case ty of
     BPF_OK1 \<Rightarrow> (
     if INSN_SIZE*unat pc < length prog then
-      if (instruction_meter_checkpoint_distance + l_pc \<le> pc) \<and> pc + 1 > remain_cu then default_bpf_state1 BPF_CU1
+      if l_pc \<ge> remain_cu then
+        default_bpf_state1 BPF_CU1
       else
-        let l_pc' = if instruction_meter_checkpoint_distance + l_pc \<le> pc then pc else l_pc in 
-          case bpf_find_instr (unat pc) prog of
-            None \<Rightarrow> default_bpf_state1 BPF_Err1 |
-            Some ins \<Rightarrow> bpf_interp2 fuel l_pc' prog (step2 l_pc' pc ins rs m ss sv remain_cu)
+        case bpf_find_instr (unat pc) prog of
+          None \<Rightarrow> default_bpf_state1 BPF_Err1 |
+          Some ins \<Rightarrow> bpf_interp2 fuel prog (step2 l_pc pc ins rs m ss sv remain_cu)
     else default_bpf_state1 BPF_EFlag1) |
     _ \<Rightarrow> st )
 )"  
