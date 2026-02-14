@@ -17,7 +17,7 @@ type_synonym last_pc = "usize"
 definition emit_validate_instruction_count::"pc \<Rightarrow> insn_meter \<Rightarrow> bool \<Rightarrow> last_pc option" where
 "emit_validate_instruction_count pc im is_final = (
   if is_final then 
-    if pc = im then Some pc else None 
+    if im < pc then Some pc else None 
   else 
     if pc+1 < im then Some pc else None
 )"

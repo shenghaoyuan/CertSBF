@@ -2,15 +2,247 @@ theory InterpreterProof
 imports Interpreter Interpreter2
 begin
 
+(** meter' = meter + target_pc - (pc+1) **)
+definition cu_invariant::"u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> u64 \<Rightarrow> bool" where
+"cu_invariant l_pc remain_cu remain_cu' curr_pc const \<equiv> remain_cu + const = remain_cu' + l_pc - curr_pc"
+
+
+theorem preserve_cu_invariant:
+" st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu) \<Longrightarrow> 
+  step1 pc ins rs m ss sv lpc remain_cu = st1 \<Longrightarrow>
+  step2 lpc pc ins rs m ss sv remain_cu = st2 \<Longrightarrow>
+  st1 = BPF_st BPF_OK1 l_pc1 pc1 rs1 m1 ss1 sv1 remain_cu1 \<Longrightarrow>
+  st2 = BPF_st BPF_OK1 l_pc2 pc2 rs2 m2 ss2 sv2 remain_cu2 \<Longrightarrow>
+  cu_invariant l_pc1 remain_cu remain_cu2 pc2 (lpc-pc)"
+proof-
+  assume assm0:"st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu)" and
+    assm1:"step1 pc ins rs m ss sv lpc remain_cu = st1" and
+    assm2:"step2 lpc pc ins rs m ss sv remain_cu = st2" and
+    assm4:"st1 = BPF_st BPF_OK1 l_pc1 pc1 rs1 m1 ss1 sv1 remain_cu1" and
+    assm5:"st2 = BPF_st BPF_OK1 l_pc2 pc2 rs2 m2 ss2 sv2 remain_cu2"
+then show ?thesis proof(cases ins)
+  case (BPF_LD_IMM x11 x12 x13)
+  then show ?thesis sorry
+(*  proof -
+    have "l_pc = pc+1" 
+      using assm1 assm4 assm0 
+      apply(unfold step1_def Let_def,simp_all) 
+      apply(cases ins,simp_all)  defer using local.BPF_LD_IMM apply blast+
+      subgoal for x11 x12 x13
+        apply(cases "eval_load_imm x11 x12 x13 rs m",simp_all)
+        apply(unfold eval_load_imm_def,simp_all)
+        apply(cases "loadv M64 m1 (Vlong (ucast (scast x12 + scast x13)))")
+
+         prefer 2 subgoal for a 
+          apply(cases "loadv M64 m1 (Vlong (ucast (scast x12 + scast x13)))")*)
+
+next
+  case (BPF_LDX x21 x22 x23 x24)
+  then show ?thesis sorry
+next
+  case (BPF_ST x31 x32 x33 x34)
+  then show ?thesis sorry
+next
+  case (BPF_ADD_STK x4)
+  then show ?thesis sorry
+next
+  case (BPF_ALU x51 x52 x53)
+  then show ?thesis sorry
+next
+  case (BPF_NEG32_REG x6)
+  then show ?thesis sorry
+next
+  case (BPF_LE x71 x72)
+  then show ?thesis sorry
+next
+  case (BPF_BE x81 x82)
+  then show ?thesis sorry
+next
+  case (BPF_ALU64 x91 x92 x93)
+  then show ?thesis
+  proof -
+    have b0:"l_pc1 = lpc+1" 
+      using assm1 assm4 assm0 
+      apply(unfold step1_def Let_def,simp_all) 
+      apply(cases ins,simp_all)  using local.BPF_ALU64 apply blast+
+      subgoal for x11 x12 x13
+        apply(cases sv,simp_all)
+         apply(cases "eval_alu64 x11 x12 x13 rs enable_instruction_meter",simp_all)
+         apply(unfold eval_alu64_def eval_alu64_aux1_def eval_alu64_aux2_def eval_alu64_aux3_def eval_reg_def Let_def) 
+        apply(cases x11,simp_all) 
+        apply(cases x13,simp_all) 
+        done
+      using local.BPF_ALU64 apply blast+
+      done
+
+    have b1:"remain_cu2 = remain_cu \<and> pc2 = pc+1"
+      using assm2 assm5 
+      apply(unfold step2_def Let_def,simp_all) 
+      apply(cases ins,simp_all)  using local.BPF_ALU64 apply blast+
+      subgoal for x11 x12 x13
+        apply(cases sv,simp_all)
+         apply(cases "eval_alu64 x11 x12 x13 rs enable_instruction_meter",simp_all)
+        apply(unfold eval_alu64_def eval_alu64_aux1_def eval_alu64_aux2_def eval_alu64_aux3_def eval_reg_def Let_def) 
+        apply(cases x11,simp_all) 
+        apply(cases x13,simp_all) 
+        done
+      using local.BPF_ALU64 apply blast+
+      done
+    thus ?thesis using b0 b1 by(unfold cu_invariant_def,simp_all)
+  qed
+next
+  case (BPF_NEG64_REG x10)
+  then show ?thesis sorry
+next
+  case (BPF_HOR64_IMM x111 x112)
+  then show ?thesis sorry
+next
+  case (BPF_PQR x121 x122 x123)
+  then show ?thesis sorry
+next
+  case (BPF_PQR64 x131 x132 x133)
+  then show ?thesis sorry
+next
+  case (BPF_PQR2 x141 x142 x143)
+  then show ?thesis sorry
+next
+  case (BPF_JA x15)
+    have b0:"l_pc1 = lpc+1" 
+      using assm1 assm4 assm0 
+      apply(unfold step1_def Let_def,simp_all) 
+      apply(cases ins,simp_all) 
+      using local.BPF_JA apply blast+
+      done
+
+    have b1:"pc2 = pc + scast x15 + 1" 
+      using assm2 assm5 
+      apply(unfold step2_def Let_def,simp_all) 
+      apply(cases ins,simp_all)  
+      using local.BPF_JA apply blast+
+          defer 
+      using local.BPF_JA apply blast+
+      subgoal for x15a 
+        apply(subgoal_tac "x15 = x15a")
+        prefer 2 using local.BPF_JA apply blast  
+        apply(cases "emit_validate_and_profile_instruction_count (pc + scast x15a + 1) pc remain_cu False",simp_all)
+        subgoal for a apply(cases a,simp_all)
+          done
+        done
+      done
+
+    have b2:"remain_cu2 = remain_cu + (pc + scast x15 + 1) - (pc + 1)"
+      using assm2 assm5 b1
+      apply(unfold step2_def Let_def,simp_all) 
+      apply(cases ins,simp_all)  
+      using local.BPF_JA apply blast+
+      subgoal for x15a 
+        apply(cases "emit_validate_and_profile_instruction_count (pc + scast x15a + 1) pc remain_cu False",simp_all)
+        subgoal for a apply(cases a,simp_all)
+        apply(unfold emit_validate_and_profile_instruction_count_def)
+          apply(cases "emit_validate_instruction_count pc remain_cu False",simp_all)
+          apply(unfold emit_validate_instruction_count_def emit_profile_instruction_count_def,simp_all)
+          done
+        done
+      using local.BPF_JA apply blast+
+      done
+
+      (*remain_cu + (lpc-pc) = (remain_cu + (pc + scast x15 + 1) - (pc + 1)) + (lpc+1) - (pc + scast x15 + 1)*)
+    have b3:"cu_invariant (lpc+1) remain_cu (remain_cu + (pc + scast x15 + 1) - (pc + 1)) pc2 (lpc-pc)"
+      using b2 b1 b0 by(unfold cu_invariant_def,simp_all)
+    then show ?thesis 
+      using b3 using b0 b2 by blast 
+next
+  case (BPF_JUMP x161 x162 x163 x164)
+  then show ?thesis sorry
+next
+  case (BPF_CALL_REG x171 x172)
+  then show ?thesis sorry
+next
+  case (BPF_CALL_IMM x181 x182)
+  then show ?thesis sorry
+next
+  case BPF_EXIT
+  then show ?thesis sorry
+qed
+qed
+
+(**remain_cu + target_pc - (pc+1) = remain_cu' **)
+                   (** | |**)
+(**interp1_remain_cu + (init_lpc-init_pc) = remain_cu' + interp_lpc - pc**)
 theorem cu_correct_ok_state:
 " st0 = (BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu) \<Longrightarrow>
-  bpf_interp1 n l st0 = st1 \<Longrightarrow> bpf_interp2 n l st0 = st2 \<Longrightarrow>
+  bpf_interp1 n l st0 = st1 \<Longrightarrow> 
+  bpf_interp2 n l st0 = st2 \<Longrightarrow>
   st1 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu' \<Longrightarrow>
-  st2 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu''"
-  apply (induction n, simp)
-  subgoal for n
-    sorry
-  done
+  st2 = BPF_st BPF_Success1 l_pc'' pc'' rs' m' ss' sv' remain_cu''"
+proof (induction n arbitrary: st0 l_pc pc rs m ss sv remain_cu st1 l_pc' pc' rs' m' ss' sv' remain_cu' remain_cu'')
+  case 0
+  then show ?case by simp
+next
+  case (Suc n)
+ 
+  have c0:"bpf_interp1 (Suc n) l st0 = st1" using Suc by blast
+  have c1:"bpf_interp2 (Suc n) l st0 = st2" using Suc by blast
+  have c2:"st0 = BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu" using Suc by blast
+  have c3:"st1 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu'" using Suc by blast
+
+  have "\<exists> st1'. st1' = bpf_interp1 1 l st0" by blast
+  then obtain temp_st1 where d0:"temp_st1 = bpf_interp1 1 l st0" by presburger 
+  have "\<exists> temp1_l_pc temp1_pc temp1_rs temp1_m temp1_ss temp1_sv temp1_remain_cu. temp_st1 = BPF_st BPF_OK1 temp1_l_pc temp1_pc temp1_rs temp1_m temp1_ss temp1_sv temp1_remain_cu" sorry
+  then obtain temp1_l_pc temp1_pc temp1_rs temp1_m temp1_ss temp1_sv temp1_remain_cu where d1:"temp_st1 = BPF_st BPF_OK1 temp1_l_pc temp1_pc temp1_rs temp1_m temp1_ss temp1_sv temp1_remain_cu" by auto
+
+  have "\<exists> temp_st2. temp_st2 = bpf_interp2 1 l st0" by blast
+  then obtain temp_st2 where d2:"temp_st2 = bpf_interp2 1 l st0" by presburger 
+  have "\<exists> temp2_l_pc temp2_pc temp2_rs temp2_m temp2_ss temp2_sv temp2_remain_cu. temp_st1 = BPF_st BPF_OK1 temp2_l_pc temp2_pc temp2_rs temp2_m temp2_ss temp2_sv temp2_remain_cu" sorry
+  then obtain temp2_l_pc temp2_pc temp2_rs temp2_m temp2_ss temp2_sv temp2_remain_cu where d3:"temp_st1 = BPF_st BPF_OK1 temp2_l_pc temp2_pc temp2_rs temp2_m temp2_ss temp2_sv temp2_remain_cu" by auto
+
+  have d4:"temp2_rs = temp1_rs \<and> temp1_m = temp2_m \<and> temp1_ss = temp2_ss \<and> temp1_sv = temp2_sv" sorry
+
+  have e0:"temp1_l_pc =  l_pc + 1" sorry
+
+  have e1:"temp1_l_pc -1 < remain_cu" sorry
+
+  have e2:"temp2_pc = temp1_pc" sorry
+
+  have e3:"remain_cu > l_pc" sorry
+
+  (*have e4:"l_pc > pc" sorry*)
+  have e4:"remain_cu > pc" sorry
+
+  have e5:"remain_cu + (l_pc-pc) = temp2_remain_cu + temp1_l_pc - temp2_pc" sorry
+
+ (* have e6:"remain_cu - (pc+1) + pc'' = remain_cu''"
+    using e5 e0 by (metis (no_types, lifting) add_diff_eq diff_diff_eq eq_diff_eq) 
+
+  have e7:"remain_cu > pc+1" sorry
+
+  have e8:"remain_cu'' > 0" sorry
+
+  have e9:"pc'' > 0" sorry*)
+
+  have e6:"remain_cu - (pc+1) = temp2_remain_cu - temp2_pc"
+    using e5 e0 by (metis (no_types, lifting) add_diff_eq diff_diff_eq eq_diff_eq) 
+
+  have e7:"remain_cu -(pc+1) > 0 " sorry
+
+  have e8:"temp2_remain_cu - temp2_pc > 0" using e6 e7 by auto
+
+  have f0:"bpf_interp1 1 l st0 = temp_st1 \<and> bpf_interp1 n l temp_st1 = st1" sorry
+
+  have f1:"bpf_interp1 n l st0 = temp_st2 \<and> bpf_interp1 n l temp_st2 = st2" sorry
+
+
+  have "st0 = BPF_st BPF_OK1 l_pc pc rs m ss sv remain_cu \<Longrightarrow>
+        bpf_interp1 n l st0 = st1 \<Longrightarrow>
+        bpf_interp2 n l st0 = st2 \<Longrightarrow> 
+        st1 = BPF_st BPF_Success1 l_pc' pc' rs' m' ss' sv' remain_cu' \<Longrightarrow> 
+        st2 = BPF_st BPF_Success1 l_pc'' pc'' rs' m' ss' sv' remain_cu''"
+   using Suc by blast
+
+
+  then show ?case using c0 c1 c2 c3 Suc sorry
+qed
+
 
 
 theorem cu_correct_err_state:
