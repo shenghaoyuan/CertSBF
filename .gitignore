@@ -12,3 +12,4 @@ tests/rbpf/step_test_random/target/*
 tests/rbpf/step_test_random/target/.rustc_info.json
 tests/rbpf/step_test_random/target/debug/step_test
 tests/rbpf/step_test_random/target/debug/step_test.d
+tests/rbpf/target/
